@@ -47,7 +47,25 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health_check():
-        return {"status": "healthy"}
+        health_status = {
+            "status": "healthy",
+            "app": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "environment": settings.ENVIRONMENT
+        }
+
+        # Check database connection
+        try:
+            from app.db.base import engine
+            from sqlalchemy import text
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            health_status["database"] = "connected"
+        except Exception as e:
+            health_status["database"] = f"error: {str(e)[:100]}"
+            health_status["status"] = "degraded"
+
+        return health_status
 
     return app
 
@@ -56,7 +74,7 @@ app = create_app()
 
 if __name__ == "__main__":
     uvicorn.run(
-        "backend.app.main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG

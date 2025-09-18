@@ -1,0 +1,67 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+
+# Environments
+.env
+.env.*
+.venv
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Project specific
+node_modules/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Documentation
+docs/
+*.md
+!README.md
+!TIMEWEB_ENV.md
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# GitHub
+.github/

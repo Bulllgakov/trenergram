@@ -15,10 +15,12 @@ COPY . .
 # Устанавливаем переменные окружения
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/backend:$PYTHONPATH
-ENV PORT=8000
 
-# Даем права на выполнение скрипта
-RUN chmod +x run.sh 2>/dev/null || true
+# Даем права на выполнение
+RUN chmod +x run.sh start.py 2>/dev/null || true
 
-# Команда запуска - используем run.sh
-CMD ["bash", "run.sh"]
+# Expose port
+EXPOSE 8000
+
+# Команда запуска
+CMD ["python", "start.py"]
