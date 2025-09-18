@@ -1,0 +1,81 @@
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Date, Time, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from backend.app.db.base import Base
+
+
+class TrainerSlot(Base):
+    __tablename__ = "trainer_slots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
+    day_of_week = Column(Integer, nullable=False)  # 0-6 (Monday-Sunday)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    is_recurring = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    trainer = relationship("Trainer", back_populates="slots")
+
+
+class Booking(Base):
+    __tablename__ = "bookings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    time = Column(Time, nullable=False)
+    status = Column(String(20), default="pending")  # pending, confirmed, cancelled, completed, no_show
+
+    # Reminders
+    reminder_sent_1 = Column(Boolean, default=False)
+    reminder_sent_2 = Column(Boolean, default=False)
+    reminder_sent_3 = Column(Boolean, default=False)
+
+    # Cancellation info
+    cancelled_by = Column(String(20))  # trainer, client, system
+    cancel_reason = Column(Text)
+    cancelled_at = Column(DateTime(timezone=True))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    trainer = relationship("Trainer", back_populates="bookings")
+    client = relationship("Client", back_populates="bookings")
+
+
+class Invitation(Base):
+    __tablename__ = "invitations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"))
+    date = Column(Date, nullable=False)
+    time = Column(Time, nullable=False)
+    temp_client_username = Column(String(100))
+    status = Column(String(20), default="pending")  # pending, accepted, declined, expired
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True))
+
+    # Relationships
+    trainer = relationship("Trainer", back_populates="invitations")
+    client = relationship("Client", back_populates="invitations")
+
+
+class ProfileView(Base):
+    __tablename__ = "profile_views"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
+    viewer_telegram_id = Column(String(50))
+    source = Column(String(50))  # direct_link, qr_code, web_catalog, club_page
+    qr_code_id = Column(Integer, ForeignKey("club_qr_codes.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    trainer = relationship("Trainer", back_populates="profile_views")

@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trenergram - Расписание тренера</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Telegram Native Variables */
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #3390ec;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f1f1f1;
+            --tg-theme-section-bg-color: #ffffff;
+            --tg-theme-section-header-text-color: #6d6d72;
+            --tg-theme-subtitle-text-color: #999999;
+            --tg-theme-destructive-text-color: #ff3b30;
+        }
+
+        /* Dark theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --tg-theme-bg-color: #1c1c1d;
+                --tg-theme-text-color: #ffffff;
+                --tg-theme-hint-color: #98989e;
+                --tg-theme-link-color: #64a9f4;
+                --tg-theme-button-color: #3390ec;
+                --tg-theme-button-text-color: #ffffff;
+                --tg-theme-secondary-bg-color: #2c2c2e;
+                --tg-theme-section-bg-color: #1c1c1d;
+                --tg-theme-section-header-text-color: #8e8e93;
+                --tg-theme-subtitle-text-color: #98989e;
+                --tg-theme-destructive-text-color: #ff453a;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.4;
+            color: var(--tg-theme-text-color);
+            background: var(--tg-theme-secondary-bg-color);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        /* Main container */
+        .container {
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+
+        /* Header - Telegram style */
+        .header {
+            background: var(--tg-theme-bg-color);
+            padding: 14px 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 1px;
+        }
+
+        .header-action {
+            color: var(--tg-theme-link-color);
+            font-size: 17px;
+            text-decoration: none;
+            padding: 4px;
+        }
+
+        /* Date selector */
+        .date-tabs {
+            background: var(--tg-theme-bg-color);
+            padding: 0;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .date-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-tab {
+            flex-shrink: 0;
+            padding: 12px 16px;
+            font-size: 15px;
+            color: var(--tg-theme-hint-color);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            background: transparent;
+            border: none;
+            outline: none;
+        }
+
+        .date-tab.active {
+            color: var(--tg-theme-link-color);
+            border-bottom-color: var(--tg-theme-link-color);
+        }
+
+        /* Section header - Telegram style */
+        .section-header {
+            padding: 7px 16px;
+            background: var(--tg-theme-secondary-bg-color);
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--tg-theme-section-header-text-color);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Schedule list */
+        .schedule-section {
+            background: var(--tg-theme-bg-color);
+        }
+
+        .time-slot {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            min-height: 60px;
+        }
+
+        .time-slot:last-child {
+            border-bottom: none;
+        }
+
+        .time-slot:active {
+            background-color: var(--tg-theme-secondary-bg-color);
+        }
+
+        /* Drag and Drop styles */
+        .time-slot.draggable {
+            cursor: move;
+        }
+
+        .time-slot.dragging {
+            opacity: 0.5;
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .time-slot.drag-over {
+            background: rgba(51, 144, 236, 0.1);
+            border: 2px dashed var(--tg-theme-link-color);
+        }
+
+        /* Conflict visualization */
+        .time-slot.conflict {
+            background: rgba(255, 59, 48, 0.05);
+            border-left: 3px solid var(--tg-theme-destructive-text-color);
+        }
+
+        .time-slot.back-to-back::after {
+            content: "⚠️";
+            position: absolute;
+            right: 48px;
+            font-size: 14px;
+        }
+
+        .time-slot-time {
+            width: 55px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+            flex-shrink: 0;
+        }
+
+        .time-slot-content {
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .time-slot-name {
+            font-size: 16px;
+            color: var(--tg-theme-text-color);
+            font-weight: 400;
+        }
+
+        .time-slot-info {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+        }
+
+        .time-slot-status {
+            width: 24px;
+            height: 24px;
+            margin-left: auto;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Status badges with new confirmation states */
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-icon.confirmed {
+            background: #34c759;
+            color: white;
+        }
+
+        .status-icon.pending {
+            background: #ff9500;
+            color: white;
+        }
+
+        .status-icon.waiting-confirmation {
+            background: #007aff;
+            color: white;
+        }
+
+        .status-icon.reminder-sent {
+            background: #5856d6;
+            color: white;
+        }
+
+        .status-icon.auto-cancelled {
+            background: #8e8e93;
+            color: white;
+        }
+
+        .status-icon.free {
+            color: var(--tg-theme-link-color);
+            font-size: 22px;
+            font-weight: 400;
+        }
+
+        /* Empty slot */
+        .time-slot.empty {
+            background: var(--tg-theme-bg-color);
+        }
+
+        .time-slot.empty .time-slot-name {
+            color: var(--tg-theme-link-color);
+        }
+
+        .time-slot.empty .time-slot-info {
+            color: var(--tg-theme-hint-color);
+            font-size: 13px;
+        }
+
+        /* Lunch break */
+        .time-slot.break {
+            background: var(--tg-theme-secondary-bg-color);
+            cursor: default;
+            min-height: 44px;
+        }
+
+        .time-slot.break .time-slot-name {
+            color: var(--tg-theme-hint-color);
+            font-size: 14px;
+        }
+
+        /* Quick actions */
+        .quick-actions {
+            padding: 12px 16px;
+            background: var(--tg-theme-bg-color);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .quick-action {
+            padding: 10px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            outline: none;
+        }
+
+        .quick-action:active {
+            transform: scale(0.96);
+            opacity: 0.7;
+        }
+
+        .badge {
+            background: var(--tg-theme-destructive-text-color);
+            color: white;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* FAB button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            box-shadow: 0 3px 12px rgba(51, 144, 236, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            z-index: 90;
+        }
+
+        .fab:active {
+            transform: scale(0.92);
+        }
+
+        /* Settings FAB button */
+        .settings-fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            z-index: 89;
+        }
+
+        .settings-fab:active {
+            transform: scale(0.92);
+        }
+
+        /* Bottom sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 12px 12px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bottom-sheet.active {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            padding: 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .sheet-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        .sheet-close {
+            color: var(--tg-theme-link-color);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .sheet-content {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: none;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            outline: none;
+            color: var(--tg-theme-text-color);
+        }
+
+        .form-input:focus {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        /* Client list */
+        .client-list {
+            background: var(--tg-theme-bg-color);
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .client-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .client-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-item:active {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .client-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3390ec, #55a4f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .client-name {
+            font-size: 16px;
+            color: var(--tg-theme-text-color);
+        }
+
+        .add-new {
+            color: var(--tg-theme-link-color);
+        }
+
+        /* Time grid */
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .time-option {
+            padding: 14px;
+            text-align: center;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .time-option:active {
+            transform: scale(0.96);
+        }
+
+        .time-option.selected {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .time-option.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Submit button */
+        .submit-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            margin-top: 20px;
+        }
+
+        .submit-button:active {
+            opacity: 0.8;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 190;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Settings styles */
+        .settings-list {
+            background: var(--tg-theme-bg-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: background 0.1s ease;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-item:active {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-size: 15px;
+            color: var(--tg-theme-text-color);
+            margin-bottom: 2px;
+        }
+
+        .setting-description {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .setting-value {
+            font-size: 15px;
+            color: var(--tg-theme-text-color);
+            font-weight: 500;
+        }
+
+        .setting-arrow {
+            color: var(--tg-theme-hint-color);
+            font-size: 18px;
+        }
+
+        /* Time picker styles */
+        .time-picker-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+        }
+
+        .time-input {
+            width: 60px;
+            padding: 12px;
+            text-align: center;
+            background: var(--tg-theme-bg-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        .time-separator {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        /* Toggle switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--tg-theme-secondary-bg-color);
+            transition: .4s;
+            border-radius: 31px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #34c759;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Status legend */
+        .status-legend {
+            padding: 12px 16px;
+            background: var(--tg-theme-bg-color);
+            border-top: 0.33px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .legend-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .bottom-sheet.active {
+            animation: slideUp 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <div class="header-title">Trenergram</div>
+                <div class="header-subtitle" id="headerStats">✅ 5 подтверждено • ⏳ 2 ожидает • ➕ 3 свободно</div>
+            </div>
+            <div>
+                <a href="#" class="header-action" onclick="showTrainerStats()">📊</a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action" onclick="showClients()">
+                👥 Мои клиенты
+                <span class="badge">24</span>
+            </button>
+            <button class="quick-action" onclick="showLink()">
+                🔗 Моя ссылка
+            </button>
+            <button class="quick-action" onclick="showTrainerStats()">
+                📊 Статистика
+            </button>
+        </div>
+
+        <!-- Settings button -->
+        <button class="settings-fab" onclick="showSettings()">⚙️</button>
+
+        <!-- Date Tabs -->
+        <div class="date-tabs">
+            <button class="date-tab" onclick="selectDate(this, '2025-08-11')">Пн, 11</button>
+            <button class="date-tab" onclick="selectDate(this, '2025-08-12')">Вт, 12</button>
+            <button class="date-tab active" onclick="selectDate(this, '2025-08-13')">Сегодня</button>
+            <button class="date-tab" onclick="selectDate(this, '2025-08-14')">Завтра</button>
+            <button class="date-tab" onclick="selectDate(this, '2025-08-15')">Пт, 15</button>
+            <button class="date-tab" onclick="selectDate(this, '2025-08-16')">Сб, 16</button>
+            <button class="date-tab" onclick="selectDate(this, '2025-08-17')">Вс, 17</button>
+        </div>
+
+        <!-- Section Header -->
+        <div class="section-header">Среда, 13 августа • Фитнес ЭНЕРГИЯ</div>
+
+        <!-- Schedule List -->
+        <div class="schedule-section" id="scheduleSection">
+            <div class="time-slot draggable" data-time="09:00" data-client="Мария Сидорова" data-status="confirmed" onclick="openBookingActions(this)">
+                <div class="time-slot-time">09:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Мария Сидорова</div>
+                    <div class="time-slot-info">Силовая тренировка</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon confirmed">✓</div>
+                </div>
+            </div>
+
+            <div class="time-slot draggable back-to-back" data-time="10:00" data-client="Александр Смирнов" data-status="confirmed" onclick="openBookingActions(this)">
+                <div class="time-slot-time">10:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Александр Смирнов</div>
+                    <div class="time-slot-info">Функциональный тренинг</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon confirmed">✓</div>
+                </div>
+            </div>
+
+            <div class="time-slot empty" data-time="11:00" onclick="quickBook('11:00')">
+                <div class="time-slot-time">11:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Свободно</div>
+                    <div class="time-slot-info">Нажмите для записи</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon free">+</div>
+                </div>
+            </div>
+
+            <div class="time-slot break" data-time="12:00">
+                <div class="time-slot-time">12:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Обеденный перерыв</div>
+                </div>
+            </div>
+
+            <div class="time-slot draggable" data-time="15:00" data-client="Иван Петров" data-status="waiting-confirmation" onclick="openBookingActions(this)">
+                <div class="time-slot-time">15:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Иван Петров</div>
+                    <div class="time-slot-info">Кардио • Ждет подтверждения</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon waiting-confirmation">?</div>
+                </div>
+            </div>
+
+            <div class="time-slot empty" data-time="16:00" onclick="quickBook('16:00')">
+                <div class="time-slot-time">16:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Свободно</div>
+                    <div class="time-slot-info">Нажмите для записи</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon free">+</div>
+                </div>
+            </div>
+
+            <div class="time-slot draggable" data-time="17:00" data-client="Елена Козлова" data-status="reminder-sent" onclick="openBookingActions(this)">
+                <div class="time-slot-time">17:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Елена Козлова</div>
+                    <div class="time-slot-info">Растяжка • Напоминание отправлено</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon reminder-sent">📨</div>
+                </div>
+            </div>
+
+            <div class="time-slot empty" data-time="18:00" onclick="quickBook('18:00')">
+                <div class="time-slot-time">18:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Свободно</div>
+                    <div class="time-slot-info">Нажмите для записи</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon free">+</div>
+                </div>
+            </div>
+
+            <div class="time-slot draggable conflict" data-time="19:00" data-client="Дмитрий Новиков" data-status="confirmed" onclick="openBookingActions(this)">
+                <div class="time-slot-time">19:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Дмитрий Новиков</div>
+                    <div class="time-slot-info">Бокс • ⚠️ Долг за 2 тренировки</div>
+                </div>
+                <div class="time-slot-status">
+                    <div class="status-icon confirmed">✓</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Legend -->
+        <div class="status-legend">
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #34c759"></div>
+                <span>Подтверждено</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #007aff"></div>
+                <span>Ожидает ответа</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #5856d6"></div>
+                <span>Напоминание</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #ff3b30"></div>
+                <span>Конфликт</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <button class="fab" onclick="openBookingSheet()">+</button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
+
+    <!-- Settings Bottom Sheet -->
+    <div class="bottom-sheet" id="settingsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Настройки</div>
+            <div class="sheet-close" onclick="closeSheet('settingsSheet')">Готово</div>
+        </div>
+        <div class="sheet-content">
+            <div class="section-header" style="margin: -16px -16px 10px; padding-left: 16px;">НАПОМИНАНИЯ КЛИЕНТАМ</div>
+            
+            <div class="settings-list">
+                <div class="setting-item" onclick="openReminderSettings('first')">
+                    <div class="setting-info">
+                        <div class="setting-label">Первое напоминание</div>
+                        <div class="setting-description">За 24 часа в 20:00</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" onclick="openReminderSettings('second')">
+                    <div class="setting-info">
+                        <div class="setting-label">Второе напоминание</div>
+                        <div class="setting-description">Через 2 часа после первого (22:00)</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" onclick="openReminderSettings('third')">
+                    <div class="setting-info">
+                        <div class="setting-label">Третье напоминание</div>
+                        <div class="setting-description">Через 4 часа после первого (00:00)</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" onclick="openReminderSettings('cancel')">
+                    <div class="setting-info">
+                        <div class="setting-label">Автоотмена при неответе</div>
+                        <div class="setting-description">Через 5 часов после первого (01:00)</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+            
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ПРАВИЛА ПЕРЕНОСА</div>
+            
+            <div class="settings-list">
+                <div class="setting-item" onclick="openTransferSettings()">
+                    <div class="setting-info">
+                        <div class="setting-label">Запрет переноса</div>
+                        <div class="setting-description">За 24 часа до тренировки</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+            
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">РАБОЧИЕ ЧАСЫ</div>
+            
+            <div class="settings-list">
+                <div class="setting-item" onclick="openWorkingHours()">
+                    <div class="setting-info">
+                        <div class="setting-label">Понедельник - Пятница</div>
+                        <div class="setting-description">09:00 - 21:00</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" onclick="openWorkingHours()">
+                    <div class="setting-info">
+                        <div class="setting-label">Суббота - Воскресенье</div>
+                        <div class="setting-description">10:00 - 18:00</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+            
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ЦЕНА ТРЕНИРОВКИ</div>
+            
+            <div class="settings-list">
+                <div class="setting-item" onclick="openPriceSettings()">
+                    <div class="setting-info">
+                        <div class="setting-label">Стандартная цена</div>
+                        <div class="setting-value">2000₽</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+            
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">МОЙ КЛУБ</div>
+            
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Фитнес ЭНЕРГИЯ</div>
+                        <div class="setting-description">Тариф клуба: Стандарт</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="submit-button" onclick="restoreDefaults()">
+                Восстановить стандартные настройки
+            </button>
+        </div>
+    </div>
+
+    <!-- Reminder Settings Sheet -->
+    <div class="bottom-sheet" id="reminderSettingsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title" id="reminderTitle">Настройка напоминания</div>
+            <div class="sheet-close" onclick="closeSheet('reminderSettingsSheet')">Сохранить</div>
+        </div>
+        <div class="sheet-content">
+            <div class="form-group">
+                <label class="form-label">За сколько часов до тренировки</label>
+                <div class="time-grid">
+                    <div class="time-option" onclick="selectHours(this, 12)">12ч</div>
+                    <div class="time-option selected" onclick="selectHours(this, 24)">24ч</div>
+                    <div class="time-option" onclick="selectHours(this, 36)">36ч</div>
+                    <div class="time-option" onclick="selectHours(this, 48)">48ч</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">В какое время отправлять</label>
+                <div class="time-picker-group">
+                    <input type="number" class="time-input" value="20" min="0" max="23" id="hoursInput">
+                    <span class="time-separator">:</span>
+                    <input type="number" class="time-input" value="00" min="0" max="59" id="minutesInput">
+                </div>
+            </div>
+            
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Включить напоминание</div>
+                        <div class="setting-description">Отправлять автоматически</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="submit-button" onclick="saveReminderSettings()">
+                Сохранить изменения
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Booking Bottom Sheet -->
+    <div class="bottom-sheet" id="bookingSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Быстрая запись</div>
+            <div class="sheet-close" onclick="closeSheet('bookingSheet')">Готово</div>
+        </div>
+        <div class="sheet-content">
+            <div class="form-group">
+                <label class="form-label">Выберите клиента</label>
+                <input type="text" class="form-input" id="clientSearch" placeholder="Поиск по имени..." oninput="searchClient(this.value)">
+                
+                <div class="client-list" id="clientList">
+                    <div class="client-item" onclick="selectClient('Мария Сидорова')">
+                        <div class="client-avatar">МС</div>
+                        <div class="client-name">Мария Сидорова</div>
+                    </div>
+                    <div class="client-item" onclick="selectClient('Александр Смирнов')">
+                        <div class="client-avatar">АС</div>
+                        <div class="client-name">Александр Смирнов</div>
+                    </div>
+                    <div class="client-item" onclick="selectClient('Иван Петров')">
+                        <div class="client-avatar">ИП</div>
+                        <div class="client-name">Иван Петров</div>
+                    </div>
+                    <div class="client-item" onclick="newClient()">
+                        <div class="client-avatar" style="background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-link-color);">+</div>
+                        <div class="client-name add-new">Добавить нового клиента</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Выберите время</label>
+                <div class="time-grid">
+                    <div class="time-option disabled">09:00</div>
+                    <div class="time-option disabled">10:00</div>
+                    <div class="time-option" onclick="selectTime(this)">11:00</div>
+                    <div class="time-option disabled">12:00</div>
+                    <div class="time-option disabled">15:00</div>
+                    <div class="time-option" onclick="selectTime(this)">16:00</div>
+                    <div class="time-option disabled">17:00</div>
+                    <div class="time-option" onclick="selectTime(this)">18:00</div>
+                    <div class="time-option disabled">19:00</div>
+                </div>
+            </div>
+
+            <button class="submit-button" onclick="confirmBooking()">Записать клиента</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Apply Telegram theme colors
+            const theme = tg.themeParams;
+            if (theme) {
+                Object.keys(theme).forEach(key => {
+                    document.documentElement.style.setProperty(`--tg-theme-${key.replace(/_/g, '-')}`, theme[key]);
+                });
+            }
+            
+            // Setup back button
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => {
+                if (document.querySelector('.bottom-sheet.active')) {
+                    closeAllSheets();
+                } else {
+                    tg.close();
+                }
+            });
+        }
+
+        // State management
+        let selectedClient = null;
+        let selectedTime = null;
+        let selectedHoursValue = 24;
+        let currentDate = '2025-08-13';
+        let currentBookingSlot = null;
+        let currentReminderType = null;
+
+        // Show functions
+        function showClients() {
+            showNotification('Открытие списка клиентов');
+            // In real implementation, open clients list
+        }
+
+        function showLink() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_123456\n\nQR-код доступен в боте по команде /qr');
+            }
+        }
+
+        function showTrainerStats() {
+            showNotification('Открытие статистики');
+            // In real implementation, open stats
+        }
+
+        function showSettings() {
+            const sheet = document.getElementById('settingsSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        // Settings functions
+        function openReminderSettings(type) {
+            currentReminderType = type;
+            const titles = {
+                'first': 'Первое напоминание',
+                'second': 'Второе напоминание',
+                'third': 'Третье напоминание',
+                'cancel': 'Автоотмена'
+            };
+            
+            document.getElementById('reminderTitle').textContent = titles[type];
+            
+            const sheet = document.getElementById('reminderSettingsSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function openTransferSettings() {
+            showNotification('Настройка правил переноса');
+            // In real implementation, open transfer settings
+        }
+
+        function openWorkingHours() {
+            showNotification('Настройка рабочих часов');
+            // In real implementation, open working hours settings
+        }
+
+        function openPriceSettings() {
+            showNotification('Настройка цены тренировки');
+            // In real implementation, open price settings
+        }
+
+        function restoreDefaults() {
+            if (confirm('Восстановить стандартные настройки напоминаний?')) {
+                showNotification('✅ Настройки восстановлены');
+                closeSheet('settingsSheet');
+            }
+        }
+
+        function selectHours(element, hours) {
+            document.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedHoursValue = hours;
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            }
+        }
+
+        function saveReminderSettings() {
+            const hours = document.getElementById('hoursInput').value;
+            const minutes = document.getElementById('minutesInput').value;
+            
+            showNotification(`✅ Напоминание сохранено: за ${selectedHoursValue}ч в ${hours}:${minutes.padStart(2, '0')}`);
+            closeSheet('reminderSettingsSheet');
+            
+            // Update the description in main settings
+            const settingItems = document.querySelectorAll('.setting-item');
+            // In real implementation, update the correct setting item
+        }
+
+        // Date selection
+        function selectDate(element, date) {
+            document.querySelectorAll('.date-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            element.classList.add('active');
+            currentDate = date;
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        // Open booking sheet
+        function openBookingSheet() {
+            const sheet = document.getElementById('bookingSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+            }
+        }
+
+        // Quick book for specific time
+        function quickBook(time) {
+            selectedTime = time;
+            openBookingSheet();
+            
+            // Pre-select the time
+            document.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.textContent === time && !option.classList.contains('disabled')) {
+                    option.classList.add('selected');
+                }
+            });
+        }
+
+        // Close specific sheet
+        function closeSheet(sheetId) {
+            const sheet = document.getElementById(sheetId);
+            const overlay = document.getElementById('overlay');
+            if (sheet) {
+                sheet.classList.remove('active');
+            }
+            
+            // Check if any other sheets are open
+            const activeSheets = document.querySelectorAll('.bottom-sheet.active');
+            if (activeSheets.length === 0 && overlay) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        // Close all sheets
+        function closeAllSheets() {
+            document.querySelectorAll('.bottom-sheet').forEach(sheet => {
+                sheet.classList.remove('active');
+            });
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        // Search client
+        function searchClient(query) {
+            const clients = document.querySelectorAll('.client-item');
+            clients.forEach(client => {
+                const name = client.querySelector('.client-name').textContent.toLowerCase();
+                if (name.includes(query.toLowerCase())) {
+                    client.style.display = 'flex';
+                } else {
+                    client.style.display = 'none';
+                }
+            });
+        }
+
+        // Select client
+        function selectClient(name) {
+            selectedClient = name;
+            document.getElementById('clientSearch').value = name;
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            }
+        }
+
+        // Select time
+        function selectTime(element) {
+            if (element.classList.contains('disabled')) return;
+            
+            document.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedTime = element.textContent;
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            }
+        }
+
+        // Confirm booking
+        function confirmBooking() {
+            if (!selectedClient) {
+                selectedClient = document.getElementById('clientSearch').value;
+            }
+            
+            if (selectedClient && selectedTime) {
+                // Send data to bot
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.sendData(JSON.stringify({
+                        action: 'book',
+                        client: selectedClient,
+                        date: currentDate,
+                        time: selectedTime
+                    }));
+                    
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                }
+                
+                closeSheet('bookingSheet');
+                
+                // Show confirmation
+                showNotification(`✅ ${selectedClient} записан на ${selectedTime}`);
+                
+                // Reset form
+                selectedClient = null;
+                selectedTime = null;
+                document.getElementById('clientSearch').value = '';
+                document.querySelectorAll('.time-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+            } else {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                    window.Telegram.WebApp.showAlert('Выберите клиента и время');
+                }
+            }
+        }
+
+        function newClient() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('Для добавления нового клиента используйте команду /add_client в боте');
+            }
+        }
+
+        // Show notification
+        function showNotification(message) {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                window.Telegram.WebApp.showAlert(message);
+            } else {
+                // Fallback for browser
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: var(--tg-theme-button-color);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    animation: slideDown 0.3s ease;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Open booking actions for occupied slot  
+        function openBookingActions(slot) {
+            const clientName = slot.dataset.client;
+            const status = slot.dataset.status;
+            
+            showNotification(`Управление записью: ${clientName}`);
+            // In real implementation, open booking actions sheet
+        }
+    </script>
+</body>
+</html>

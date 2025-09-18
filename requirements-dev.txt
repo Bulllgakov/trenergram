@@ -1,0 +1,2 @@
+# Development dependencies
+aiosqlite==0.19.0  # For SQLite async support

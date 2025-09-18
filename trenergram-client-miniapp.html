@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trenergram - Клиент</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Telegram Native Variables */
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #3390ec;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f1f1f1;
+            --tg-theme-section-bg-color: #ffffff;
+            --tg-theme-section-header-text-color: #6d6d72;
+            --tg-theme-subtitle-text-color: #999999;
+            --tg-theme-destructive-text-color: #ff3b30;
+        }
+
+        /* Dark theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --tg-theme-bg-color: #1c1c1d;
+                --tg-theme-text-color: #ffffff;
+                --tg-theme-hint-color: #98989e;
+                --tg-theme-link-color: #64a9f4;
+                --tg-theme-button-color: #3390ec;
+                --tg-theme-button-text-color: #ffffff;
+                --tg-theme-secondary-bg-color: #2c2c2e;
+                --tg-theme-section-bg-color: #1c1c1d;
+                --tg-theme-section-header-text-color: #8e8e93;
+                --tg-theme-subtitle-text-color: #98989e;
+                --tg-theme-destructive-text-color: #ff453a;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.4;
+            color: var(--tg-theme-text-color);
+            background: var(--tg-theme-secondary-bg-color);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        /* Main container */
+        .container {
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+
+        /* Header - Telegram style */
+        .header {
+            background: var(--tg-theme-bg-color);
+            padding: 14px 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .header-action {
+            color: var(--tg-theme-link-color);
+            font-size: 17px;
+            text-decoration: none;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            padding: 12px 16px;
+            background: var(--tg-theme-bg-color);
+            display: flex;
+            gap: 8px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .quick-action {
+            flex: 1;
+            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            outline: none;
+        }
+
+        .quick-action:active {
+            transform: scale(0.96);
+            opacity: 0.7;
+        }
+
+        .badge {
+            background: var(--tg-theme-destructive-text-color);
+            color: white;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.info {
+            background: var(--tg-theme-link-color);
+        }
+
+        /* Category tabs */
+        .category-tabs {
+            background: var(--tg-theme-bg-color);
+            padding: 0;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-tab {
+            flex-shrink: 0;
+            padding: 12px 16px;
+            font-size: 15px;
+            color: var(--tg-theme-hint-color);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            background: transparent;
+            border: none;
+            outline: none;
+        }
+
+        .category-tab.active {
+            color: var(--tg-theme-link-color);
+            border-bottom-color: var(--tg-theme-link-color);
+        }
+
+        /* Section header - Telegram style */
+        .section-header {
+            padding: 7px 16px;
+            background: var(--tg-theme-secondary-bg-color);
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--tg-theme-section-header-text-color);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Booking cards */
+        .bookings-section {
+            background: var(--tg-theme-bg-color);
+        }
+
+        .booking-card {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: background 0.1s ease;
+            position: relative;
+        }
+
+        .booking-card:last-child {
+            border-bottom: none;
+        }
+
+        .booking-card:active {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .booking-card.highlight {
+            background: rgba(51, 144, 236, 0.05);
+            border-left: 3px solid var(--tg-theme-link-color);
+        }
+
+        .booking-date {
+            width: 50px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .booking-day {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+            line-height: 1;
+        }
+
+        .booking-month {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+            text-transform: uppercase;
+        }
+
+        .booking-time {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+            margin-top: 2px;
+        }
+
+        .booking-info {
+            flex: 1;
+        }
+
+        .booking-trainer {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+
+        .booking-details {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+        }
+
+        .booking-location {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .booking-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-icon.confirmed {
+            background: #34c759;
+            color: white;
+        }
+
+        .status-icon.pending {
+            background: #ff9500;
+            color: white;
+        }
+
+        .status-icon.reminder {
+            background: #5856d6;
+            color: white;
+        }
+
+        .status-icon.completed {
+            background: #8e8e93;
+            color: white;
+        }
+
+        /* Trainer mini card */
+        .trainer-mini-card {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            transition: background 0.1s ease;
+        }
+
+        .trainer-mini-card:last-child {
+            border-bottom: none;
+        }
+
+        .trainer-mini-card:active {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .trainer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3390ec, #55a4f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .trainer-online {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            background: #34c759;
+            border: 2px solid var(--tg-theme-bg-color);
+            border-radius: 50%;
+        }
+
+        .trainer-info {
+            flex: 1;
+        }
+
+        .trainer-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+
+        .trainer-meta {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+        }
+
+        .trainer-action {
+            padding: 6px 12px;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            background: var(--tg-theme-bg-color);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+            margin-bottom: 8px;
+        }
+
+        .empty-description {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        /* FAB button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            box-shadow: 0 3px 12px rgba(51, 144, 236, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            z-index: 90;
+        }
+
+        .fab:active {
+            transform: scale(0.92);
+        }
+
+        /* Bottom sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 12px 12px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bottom-sheet.active {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            padding: 16px;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .sheet-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+        }
+
+        .sheet-close {
+            color: var(--tg-theme-link-color);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .sheet-content {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Booking details in sheet */
+        .booking-details-card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .booking-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .booking-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .booking-detail-label {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .booking-detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+            text-align: right;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: grid;
+            gap: 12px;
+        }
+
+        .action-button {
+            padding: 14px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+            opacity: 0.7;
+        }
+
+        .action-button.primary {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .action-button.confirm {
+            background: #34c759;
+            color: white;
+        }
+
+        .action-button.cancel {
+            background: var(--tg-theme-destructive-text-color);
+            color: white;
+        }
+
+        .action-button.reschedule {
+            background: #ff9500;
+            color: white;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 190;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Trainer list in modal */
+        .trainers-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .trainer-card {
+            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .trainer-card:active {
+            transform: scale(0.98);
+            opacity: 0.7;
+        }
+
+        .trainer-card-info {
+            flex: 1;
+        }
+
+        .trainer-card-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+
+        .trainer-card-specialty {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+        }
+
+        .trainer-card-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+        }
+
+        /* Notification dot */
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            background: var(--tg-theme-destructive-text-color);
+            border-radius: 50%;
+        }
+
+        /* Date chips */
+        .date-chip {
+            flex-shrink: 0;
+            padding: 8px 12px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 50px;
+        }
+
+        .date-chip:active {
+            transform: scale(0.96);
+        }
+
+        .date-chip.active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .date-chip-day {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        .date-chip-date {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* Time slots grid */
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .time-slot-button {
+            padding: 14px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-slot-button:active {
+            transform: scale(0.96);
+        }
+
+        .time-slot-button.selected {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .time-slot-button.occupied {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Booking type buttons */
+        .booking-type-button {
+            flex: 1;
+            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .booking-type-button:active {
+            transform: scale(0.96);
+        }
+
+        .booking-type-button.active {
+            border-color: var(--tg-theme-button-color);
+            background: rgba(51, 144, 236, 0.1);
+        }
+
+        .booking-type-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .booking-type-label {
+            font-size: 13px;
+            color: var(--tg-theme-text-color);
+            font-weight: 500;
+        }
+
+        .booking-type-price {
+            font-size: 16px;
+            color: var(--tg-theme-text-color);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Submit button */
+        .submit-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            margin-top: 20px;
+        }
+
+        .submit-button:active {
+            opacity: 0.8;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .bottom-sheet.active {
+            animation: slideUp 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="header-title">Мои тренировки</div>
+                <div class="header-subtitle" id="headerSubtitle">3 предстоящие • 2 на этой неделе</div>
+            </div>
+            <div class="header-actions">
+                <a href="#" class="header-action" onclick="showNotifications()">🔔</a>
+                <a href="#" class="header-action" onclick="showProfile()">👤</a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action" onclick="showMyTrainers()">
+                ⭐ Мои тренеры
+                <span class="badge info">5</span>
+            </button>
+            <button class="quick-action" onclick="showHistory()">
+                📊 История и статистика
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="category-tabs">
+            <button class="category-tab active" onclick="selectTab(this, 'upcoming')">Предстоящие</button>
+            <button class="category-tab" onclick="selectTab(this, 'past')">Прошедшие</button>
+            <button class="category-tab" onclick="selectTab(this, 'cancelled')">Отмененные</button>
+        </div>
+
+        <!-- Upcoming Bookings -->
+        <div id="upcomingTab">
+            <!-- Today -->
+            <div class="section-header">СЕГОДНЯ, 13 АВГУСТА</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card highlight" onclick="openBookingDetails('today-training', 'confirmed')">
+                    <div class="notification-dot"></div>
+                    <div class="booking-date">
+                        <div class="booking-time">17:00</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Александр Петров</div>
+                        <div class="booking-details">Силовая тренировка</div>
+                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ, зал №2</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon confirmed">✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tomorrow -->
+            <div class="section-header">ЗАВТРА, 14 АВГУСТА</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card" onclick="openBookingDetails('tomorrow-training', 'pending')">
+                    <div class="booking-date">
+                        <div class="booking-time">10:00</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Мария Сидорова</div>
+                        <div class="booking-details">Йога для начинающих</div>
+                        <div class="booking-location">📍 Студия YogaLife</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon pending">!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- This Week -->
+            <div class="section-header">ПЯТНИЦА, 16 АВГУСТА</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card" onclick="openBookingDetails('friday-training', 'confirmed')">
+                    <div class="booking-date">
+                        <div class="booking-time">19:00</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Дмитрий Новиков</div>
+                        <div class="booking-details">Бокс • Индивидуальная</div>
+                        <div class="booking-location">📍 Спортклуб Чемпион</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon confirmed">✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Week -->
+            <div class="section-header">СЛЕДУЮЩАЯ НЕДЕЛЯ</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card" onclick="openBookingDetails('next-week-training', 'reminder')">
+                    <div class="booking-date">
+                        <div class="booking-day">20</div>
+                        <div class="booking-month">АВГ</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Елена Козлова</div>
+                        <div class="booking-details">Пилатес • Групповая</div>
+                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon reminder">📨</div>
+                    </div>
+                </div>
+
+                <div class="booking-card" onclick="openBookingDetails('next-week-training-2', 'confirmed')">
+                    <div class="booking-date">
+                        <div class="booking-day">22</div>
+                        <div class="booking-month">АВГ</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Александр Петров</div>
+                        <div class="booking-details">Функциональный тренинг</div>
+                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon confirmed">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past Bookings Tab -->
+        <div id="pastTab" style="display: none;">
+            <div class="section-header">ПРОШЛАЯ НЕДЕЛЯ</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card" onclick="openPastBookingDetails()">
+                    <div class="booking-date">
+                        <div class="booking-day">10</div>
+                        <div class="booking-month">АВГ</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Александр Петров</div>
+                        <div class="booking-details">Силовая тренировка</div>
+                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon completed">✓</div>
+                    </div>
+                </div>
+
+                <div class="booking-card" onclick="openPastBookingDetails()">
+                    <div class="booking-date">
+                        <div class="booking-day">8</div>
+                        <div class="booking-month">АВГ</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Мария Сидорова</div>
+                        <div class="booking-details">Йога</div>
+                        <div class="booking-location">📍 Студия YogaLife</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon completed">✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">ИЮЛЬ 2025</div>
+            
+            <div class="bookings-section">
+                <div class="booking-card" onclick="openPastBookingDetails()">
+                    <div class="booking-date">
+                        <div class="booking-day">28</div>
+                        <div class="booking-month">ИЮЛ</div>
+                    </div>
+                    <div class="booking-info">
+                        <div class="booking-trainer">Дмитрий Новиков</div>
+                        <div class="booking-details">Бокс</div>
+                        <div class="booking-location">📍 Спортклуб Чемпион</div>
+                    </div>
+                    <div class="booking-status">
+                        <div class="status-icon completed">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancelled Tab -->
+        <div id="cancelledTab" style="display: none;">
+            <div class="empty-state">
+                <div class="empty-icon">🎉</div>
+                <div class="empty-title">Нет отмененных тренировок</div>
+                <div class="empty-description">У вас нет отмененных тренировок за последний месяц</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <button class="fab" onclick="quickBook()">+</button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
+
+    <!-- Booking Details Sheet -->
+    <div class="bottom-sheet" id="bookingDetailsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title" id="bookingTitle">Детали тренировки</div>
+            <div class="sheet-close" onclick="closeSheet('bookingDetailsSheet')">Закрыть</div>
+        </div>
+        <div class="sheet-content">
+            <!-- Trainer info -->
+            <div class="trainer-mini-card" onclick="openTrainerProfileFromBooking()">
+                <div class="trainer-avatar" id="detailsTrainerAvatar">
+                    АП
+                    <div class="trainer-online"></div>
+                </div>
+                <div class="trainer-info">
+                    <div class="trainer-name" id="detailsTrainerName">Александр Петров</div>
+                    <div class="trainer-meta">⭐ 4.9 • 5 лет опыта</div>
+                </div>
+                <div class="trainer-action">Профиль</div>
+            </div>
+
+            <!-- Booking details -->
+            <div class="booking-details-card">
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Дата</span>
+                    <span class="booking-detail-value" id="detailsDate">Среда, 13 августа</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Время</span>
+                    <span class="booking-detail-value" id="detailsTime">17:00 - 18:00</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Тип</span>
+                    <span class="booking-detail-value" id="detailsType">Силовая тренировка</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Формат</span>
+                    <span class="booking-detail-value" id="detailsFormat">Индивидуальная</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Место</span>
+                    <span class="booking-detail-value" id="detailsLocation">Фитнес ЭНЕРГИЯ, зал №2</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Адрес</span>
+                    <span class="booking-detail-value" id="detailsAddress">ул. Спортивная, 15</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Стоимость</span>
+                    <span class="booking-detail-value" id="detailsPrice">2000₽</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Статус оплаты</span>
+                    <span class="booking-detail-value" id="detailsPaymentStatus" style="color: #34c759;">✓ Будет списано со счета</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Баланс счета</span>
+                    <span class="booking-detail-value" id="detailsBalance">6,000₽</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="action-buttons" id="bookingActions">
+                <!-- Dynamic actions will be inserted here based on status -->
+            </div>
+
+            <!-- Note -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--tg-theme-secondary-bg-color); border-radius: 10px;">
+                <div style="font-size: 13px; color: var(--tg-theme-hint-color);">
+                    ⚠️ После подтверждения тренировки средства будут списаны с баланса полностью. Если вы не придете - деньги не возвращаются.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Trainers List Sheet (from header button) -->
+    <div class="bottom-sheet" id="myTrainersListSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Мои тренеры</div>
+            <div class="sheet-close" onclick="closeSheet('myTrainersListSheet')">Закрыть</div>
+        </div>
+        <div class="sheet-content">
+            <div class="section-header" style="margin: -16px -16px 12px;">ТРЕНЕРЫ И СЧЕТА</div>
+            
+            <div class="trainers-grid">
+                <div class="trainer-card" onclick="openTrainerProfile('Александр Петров')">
+                    <div class="trainer-avatar">АП</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">Александр Петров</div>
+                        <div class="trainer-card-specialty">18 тренировок</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600;">💰 6,000₽</span>
+                            <span>⭐ 5.0</span>
+                        </div>
+                    </div>
+                    <div class="trainer-action">Профиль</div>
+                </div>
+
+                <div class="trainer-card" onclick="openTrainerProfile('Мария Сидорова')">
+                    <div class="trainer-avatar">МС</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">Мария Сидорова</div>
+                        <div class="trainer-card-specialty">12 тренировок</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600;">💰 3,600₽</span>
+                            <span>⭐ 4.9</span>
+                        </div>
+                    </div>
+                    <div class="trainer-action">Профиль</div>
+                </div>
+
+                <div class="trainer-card" onclick="openTrainerProfile('Дмитрий Новиков')">
+                    <div class="trainer-avatar">ДН</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">Дмитрий Новиков</div>
+                        <div class="trainer-card-specialty">8 тренировок</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600; color: var(--tg-theme-destructive-text-color);">💰 -500₽</span>
+                            <span>⭐ 4.8</span>
+                        </div>
+                    </div>
+                    <div class="trainer-action">Профиль</div>
+                </div>
+
+                <div class="trainer-card" onclick="openTrainerProfile('Елена Козлова')">
+                    <div class="trainer-avatar">ЕК</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">Елена Козлова</div>
+                        <div class="trainer-card-specialty">4 тренировки</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600;">💰 1,500₽</span>
+                            <span>⭐ 4.7</span>
+                        </div>
+                    </div>
+                    <div class="trainer-action">Профиль</div>
+                </div>
+
+                <div class="trainer-card" onclick="openTrainerProfile('Иван Смирнов')">
+                    <div class="trainer-avatar">ИС</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">Иван Смирнов</div>
+                        <div class="trainer-card-specialty">2 тренировки</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600; color: var(--tg-theme-destructive-text-color);">💰 0₽</span>
+                            <span>⭐ 4.6</span>
+                        </div>
+                    </div>
+                    <div class="trainer-action">Пополнить</div>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin: 16px -16px 12px;">ОБЩАЯ СТАТИСТИКА</div>
+            
+            <div class="booking-details-card">
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Всего тренеров</span>
+                    <span class="booking-detail-value">5</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Общий баланс</span>
+                    <span class="booking-detail-value">10,600₽</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Требуют пополнения</span>
+                    <span class="booking-detail-value" style="color: var(--tg-theme-destructive-text-color);">2 тренера</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trainer Profile Sheet (from "My Trainers" button) -->
+    <div class="bottom-sheet" id="trainerProfileSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Профиль тренера</div>
+            <div class="sheet-close" onclick="closeSheet('trainerProfileSheet')">Закрыть</div>
+        </div>
+        <div class="sheet-content">
+            <!-- Trainer info -->
+            <div class="trainer-mini-card" style="padding: 16px; background: var(--tg-theme-secondary-bg-color); border-radius: 10px; margin-bottom: 16px;">
+                <div class="trainer-avatar" id="profileTrainerAvatar">АП</div>
+                <div class="trainer-info">
+                    <div class="trainer-name" id="profileTrainerName">Александр Петров</div>
+                    <div class="trainer-meta">Силовые тренировки • ⭐ 5.0</div>
+                </div>
+            </div>
+
+            <!-- Balance card -->
+            <div class="booking-details-card" style="background: linear-gradient(135deg, #3390ec, #55a4f7); color: white;">
+                <div style="text-align: center; padding: 8px 0;">
+                    <div style="font-size: 13px; opacity: 0.9;">Баланс счета</div>
+                    <div style="font-size: 32px; font-weight: 600; margin: 8px 0;" id="trainerBalance">6,000₽</div>
+                    <div style="font-size: 12px; opacity: 0.9;">Достаточно на 3 тренировки</div>
+                </div>
+            </div>
+
+            <!-- Account info -->
+            <div class="section-header" style="margin: 16px -16px 12px;">ИНФОРМАЦИЯ О СЧЕТЕ</div>
+            
+            <div class="booking-details-card">
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Стоимость тренировки</span>
+                    <span class="booking-detail-value">2,000₽</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Групповая тренировка</span>
+                    <span class="booking-detail-value">800₽</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Время для отмены</span>
+                    <span class="booking-detail-value">До подтверждения</span>
+                </div>
+            </div>
+
+            <!-- Transaction history -->
+            <div class="section-header" style="margin: 16px -16px 12px;">ПОСЛЕДНИЕ ОПЕРАЦИИ</div>
+            
+            <div class="booking-details-card">
+                <div class="transaction-item" style="padding: 12px 0; border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500;">Пополнение счета</div>
+                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">10 августа, 14:30</div>
+                        </div>
+                        <div style="font-size: 16px; font-weight: 600; color: #34c759;">+10,000₽</div>
+                    </div>
+                </div>
+                <div class="transaction-item" style="padding: 12px 0; border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500;">Тренировка</div>
+                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">10 августа, 17:00</div>
+                        </div>
+                        <div style="font-size: 16px; font-weight: 600; color: var(--tg-theme-destructive-text-color);">-2,000₽</div>
+                    </div>
+                </div>
+                <div class="transaction-item" style="padding: 12px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500;">Тренировка</div>
+                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">8 августа, 17:00</div>
+                        </div>
+                        <div style="font-size: 16px; font-weight: 600; color: var(--tg-theme-destructive-text-color);">-2,000₽</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="section-header" style="margin: 16px -16px 12px;">СТАТИСТИКА</div>
+            
+            <div class="booking-details-card">
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Всего тренировок</span>
+                    <span class="booking-detail-value">18</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Потрачено всего</span>
+                    <span class="booking-detail-value">36,000₽</span>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">Последняя тренировка</span>
+                    <span class="booking-detail-value">3 дня назад</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="action-buttons">
+                <button class="action-button primary" onclick="requestTopUp()">
+                    💳 Запросить пополнение
+                </button>
+                <button class="action-button" onclick="bookWithTrainer('Александр Петров')">
+                    📅 Записаться на тренировку
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Apply Telegram theme colors
+            const theme = tg.themeParams;
+            if (theme) {
+                Object.keys(theme).forEach(key => {
+                    document.documentElement.style.setProperty(`--tg-theme-${key.replace(/_/g, '-')}`, theme[key]);
+                });
+            }
+            
+            // Setup back button
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => {
+                if (document.querySelector('.bottom-sheet.active')) {
+                    closeAllSheets();
+                } else {
+                    tg.close();
+                }
+            });
+        }
+
+        // State management
+        let currentTab = 'upcoming';
+        let selectedBooking = null;
+        let selectedTrainer = null;
+        
+        // Mock data for trainers with balances (can be negative)
+        const myTrainers = [
+            { name: 'Александр Петров', initials: 'АП', specialty: 'Силовые тренировки', price: 2000, balance: 6000 },
+            { name: 'Мария Сидорова', initials: 'МС', specialty: 'Йога, Растяжка', price: 1800, balance: 3600 },
+            { name: 'Дмитрий Новиков', initials: 'ДН', specialty: 'Бокс, Единоборства', price: 2500, balance: -500 },
+            { name: 'Елена Козлова', initials: 'ЕК', specialty: 'Пилатес', price: 1500, balance: 1500 },
+            { name: 'Иван Смирнов', initials: 'ИС', specialty: 'Кроссфит, TRX', price: 2200, balance: 0 }
+        ];
+
+        // Tab selection
+        function selectTab(element, tab) {
+            // Update tabs
+            document.querySelectorAll('.category-tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            // Hide all tabs
+            document.getElementById('upcomingTab').style.display = 'none';
+            document.getElementById('pastTab').style.display = 'none';
+            document.getElementById('cancelledTab').style.display = 'none';
+            
+            // Show selected tab
+            if (tab === 'upcoming') {
+                document.getElementById('upcomingTab').style.display = 'block';
+                updateHeaderSubtitle('3 предстоящие • 2 на этой неделе');
+            } else if (tab === 'past') {
+                document.getElementById('pastTab').style.display = 'block';
+                updateHeaderSubtitle('47 тренировок за все время');
+            } else if (tab === 'cancelled') {
+                document.getElementById('cancelledTab').style.display = 'block';
+                updateHeaderSubtitle('0 отмененных');
+            }
+            
+            currentTab = tab;
+            
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+            }
+        }
+
+        // Update header subtitle
+        function updateHeaderSubtitle(text) {
+            document.getElementById('headerSubtitle').textContent = text;
+        }
+
+        // Quick actions
+        function showMyTrainers() {
+            openSheet('myTrainersListSheet');
+        }
+
+        function openTrainerProfile(trainerName) {
+            const trainer = myTrainers.find(t => t.name === trainerName);
+            if (trainer) {
+                document.getElementById('profileTrainerAvatar').textContent = trainer.initials;
+                document.getElementById('profileTrainerName').textContent = trainer.name;
+                document.getElementById('trainerBalance').textContent = `${trainer.balance.toLocaleString()}₽`;
+                
+                // If coming from list, close it first
+                if (document.getElementById('myTrainersListSheet').classList.contains('active')) {
+                    closeSheet('myTrainersListSheet');
+                }
+                openSheet('trainerProfileSheet');
+            }
+        }
+
+        function showHistory() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('📊 Ваша статистика:\n\n• Всего тренировок: 47\n• За этот месяц: 12\n• Любимый тренер: Александр Петров (18 занятий)\n• Общая сумма потрачено: 94,000₽\n• Общий баланс счетов: 10,600₽\n• Средний рейтинг: 4.8\n\n🏆 Достижения:\n• Месяц без пропусков\n• 10 тренировок подряд');
+            }
+        }
+
+        function showNotifications() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('📨 Новые уведомления:\n\n• Напоминание о тренировке сегодня в 17:00\n• Александр Петров подтвердил запись\n• Новое расписание от Марии Сидоровой');
+            }
+        }
+
+        function showProfile() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('👤 Иван Иванов\n📱 +7 (999) 123-45-67\n\n⚙️ Настройки\n💳 Способы оплаты\n🔔 Уведомления\n❤️ Избранные тренеры\n📄 Условия использования');
+            }
+        }
+
+        // Booking details
+        function openBookingDetails(bookingId, status) {
+            selectedBooking = { id: bookingId, status: status };
+            
+            // Update booking details (mock data)
+            const bookingData = {
+                'today-training': {
+                    trainer: 'Александр Петров',
+                    initials: 'АП',
+                    date: 'Среда, 13 августа',
+                    time: '17:00 - 18:00',
+                    type: 'Силовая тренировка',
+                    format: 'Индивидуальная',
+                    location: 'Фитнес ЭНЕРГИЯ, зал №2',
+                    address: 'ул. Спортивная, 15',
+                    price: '2000₽',
+                    paymentStatus: '✓ Будет списано со счета',
+                    balance: '6,000₽'
+                },
+                'tomorrow-training': {
+                    trainer: 'Мария Сидорова',
+                    initials: 'МС',
+                    date: 'Четверг, 14 августа',
+                    time: '10:00 - 11:00',
+                    type: 'Йога для начинающих',
+                    format: 'Групповая',
+                    location: 'Студия YogaLife',
+                    address: 'ул. Йоговская, 7',
+                    price: '800₽',
+                    paymentStatus: 'Ожидает подтверждения',
+                    balance: '3,600₽'
+                }
+            };
+            
+            const booking = bookingData[bookingId] || bookingData['today-training'];
+            
+            // Update sheet content
+            document.getElementById('detailsTrainerAvatar').textContent = booking.initials;
+            document.getElementById('detailsTrainerName').textContent = booking.trainer;
+            document.getElementById('detailsDate').textContent = booking.date;
+            document.getElementById('detailsTime').textContent = booking.time;
+            document.getElementById('detailsType').textContent = booking.type;
+            document.getElementById('detailsFormat').textContent = booking.format;
+            document.getElementById('detailsLocation').textContent = booking.location;
+            document.getElementById('detailsAddress').textContent = booking.address;
+            document.getElementById('detailsPrice').textContent = booking.price;
+            document.getElementById('detailsPaymentStatus').textContent = booking.paymentStatus;
+            document.getElementById('detailsBalance').textContent = booking.balance;
+            
+            // Generate action buttons based on status
+            const actionsContainer = document.getElementById('bookingActions');
+            actionsContainer.innerHTML = '';
+            
+            if (status === 'pending') {
+                // Pending - show confirm button first
+                actionsContainer.innerHTML = `
+                    <button class="action-button confirm" onclick="confirmBooking()">
+                        ✅ Подтвердить тренировку
+                    </button>
+                    <button class="action-button primary" onclick="contactTrainer()">
+                        💬 Написать тренеру
+                    </button>
+                    <button class="action-button reschedule" onclick="rescheduleBooking()">
+                        🔄 Перенести
+                    </button>
+                    <button class="action-button cancel" onclick="cancelBooking()">
+                        ❌ Отменить
+                    </button>
+                `;
+            } else if (status === 'reminder') {
+                // Reminder sent - show confirm button
+                actionsContainer.innerHTML = `
+                    <button class="action-button confirm" onclick="confirmBooking()">
+                        ✅ Подтвердить участие
+                    </button>
+                    <button class="action-button primary" onclick="contactTrainer()">
+                        💬 Написать тренеру
+                    </button>
+                    <button class="action-button cancel" onclick="cancelBooking()">
+                        ❌ Отменить
+                    </button>
+                `;
+            } else {
+                // Confirmed - standard actions
+                actionsContainer.innerHTML = `
+                    <button class="action-button primary" onclick="contactTrainer()">
+                        💬 Написать тренеру
+                    </button>
+                    <button class="action-button reschedule" onclick="rescheduleBooking()">
+                        🔄 Перенести
+                    </button>
+                    <button class="action-button cancel" onclick="cancelBooking()">
+                        ❌ Отменить
+                    </button>
+                `;
+            }
+            
+            openSheet('bookingDetailsSheet');
+        }
+
+        function openPastBookingDetails() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('Тренировка завершена!\n\nОставьте отзыв о тренере и получите 50 бонусных баллов 🎁');
+            }
+        }
+
+        // Booking actions
+        function confirmBooking() {
+            if (selectedBooking) {
+                // Get booking details for price
+                const trainer = myTrainers.find(t => t.name.includes('Мария')) || myTrainers[0];
+                const price = selectedBooking.id === 'tomorrow-training' ? 800 : 2000;
+                const balance = trainer.balance;
+                
+                if (balance < price) {
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                        window.Telegram.WebApp.showAlert(`❌ Недостаточно средств на счете!\n\nНеобходимо: ${price}₽\nБаланс: ${balance}₽\n\nПопросите тренера пополнить ваш счет.`);
+                    }
+                    return;
+                }
+                
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.sendData(JSON.stringify({
+                        action: 'confirm_booking',
+                        booking: selectedBooking.id,
+                        price: price
+                    }));
+                    
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    window.Telegram.WebApp.showAlert(`✅ Тренировка подтверждена!\n\n💰 Будет списано со счета: ${price}₽\n💳 Баланс после списания: ${balance - price}₽\n\n⚠️ Важно: деньги спишутся полностью. Если не придете - деньги не возвращаются.`);
+                }
+                closeSheet('bookingDetailsSheet');
+            }
+        }
+
+        function requestTopUp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    action: 'request_topup',
+                    trainer: document.getElementById('profileTrainerName').textContent
+                }));
+                
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                window.Telegram.WebApp.showAlert('✅ Запрос на пополнение отправлен тренеру!\n\nТренер получит уведомление и сможет пополнить ваш счет после получения оплаты.');
+            }
+            closeSheet('trainerProfileSheet');
+        }
+
+        function contactTrainer() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    action: 'contact_trainer',
+                    booking: selectedBooking
+                }));
+            }
+            closeSheet('bookingDetailsSheet');
+        }
+
+        function rescheduleBooking() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('Выберите новое время для переноса тренировки.\n\n⚠️ Перенос возможен только до подтверждения тренировки.');
+            }
+        }
+
+        function cancelBooking() {
+            if (confirm('Отменить тренировку?\n\n✅ Если вы еще не подтвердили - деньги не спишутся.\n❌ Если уже подтвердили - деньги НЕ вернутся.')) {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    window.Telegram.WebApp.showAlert('Тренировка отменена.');
+                }
+                closeSheet('bookingDetailsSheet');
+            }
+        }
+
+        // Quick booking
+        function quickBook() {
+            showNotification('Для записи к новому тренеру используйте сайт trenergram.ru или прямую ссылку от тренера');
+        }
+
+        // Sheet management
+        function openSheet(sheetId) {
+            const sheet = document.getElementById(sheetId);
+            const overlay = document.getElementById('overlay');
+            
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function closeSheet(sheetId) {
+            const sheet = document.getElementById(sheetId);
+            const overlay = document.getElementById('overlay');
+            
+            if (sheet) {
+                sheet.classList.remove('active');
+            }
+            
+            const activeSheets = document.querySelectorAll('.bottom-sheet.active');
+            if (activeSheets.length === 0) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function closeAllSheets() {
+            document.querySelectorAll('.bottom-sheet').forEach(sheet => {
+                sheet.classList.remove('active');
+            });
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function showNotification(message) {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+                window.Telegram.WebApp.showAlert(message);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const todayTraining = document.querySelector('.booking-card.highlight');
+            if (todayTraining) {
+                setTimeout(() => {
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
