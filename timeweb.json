@@ -1,0 +1,48 @@
+{
+  "name": "trenergram",
+  "region": "nl",
+  "environment": "python",
+  "framework": "fastapi",
+  "python_version": "3.10",
+  "build": {
+    "command": "pip install -r requirements.txt",
+    "output_directory": "."
+  },
+  "run": {
+    "command": "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT",
+    "runtime": "python-3.10"
+  },
+  "env_variables": {
+    "PYTHONUNBUFFERED": "1",
+    "ENVIRONMENT": "production",
+    "DEBUG": "False"
+  },
+  "services": [
+    {
+      "name": "web",
+      "type": "web",
+      "plan": "starter",
+      "run_command": "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT",
+      "health_check_path": "/health",
+      "port": 8000
+    },
+    {
+      "name": "bot",
+      "type": "worker",
+      "plan": "starter",
+      "run_command": "python backend/app/bot/main.py"
+    }
+  ],
+  "addons": [
+    {
+      "type": "postgresql",
+      "plan": "starter",
+      "version": "14"
+    },
+    {
+      "type": "redis",
+      "plan": "starter",
+      "version": "7"
+    }
+  ]
+}

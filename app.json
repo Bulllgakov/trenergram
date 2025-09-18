@@ -1,0 +1,48 @@
+{
+  "name": "Trenergram",
+  "description": "Platform for fitness trainers booking",
+  "repository": "https://github.com/Bulllgakov/trenergram",
+  "keywords": ["python", "fastapi", "telegram-bot"],
+  "stack": "python",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Telegram Bot Token",
+      "required": true
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection string",
+      "required": true
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for JWT",
+      "generator": "secret",
+      "required": true
+    },
+    "REDIS_URL": {
+      "description": "Redis connection string",
+      "required": false
+    }
+  },
+  "scripts": {
+    "postdeploy": "python backend/init_db.py"
+  },
+  "addons": [
+    "heroku-postgresql:hobby-dev",
+    "heroku-redis:hobby-dev"
+  ]
+}

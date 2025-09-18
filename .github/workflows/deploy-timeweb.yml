@@ -1,0 +1,53 @@
+name: Deploy to TimeWeb
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        # Базовая проверка импортов
+        python -c "from backend.app.main import app; print('✅ FastAPI app imports successfully')"
+        python -c "from backend.app.bot.main import main; print('✅ Bot imports successfully')"
+
+    - name: Deploy to TimeWeb
+      env:
+        TIMEWEB_API_TOKEN: ${{ secrets.TIMEWEB_API_TOKEN }}
+        TIMEWEB_APP_ID: ${{ secrets.TIMEWEB_APP_ID }}
+      run: |
+        # Trigger deployment via TimeWeb API
+        curl -X POST \
+          -H "Authorization: Bearer ${TIMEWEB_API_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d '{"branch": "main", "auto_deploy": true}' \
+          https://api.timeweb.cloud/api/v1/apps/${TIMEWEB_APP_ID}/deploy
+
+    - name: Notify deployment
+      if: success()
+      run: |
+        echo "✅ Deployment triggered successfully!"
+        echo "Check TimeWeb dashboard for deployment status"
+
+    - name: Notify failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed! Check logs above"
