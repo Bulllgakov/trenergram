@@ -23,7 +23,7 @@ python-multipart==0.0.6
 # Utils
 python-dotenv==1.0.0
 pytz==2023.3
-httpx==0.25.1
+httpx~=0.24.0  # Изменено для совместимости с python-telegram-bot
 aiofiles==23.2.1
 qrcode[pil]==7.4.2
 Pillow==10.1.0
