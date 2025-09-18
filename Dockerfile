@@ -12,11 +12,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Копируем весь код проекта
 COPY . .
 
-# Устанавливаем переменную окружения
+# Устанавливаем переменные окружения
 ENV PYTHONUNBUFFERED=1
-
-# Порт по умолчанию
+ENV PYTHONPATH=/app/backend:$PYTHONPATH
 ENV PORT=8000
 
-# Команда запуска
-CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Даем права на выполнение скрипта
+RUN chmod +x run.sh 2>/dev/null || true
+
+# Команда запуска - используем run.sh
+CMD ["bash", "run.sh"]

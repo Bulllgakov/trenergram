@@ -3,9 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-from backend.app.core.config import settings
-from backend.app.api.v1 import router as api_v1_router
-from backend.app.api.admin import router as admin_router
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app.core.config import settings
+from app.api.v1 import router as api_v1_router
+from app.api.admin import router as admin_router
 
 
 def create_app() -> FastAPI:

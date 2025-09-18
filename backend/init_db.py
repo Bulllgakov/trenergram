@@ -1,8 +1,8 @@
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
-from backend.app.db.base import Base
-from backend.app.core.config import settings
-from backend.app.models import *  # Import all models
+from app.db.base import Base
+from app.core.config import settings
+from app.models import *  # Import all models
 
 async def init_db():
     """Initialize database with tables"""

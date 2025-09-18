@@ -2,9 +2,9 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-from backend.app.core.config import settings
-from backend.app.bot.handlers import registration, trainer, client, common
-from backend.app.bot.utils import keyboards
+from app.core.config import settings
+from app.bot.handlers import registration, trainer, client, common
+from app.bot.utils import keyboards
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
