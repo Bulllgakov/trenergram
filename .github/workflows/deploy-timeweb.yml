@@ -25,26 +25,82 @@ jobs:
 
     - name: Run tests
       run: |
-        # Базовая проверка импортов
-        python -c "from backend.app.main import app; print('✅ FastAPI app imports successfully')"
-        python -c "from backend.app.bot.main import main; print('✅ Bot imports successfully')"
+        # Проверка импортов с правильными путями
+        cd backend
+        python -c "from app.main import app; print('✅ FastAPI app imports successfully')"
+        python -c "from app.bot.main import main; print('✅ Bot imports successfully')"
 
-    - name: Deploy to TimeWeb
+    - name: Build and Push Docker image
+      env:
+        DOCKER_REGISTRY: ${{ secrets.TIMEWEB_REGISTRY }}
+        DOCKER_USERNAME: ${{ secrets.TIMEWEB_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.TIMEWEB_PASSWORD }}
+        IMAGE_NAME: trenergram
+      run: |
+        # Login to TimeWeb registry (if they provide one)
+        if [ ! -z "$DOCKER_REGISTRY" ]; then
+          echo "$DOCKER_PASSWORD" | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
+
+          # Build and push image
+          docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest .
+          docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+
+          echo "✅ Docker image pushed to registry"
+        else
+          echo "⚠️ No Docker registry configured, skipping image push"
+        fi
+
+    - name: Deploy via SSH
+      env:
+        SSH_HOST: ${{ secrets.TIMEWEB_SSH_HOST }}
+        SSH_USER: ${{ secrets.TIMEWEB_SSH_USER }}
+        SSH_KEY: ${{ secrets.TIMEWEB_SSH_KEY }}
+        APP_PATH: ${{ secrets.TIMEWEB_APP_PATH }}
+      run: |
+        if [ ! -z "$SSH_HOST" ]; then
+          # Setup SSH key
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Add host to known hosts
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+
+          # Deploy via SSH
+          ssh -i ~/.ssh/deploy_key $SSH_USER@$SSH_HOST << 'EOF'
+            cd $APP_PATH
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+            echo "✅ Deployment completed via SSH"
+          EOF
+        else
+          echo "⚠️ SSH credentials not configured"
+        fi
+
+    - name: Deploy via TimeWeb API
       env:
         TIMEWEB_API_TOKEN: ${{ secrets.TIMEWEB_API_TOKEN }}
         TIMEWEB_APP_ID: ${{ secrets.TIMEWEB_APP_ID }}
       run: |
-        # Trigger deployment via TimeWeb API
-        curl -X POST \
-          -H "Authorization: Bearer ${TIMEWEB_API_TOKEN}" \
-          -H "Content-Type: application/json" \
-          -d '{"branch": "main", "auto_deploy": true}' \
-          https://api.timeweb.cloud/api/v1/apps/${TIMEWEB_APP_ID}/deploy
+        if [ ! -z "$TIMEWEB_API_TOKEN" ]; then
+          # Trigger deployment via TimeWeb API
+          response=$(curl -s -X POST \
+            -H "Authorization: Bearer ${TIMEWEB_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch": "main"}' \
+            https://api.timeweb.cloud/api/v1/apps/${TIMEWEB_APP_ID}/deploy)
+
+          echo "API Response: $response"
+          echo "✅ Deployment triggered via API"
+        else
+          echo "⚠️ TimeWeb API credentials not configured"
+        fi
 
     - name: Notify deployment
       if: success()
       run: |
-        echo "✅ Deployment triggered successfully!"
+        echo "✅ Deployment workflow completed!"
         echo "Check TimeWeb dashboard for deployment status"
 
     - name: Notify failure

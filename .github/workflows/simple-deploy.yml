@@ -1,0 +1,56 @@
+name: Simple Deploy to TimeWeb
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-and-notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run basic tests
+      run: |
+        # Test imports
+        export PYTHONPATH=$GITHUB_WORKSPACE/backend:$PYTHONPATH
+        python -c "from app.main import app; print('✅ FastAPI app works')"
+        python -c "from app.core.config import settings; print('✅ Config works')"
+
+    - name: Trigger TimeWeb deployment
+      if: success()
+      env:
+        TIMEWEB_WEBHOOK: ${{ secrets.TIMEWEB_WEBHOOK }}
+      run: |
+        if [ ! -z "$TIMEWEB_WEBHOOK" ]; then
+          # Если есть webhook от TimeWeb
+          curl -X POST "$TIMEWEB_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{"ref":"main","repository":"trenergram"}'
+          echo "✅ Triggered TimeWeb deployment via webhook"
+        else
+          echo "ℹ️ TimeWeb webhook not configured, relying on auto-deploy"
+        fi
+
+    - name: Summary
+      run: |
+        echo "### 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Code tests passed" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Pushed to main branch" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "TimeWeb should auto-deploy from GitHub" >> $GITHUB_STEP_SUMMARY
+        echo "Check deployment at: https://your-app.timeweb.cloud" >> $GITHUB_STEP_SUMMARY
