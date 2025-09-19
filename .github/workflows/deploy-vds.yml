@@ -1,0 +1,54 @@
+name: Deploy to VDS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to VDS via SSH
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.VDS_HOST }}
+        username: ${{ secrets.VDS_USER }}
+        key: ${{ secrets.VDS_SSH_KEY }}
+        port: ${{ secrets.VDS_PORT }}
+        script: |
+          # Navigate to project directory
+          cd /opt/trenergram
+
+          # Pull latest changes
+          git pull origin main
+
+          # Build and restart backend
+          docker-compose down
+          docker-compose build --no-cache
+          docker-compose up -d
+
+          # Build frontend for mini-app (if exists)
+          if [ -d "frontend" ]; then
+            cd frontend
+            npm install
+            npm run build
+            # Copy built files to nginx directory
+            sudo cp -r dist/* /var/www/trenergram/
+          fi
+
+          echo "✅ Deployment completed at $(date)"
+
+    - name: Check deployment
+      run: |
+        sleep 10
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://trenergram.ru/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ Deployment successful - API is responding"
+        else
+          echo "⚠️ API returned status code: $response"
+        fi

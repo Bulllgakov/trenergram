@@ -65,7 +65,47 @@ async def handle_club_selection(update: Update, context: ContextTypes.DEFAULT_TY
     """Handle club selection during trainer registration"""
     query = update.callback_query
     await query.answer()
-    # TODO: Implement club selection logic
+
+    if query.data == "club_private":
+        # Тренер без клуба - сразу переходим к цене
+        context.user_data['club_id'] = None
+        await query.edit_message_text(
+            "💰 *Стоимость тренировки*\n\n"
+            "Укажите стоимость одной тренировки в рублях\n"
+            "(например: 2000)",
+            parse_mode='Markdown'
+        )
+        context.user_data['registration_step'] = 'trainer_price'
+
+    elif query.data == "club_list":
+        # Показываем список клубов
+        # TODO: Загрузить клубы из БД
+        keyboard = [
+            [InlineKeyboardButton("World Class", callback_data="club_select_1")],
+            [InlineKeyboardButton("Fitness House", callback_data="club_select_2")],
+            [InlineKeyboardButton("X-Fit", callback_data="club_select_3")],
+            [InlineKeyboardButton("⬅️ Назад", callback_data="club_back")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await query.edit_message_text(
+            "🏢 *Выберите клуб:*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+
+    elif query.data.startswith("club_select_"):
+        # Выбран конкретный клуб
+        club_id = query.data.replace("club_select_", "")
+        context.user_data['club_id'] = club_id
+
+        await query.edit_message_text(
+            "💰 *Стоимость тренировки*\n\n"
+            "Укажите стоимость одной тренировки в рублях\n"
+            "(например: 3000)",
+            parse_mode='Markdown'
+        )
+        context.user_data['registration_step'] = 'trainer_price'
 
 
 async def handle_specialization_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -73,6 +113,25 @@ async def handle_specialization_selection(update: Update, context: ContextTypes.
     query = update.callback_query
     await query.answer()
     # TODO: Implement specialization selection logic
+
+
+async def handle_copy_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle copy link button press"""
+    query = update.callback_query
+    trainer_id = update.effective_user.id
+    trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{trainer_id}"
+
+    await query.answer(
+        "📋 Ссылка скопирована! Поделитесь ей с клиентами.",
+        show_alert=True
+    )
+
+    # Also send the link as a separate message for easy copying
+    await query.message.reply_text(
+        f"📎 *Ваша ссылка для клиентов:*\n\n`{trainer_link}`\n\n"
+        "Нажмите на ссылку для копирования и поделитесь ей с клиентами.",
+        parse_mode='Markdown'
+    )
 
 
 async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -88,10 +147,8 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['name'] = text
         # Ask for club
         keyboard = [
-            [InlineKeyboardButton("Выбрать из списка", callback_data="club_list")],
-            [InlineKeyboardButton("Частный тренер", callback_data="club_private")],
-            [InlineKeyboardButton("Онлайн", callback_data="club_online")],
-            [InlineKeyboardButton("Добавить новый клуб", callback_data="club_new")]
+            [InlineKeyboardButton("🏢 Выбрать клуб", callback_data="club_list")],
+            [InlineKeyboardButton("💪 Без клуба", callback_data="club_private")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -121,11 +178,30 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
     trainer_id = update.effective_user.id
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{trainer_id}"
 
+    # Создаем клавиатуру с упрощенными кнопками
+    from telegram import WebAppInfo
+    keyboard = [
+        [InlineKeyboardButton(
+            "📱 Открыть кабинет тренера",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}")
+        )],
+        [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
+        [InlineKeyboardButton(
+            "⚙️ Настройки",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}/settings")
+        )]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
         "✅ *Профиль создан!*\n\n"
-        f"Ваша ссылка: `{trainer_link}`\n\n"
-        "Платформа Trenergram полностью *БЕСПЛАТНА* для вас!\n\n"
-        "Используйте /help для просмотра доступных команд.",
+        f"📎 Ваша ссылка для клиентов:\n`{trainer_link}`\n"
+        "(нажмите для копирования)\n\n"
+        "🎯 *Управление профилем:*\n"
+        "Все функции доступны в кабинете тренера.\n"
+        "Используйте команду /cabinet в любой момент.\n\n"
+        "Платформа полностью *БЕСПЛАТНА* для вас!",
+        reply_markup=reply_markup,
         parse_mode='Markdown'
     )
 

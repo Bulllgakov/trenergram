@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 import sys
@@ -8,8 +8,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings
-from app.api.v1 import router as api_v1_router
-from app.api.admin import router as admin_router
+# from app.api.v1 import router as api_v1_router
+# from app.api.admin import router as admin_router
 
 
 def create_app() -> FastAPI:
@@ -30,12 +30,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Static files
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    # Static files - commented for now since we don't have static files yet
+    # app.mount("/static", StaticFiles(directory="static"), name="static")
 
-    # API routes
-    app.include_router(api_v1_router.router, prefix="/api/v1")
-    app.include_router(admin_router.router, prefix="/api/admin")
+    # API routes - will be added when created
+    # app.include_router(api_v1_router, prefix="/api/v1")
+    # app.include_router(admin_router, prefix="/api/admin")
 
     @app.get("/")
     async def root():

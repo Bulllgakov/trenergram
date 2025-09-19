@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from app.core.config import settings
-from app.bot.handlers import registration, trainer, client, common
+from app.bot.handlers import registration, trainer, client, common, webapp
 from app.bot.utils import keyboards
 
 logging.basicConfig(
@@ -55,26 +55,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = """
 📚 *Справка по командам Trenergram*
 
-*Общие команды:*
+*Основные команды:*
 /start - начало работы
+/cabinet - 📱 открыть кабинет
+/my_link - 📎 получить ссылку для клиентов
+/settings - ⚙️ настройки профиля
 /help - эта справка
 /support - связь с поддержкой
 
-*Для тренеров:*
-/schedule - расписание на сегодня
-/today - клиенты на сегодня
-/tomorrow - клиенты на завтра
-/my_link - персональная ссылка
-/book_client - записать клиента
-/settings - настройки
-/stats - статистика
-/my_club - информация о клубе
-
 *Для клиентов:*
-/book - записаться на тренировку
 /my - мои тренировки
-/cancel - отменить тренировку
-/trainers - мои тренеры
+
+💡 *Совет:* Все функции управления доступны в кабинете тренера через команду /cabinet
 
 Платформа Trenergram - *БЕСПЛАТНО* для всех! 🚀
 """
@@ -106,23 +98,15 @@ def main():
     # Registration handlers
     application.add_handler(CallbackQueryHandler(registration.handle_role_selection, pattern="^role_"))
     application.add_handler(CallbackQueryHandler(registration.handle_club_selection, pattern="^club_"))
-    application.add_handler(CallbackQueryHandler(registration.handle_specialization_selection, pattern="^spec_"))
+    application.add_handler(CallbackQueryHandler(registration.handle_copy_link, pattern="^copy_link$"))
 
-    # Trainer commands
-    application.add_handler(CommandHandler("schedule", trainer.schedule_command))
-    application.add_handler(CommandHandler("today", trainer.today_command))
-    application.add_handler(CommandHandler("tomorrow", trainer.tomorrow_command))
-    application.add_handler(CommandHandler("my_link", trainer.my_link_command))
-    application.add_handler(CommandHandler("book_client", trainer.book_client_command))
-    application.add_handler(CommandHandler("settings", trainer.settings_command))
-    application.add_handler(CommandHandler("stats", trainer.stats_command))
-    application.add_handler(CommandHandler("my_club", trainer.my_club_command))
+    # Main commands - simplified interface
+    application.add_handler(CommandHandler("cabinet", webapp.cabinet_command))
+    application.add_handler(CommandHandler("my_link", webapp.my_link_command))
+    application.add_handler(CommandHandler("settings", webapp.settings_command))
 
-    # Client commands
-    application.add_handler(CommandHandler("book", client.book_command))
+    # Client commands (keep minimal)
     application.add_handler(CommandHandler("my", client.my_bookings_command))
-    application.add_handler(CommandHandler("cancel", client.cancel_command))
-    application.add_handler(CommandHandler("trainers", client.trainers_command))
 
     # Message handlers for registration flow
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registration.handle_text_input))
