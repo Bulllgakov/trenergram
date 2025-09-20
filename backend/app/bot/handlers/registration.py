@@ -1,5 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
+from app.services import registration as reg_service
+import asyncio
 
 
 async def handle_role_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -48,17 +50,32 @@ async def start_client_registration_standalone(update: Update, context: ContextT
     )
 
 
-async def show_club_info(update: Update, context: ContextTypes.DEFAULT_TYPE, club_id: str):
+async def show_club_info(update: Update, context: ContextTypes.DEFAULT_TYPE, club_qr: str):
     """Show club info when user scans QR code"""
-    # TODO: Load club info from database
-    await update.message.reply_text(
-        "🏢 *Добро пожаловать в Trenergram!*\n\n"
-        f"Вы в клубе: Фитнес ЭНЕРГИЯ\n"
-        f"📍 Адрес: ул. Пушкина 15\n"
-        f"⏰ Работаем: 07:00-23:00\n\n"
-        "Выберите тренера для записи:",
-        parse_mode='Markdown'
-    )
+    # Load club info from database
+    from app.db.session import SessionLocal
+    from app.models import Club
+
+    db = SessionLocal()
+    try:
+        club = db.query(Club).filter_by(qr_code=club_qr).first()
+        if not club:
+            await update.message.reply_text(
+                "❌ Клуб не найден. Проверьте QR-код.",
+                parse_mode='Markdown'
+            )
+            return
+
+        await update.message.reply_text(
+            f"🏢 *Добро пожаловать в Trenergram!*\n\n"
+            f"Вы в клубе: {club.name}\n"
+            f"📍 Адрес: {club.address}\n"
+            f"⏰ Город: {club.city}\n\n"
+            "Выберите тренера для записи:",
+            parse_mode='Markdown'
+        )
+    finally:
+        db.close()
 
 
 async def handle_club_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -78,14 +95,23 @@ async def handle_club_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data['registration_step'] = 'trainer_price'
 
     elif query.data == "club_list":
-        # Показываем список клубов
-        # TODO: Загрузить клубы из БД
-        keyboard = [
-            [InlineKeyboardButton("World Class", callback_data="club_select_1")],
-            [InlineKeyboardButton("Fitness House", callback_data="club_select_2")],
-            [InlineKeyboardButton("X-Fit", callback_data="club_select_3")],
-            [InlineKeyboardButton("⬅️ Назад", callback_data="club_back")]
-        ]
+        # Показываем список клубов из БД
+        clubs = reg_service.get_clubs()
+
+        keyboard = []
+        for club in clubs:
+            keyboard.append([
+                InlineKeyboardButton(club.name, callback_data=f"club_select_{club.id}")
+            ])
+
+        if not clubs:
+            keyboard.append([
+                InlineKeyboardButton("➕ Добавить клуб", callback_data="club_add")
+            ])
+
+        keyboard.append([
+            InlineKeyboardButton("⬅️ Назад", callback_data="club_back")
+        ])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.edit_message_text(
@@ -174,8 +200,27 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def complete_trainer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Complete trainer registration"""
-    # TODO: Save to database
-    trainer_id = update.effective_user.id
+    user = update.effective_user
+    trainer_id = str(user.id)
+
+    # Save to database
+    try:
+        trainer = await reg_service.register_trainer(
+            telegram_id=trainer_id,
+            telegram_username=user.username,
+            telegram_first_name=user.first_name,
+            telegram_last_name=user.last_name,
+            name=context.user_data.get('name'),
+            price=context.user_data.get('price'),
+            club_id=context.user_data.get('club_id')
+        )
+    except Exception as e:
+        await update.message.reply_text(
+            "❌ Произошла ошибка при регистрации. Попробуйте позже.",
+            parse_mode='Markdown'
+        )
+        return
+
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{trainer_id}"
 
     # Создаем клавиатуру с упрощенными кнопками
@@ -208,10 +253,45 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
 
 async def complete_client_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Complete client registration"""
-    # TODO: Save to database
+    user = update.effective_user
+    client_id = str(user.id)
+    trainer_id = context.user_data.get('trainer_id')
+
+    # Save to database
+    try:
+        client = await reg_service.register_client(
+            telegram_id=client_id,
+            telegram_username=user.username,
+            telegram_first_name=user.first_name,
+            telegram_last_name=user.last_name,
+            name=context.user_data.get('name'),
+            trainer_id=trainer_id
+        )
+    except Exception as e:
+        await update.message.reply_text(
+            "❌ Произошла ошибка при регистрации. Попробуйте позже.",
+            parse_mode='Markdown'
+        )
+        return
+
+    # Show WebApp buttons for client
+    from telegram import WebAppInfo
+    keyboard = [
+        [InlineKeyboardButton(
+            "📅 Мои тренировки",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{client_id}")
+        )],
+        [InlineKeyboardButton(
+            "⚙️ Настройки",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{client_id}/settings")
+        )]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
         "✅ *Регистрация завершена!*\n\n"
         "Теперь вы можете записываться на тренировки.\n\n"
-        "Используйте /help для просмотра доступных команд.",
+        "Используйте кнопки ниже для управления тренировками.",
+        reply_markup=reply_markup,
         parse_mode='Markdown'
     )

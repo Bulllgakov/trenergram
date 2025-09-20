@@ -18,18 +18,94 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     args = context.args
 
+    # Check if user is already registered
+    from app.services.registration import get_user_by_telegram_id
+    existing_user = get_user_by_telegram_id(str(user.id))
+
     # Check if user came from a specific link
     if args:
         source = args[0]
         if source.startswith("trainer_"):
             # User came from trainer's link
             trainer_id = source.replace("trainer_", "")
+
+            # If user exists as a client, show their dashboard
+            if existing_user and existing_user.role == "client":
+                from telegram import WebAppInfo
+                keyboard = [
+                    [InlineKeyboardButton(
+                        "📅 Мои тренировки",
+                        web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}")
+                    )],
+                    [InlineKeyboardButton(
+                        "⚙️ Настройки",
+                        web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}/settings")
+                    )]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+
+                await update.message.reply_text(
+                    "С возвращением! 👋\n\n"
+                    "Используйте кнопки ниже для управления тренировками.",
+                    reply_markup=reply_markup,
+                    parse_mode='Markdown'
+                )
+                return
+
+            # Start client registration
             await registration.start_client_registration(update, context, trainer_id)
             return
+
         elif source.startswith("club_"):
             # User came from club's QR code
-            club_id = source.replace("club_", "")
-            await registration.show_club_info(update, context, club_id)
+            club_qr = source.replace("club_", "")
+            await registration.show_club_info(update, context, club_qr)
+            return
+
+    # If user is already registered, show their interface
+    if existing_user:
+        if existing_user.role == "trainer":
+            from telegram import WebAppInfo
+            keyboard = [
+                [InlineKeyboardButton(
+                    "📱 Открыть кабинет тренера",
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user.id}")
+                )],
+                [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
+                [InlineKeyboardButton(
+                    "⚙️ Настройки",
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user.id}/settings")
+                )]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                f"С возвращением, {existing_user.name}! 👋\n\n"
+                "Используйте кнопки ниже для управления профилем.",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+            return
+        elif existing_user.role == "client":
+            from telegram import WebAppInfo
+            keyboard = [
+                [InlineKeyboardButton(
+                    "📅 Мои тренировки",
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}")
+                )],
+                [InlineKeyboardButton(
+                    "⚙️ Настройки",
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}/settings")
+                )]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                f"С возвращением, {existing_user.name}! 👋\n\n"
+                "Используйте кнопки ниже для управления тренировками.",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
             return
 
     # Regular start - ask for role
