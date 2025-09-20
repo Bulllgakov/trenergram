@@ -42,7 +42,16 @@ jobs:
             sudo cp -r dist/* /var/www/trenergram/
 
             # Update nginx configuration if needed
-            sudo cp /opt/trenergram/nginx-config.conf /etc/nginx/sites-available/trenergram
+            # Check if SSL is installed
+            if [ -f /etc/letsencrypt/live/trenergram.ru/fullchain.pem ]; then
+              # Use SSL config if certificate exists
+              if [ -f /opt/trenergram/nginx-ssl.conf ]; then
+                sudo cp /opt/trenergram/nginx-ssl.conf /etc/nginx/sites-available/trenergram
+              fi
+            else
+              # Use non-SSL config
+              sudo cp /opt/trenergram/nginx-config.conf /etc/nginx/sites-available/trenergram
+            fi
             sudo nginx -t && sudo systemctl reload nginx
           fi
 
