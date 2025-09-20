@@ -18,7 +18,7 @@ jobs:
       with:
         host: ${{ secrets.VDS_HOST || '81.200.157.102' }}
         username: ${{ secrets.VDS_USER || 'root' }}
-        password: ${{ secrets.VDS_PASSWORD }}
+        key: ${{ secrets.VDS_SSH_KEY }}
         port: ${{ secrets.VDS_PORT || 22 }}
         script: |
           # Navigate to project directory
