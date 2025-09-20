@@ -183,12 +183,12 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
     keyboard = [
         [InlineKeyboardButton(
             "📱 Открыть кабинет тренера",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{trainer_id}")
         )],
         [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
         [InlineKeyboardButton(
             "⚙️ Настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}/settings")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{trainer_id}/settings")
         )]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

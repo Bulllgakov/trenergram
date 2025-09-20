@@ -13,12 +13,12 @@ async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton(
             "📱 Открыть кабинет тренера",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user_id}")
         )],
         [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
         [InlineKeyboardButton(
             "⚙️ Настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}/settings")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user_id}/settings")
         )]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -59,7 +59,7 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton(
             "⚙️ Открыть настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}/settings")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user_id}/settings")
         )]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -83,7 +83,7 @@ async def client_cabinet_command(update: Update, context: ContextTypes.DEFAULT_T
     keyboard = [
         [InlineKeyboardButton(
             "📱 Мои тренировки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user_id}")
+            web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user_id}")
         )]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

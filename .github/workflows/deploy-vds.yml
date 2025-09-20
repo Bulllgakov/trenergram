@@ -37,8 +37,13 @@ jobs:
             cd frontend
             npm install
             npm run build
-            # Copy built files to nginx directory
+            # Copy built files to nginx directory for /app path
+            sudo mkdir -p /var/www/trenergram/
             sudo cp -r dist/* /var/www/trenergram/
+
+            # Update nginx configuration if needed
+            sudo cp /opt/trenergram/nginx-config.conf /etc/nginx/sites-available/trenergram
+            sudo nginx -t && sudo systemctl reload nginx
           fi
 
           echo "✅ Deployment completed at $(date)"
