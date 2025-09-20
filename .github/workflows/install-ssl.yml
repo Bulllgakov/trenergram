@@ -1,0 +1,42 @@
+name: Install SSL Certificate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install-ssl:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install SSL via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VDS_HOST || '81.200.157.102' }}
+        username: ${{ secrets.VDS_USER || 'root' }}
+        key: ${{ secrets.VDS_SSH_KEY }}
+        port: ${{ secrets.VDS_PORT || 22 }}
+        script: |
+          # Update code first
+          cd /opt/trenergram
+          git pull origin main
+
+          # Make script executable
+          chmod +x /opt/trenergram/scripts/install-ssl.sh
+
+          # Run SSL installation
+          /opt/trenergram/scripts/install-ssl.sh
+
+          echo "✅ SSL installation completed"
+
+    - name: Test HTTPS
+      run: |
+        sleep 10
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://trenergram.ru/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ HTTPS is working - API responding"
+        else
+          echo "⚠️ HTTPS check failed with status: $response"
+        fi
