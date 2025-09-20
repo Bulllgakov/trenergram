@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -20,31 +20,33 @@ api.interceptors.request.use((config) => {
 
 // Trainer API
 export const trainerAPI = {
-  getProfile: (trainerId) => api.get(`/trainers/${trainerId}`),
-  updateProfile: (trainerId, data) => api.put(`/trainers/${trainerId}`, data),
-  getClients: (trainerId) => api.get(`/trainers/${trainerId}/clients`),
-  getBookings: (trainerId) => api.get(`/trainers/${trainerId}/bookings`),
-  getSchedule: (trainerId) => api.get(`/trainers/${trainerId}/schedule`),
-  updateSchedule: (trainerId, data) => api.put(`/trainers/${trainerId}/schedule`, data),
-  getStats: (trainerId) => api.get(`/trainers/${trainerId}/stats`),
+  getProfile: (telegramId) => api.get(`/users/trainer/${telegramId}`),
+  updateProfile: (telegramId, data) => api.put(`/users/profile?telegram_id=${telegramId}`, data),
+  getClients: (telegramId) => api.get(`/users/trainer/${telegramId}/clients`),
+  getBookings: (telegramId) => api.get(`/bookings/trainer/${telegramId}`),
+  getSchedule: (telegramId) => api.get(`/schedule/trainer/${telegramId}`),
+  updateSchedule: (telegramId, data) => api.put(`/schedule/trainer/${telegramId}`, data),
+  getStats: (telegramId) => api.get(`/users/trainer/${telegramId}/stats`),
 };
 
 // Client API
 export const clientAPI = {
-  getProfile: (clientId) => api.get(`/clients/${clientId}`),
-  updateProfile: (clientId, data) => api.put(`/clients/${clientId}`, data),
-  getBookings: (clientId) => api.get(`/clients/${clientId}/bookings`),
-  createBooking: (data) => api.post('/bookings', data),
-  cancelBooking: (bookingId) => api.delete(`/bookings/${bookingId}`),
+  getProfile: (telegramId) => api.get(`/users/client/${telegramId}`),
+  updateProfile: (telegramId, data) => api.put(`/users/profile?telegram_id=${telegramId}`, data),
+  getBookings: (telegramId) => api.get(`/bookings/client/${telegramId}`),
+  getTrainers: (telegramId) => api.get(`/users/client/${telegramId}`),
+  createBooking: (data) => api.post('/bookings/', data),
+  cancelBooking: (bookingId, telegramId) => api.delete(`/bookings/${bookingId}?telegram_id=${telegramId}`),
 };
 
 // Booking API
 export const bookingAPI = {
-  getAvailableSlots: (trainerId, date) => 
-    api.get(`/trainers/${trainerId}/available-slots`, { params: { date } }),
-  createBooking: (data) => api.post('/bookings', data),
-  updateBooking: (bookingId, data) => api.put(`/bookings/${bookingId}`, data),
-  cancelBooking: (bookingId) => api.delete(`/bookings/${bookingId}`),
+  getAvailableSlots: (trainerId, date) =>
+    api.get(`/schedule/trainer/${trainerId}/slots`, { params: { date } }),
+  createBooking: (data) => api.post('/bookings/', data),
+  updateBooking: (bookingId, data, telegramId) => api.put(`/bookings/${bookingId}?telegram_id=${telegramId}`, data),
+  cancelBooking: (bookingId, telegramId) => api.delete(`/bookings/${bookingId}?telegram_id=${telegramId}`),
+  getBooking: (bookingId) => api.get(`/bookings/${bookingId}`),
 };
 
 export default api;
