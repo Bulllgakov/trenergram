@@ -1,132 +1,504 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTelegram } from '../hooks/useTelegram';
-import { clientAPI } from '../utils/api';
+import api from '../services/api';
+import '../styles/telegram-webapp.css';
 
 function ClientDashboard() {
-  const { id } = useParams();
-  const { tg, user } = useTelegram();
+  const { id } = useParams(); // This is telegram_id from URL
+  const { tg } = useTelegram();
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [showBookingDetails, setShowBookingDetails] = useState(null);
+  const [showOverlay, setShowOverlay] = useState(false);
   const [bookings, setBookings] = useState([]);
+  const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clientInfo, setClientInfo] = useState(null);
 
   useEffect(() => {
-    loadBookings();
-    setupMainButton();
-  }, [id]);
+    tg.ready();
+    tg.expand();
+    tg.BackButton.hide();
+    if (id) {
+      loadClientData();
+    }
+  }, [tg, id]);
 
-  const loadBookings = async () => {
+  const loadClientData = async () => {
     try {
-      const response = await clientAPI.getBookings(id);
-      setBookings(response.data);
+      setLoading(true);
+
+      // Get client info with trainers using telegram_id
+      const clientData = await api.getClientInfo(id);
+      setClientInfo(clientData);
+      setTrainers(clientData.trainers || []);
+
+      // Get bookings using telegram_id
+      const bookingsList = await api.getClientBookings(id);
+      setBookings(bookingsList);
     } catch (error) {
-      console.error('Error loading bookings:', error);
+      console.error('Failed to load client data:', error);
+      // Fallback to mock data if API fails
+      setMockData();
     } finally {
       setLoading(false);
     }
   };
 
-  const setupMainButton = () => {
-    tg.MainButton.setText('Записаться на тренировку');
-    tg.MainButton.show();
-    tg.MainButton.onClick(() => {
-      // Open trainer selection
-      tg.openLink(`https://t.me/${process.env.REACT_APP_BOT_USERNAME}`);
-    });
-
-    return () => {
-      tg.MainButton.hide();
-      tg.MainButton.offClick();
-    };
+  const setMockData = () => {
+    // Mock data for demo purposes
+    setTrainers([
+      {
+        telegram_id: '123456789',
+        telegram_username: 'ivan_trainer',
+        name: 'Иван Петров',
+        specialization: 'Силовые тренировки',
+        price: 3000
+      },
+      {
+        telegram_id: '987654321',
+        telegram_username: 'maria_trainer',
+        name: 'Мария Сидорова',
+        specialization: 'Йога и растяжка',
+        price: 2500
+      },
+    ]);
+    setBookings([
+      {
+        id: 1,
+        trainer_telegram_id: '123456789',
+        trainer_name: 'Иван Петров',
+        trainer_telegram_username: 'ivan_trainer',
+        datetime: new Date(Date.now() + 24*60*60*1000).toISOString(),
+        status: 'PENDING',
+        price: 3000,
+        club_name: 'Фитнес ЭНЕРГИЯ'
+      },
+      {
+        id: 2,
+        trainer_telegram_id: '987654321',
+        trainer_name: 'Мария Сидорова',
+        trainer_telegram_username: 'maria_trainer',
+        datetime: new Date(Date.now() + 2*24*60*60*1000).toISOString(),
+        status: 'CONFIRMED',
+        price: 2500,
+        club_name: 'Фитнес ЭНЕРГИЯ'
+      }
+    ]);
   };
 
-  const cancelBooking = async (bookingId) => {
-    try {
-      await clientAPI.cancelBooking(bookingId);
-      await loadBookings();
-      tg.showPopup({
-        title: 'Успешно',
-        message: 'Запись отменена',
-        buttons: [{ type: 'ok' }],
-      });
-    } catch (error) {
+  // Mock data for bookings
+  const upcomingBookings = [
+    {
+      id: 1,
+      trainerId: 1,
+      trainerName: 'Иван Петров',
+      trainerInitials: 'ИП',
+      trainerUsername: 'ivan_trainer',
+      trainerType: 'Силовые тренировки',
+      date: 'Среда, 13 августа',
+      time: '15:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №2',
+      status: 'pending',
+      balance: -3000
+    },
+    {
+      id: 2,
+      trainerId: 2,
+      trainerName: 'Мария Сидорова',
+      trainerInitials: 'МС',
+      trainerUsername: 'maria_trainer',
+      trainerType: 'Йога и растяжка',
+      date: 'Четверг, 14 августа',
+      time: '10:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №3',
+      status: 'confirmed',
+      balance: 0
+    },
+    {
+      id: 3,
+      trainerId: 3,
+      trainerName: 'Александр Смирнов',
+      trainerInitials: 'АС',
+      trainerUsername: 'alex_trainer',
+      trainerType: 'Функциональный тренинг',
+      date: 'Пятница, 15 августа',
+      time: '18:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №1',
+      status: 'confirmed',
+      balance: 2000
+    }
+  ];
+
+  const pastBookings = [
+    {
+      id: 4,
+      trainerId: 1,
+      trainerName: 'Иван Петров',
+      trainerInitials: 'ИП',
+      trainerUsername: 'ivan_trainer',
+      trainerType: 'Силовые тренировки',
+      date: 'Понедельник, 11 августа',
+      time: '15:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №2',
+      status: 'completed'
+    },
+    {
+      id: 5,
+      trainerId: 2,
+      trainerName: 'Мария Сидорова',
+      trainerInitials: 'МС',
+      trainerUsername: 'maria_trainer',
+      trainerType: 'Йога и растяжка',
+      date: 'Пятница, 8 августа',
+      time: '10:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №3',
+      status: 'completed'
+    }
+  ];
+
+  const cancelledBookings = [
+    {
+      id: 6,
+      trainerId: 3,
+      trainerName: 'Александр Смирнов',
+      trainerInitials: 'АС',
+      trainerUsername: 'alex_trainer',
+      trainerType: 'Функциональный тренинг',
+      date: 'Вторник, 12 августа',
+      time: '18:00',
+      location: 'Фитнес ЭНЕРГИЯ, зал №1',
+      status: 'cancelled',
+      cancelReason: 'Отменено клиентом'
+    }
+  ];
+
+  const selectTab = (tab) => {
+    tg.HapticFeedback?.selectionChanged();
+    setActiveTab(tab);
+  };
+
+  const openBookingDetails = (booking) => {
+    tg.HapticFeedback?.impactOccurred('light');
+    setShowBookingDetails(booking);
+    setShowOverlay(true);
+  };
+
+  const closeBookingDetails = () => {
+    setShowBookingDetails(null);
+    setShowOverlay(false);
+  };
+
+  const confirmBooking = () => {
+    tg.HapticFeedback?.notificationOccurred('success');
+    tg.showPopup({
+      title: 'Подтверждено',
+      message: 'Вы подтвердили участие в тренировке',
+      buttons: [{ type: 'ok' }]
+    });
+    closeBookingDetails();
+  };
+
+  const cancelBooking = () => {
+    tg.HapticFeedback?.impactOccurred('medium');
+    tg.showConfirm('Отменить запись на тренировку?', async (confirmed) => {
+      if (confirmed && showBookingDetails) {
+        try {
+          await api.cancelBooking(showBookingDetails.id, id, 'Отменено клиентом');
+
+          tg.HapticFeedback?.notificationOccurred('success');
+          tg.showPopup({
+            title: 'Отменено',
+            message: 'Запись на тренировку отменена',
+            buttons: [{ type: 'ok' }]
+          });
+
+          closeBookingDetails();
+          loadClientData(); // Reload data
+        } catch (error) {
+          console.error('Failed to cancel booking:', error);
+          tg.showPopup({
+            title: 'Ошибка',
+            message: 'Не удалось отменить запись',
+            buttons: [{ type: 'ok' }]
+          });
+        }
+      }
+    });
+  };
+
+  const rescheduleBooking = () => {
+    tg.HapticFeedback?.impactOccurred('light');
+    tg.showPopup({
+      title: 'Перенос записи',
+      message: 'Свяжитесь с тренером для переноса тренировки',
+      buttons: [{ type: 'ok' }]
+    });
+  };
+
+  const contactTrainer = (trainerUsername) => {
+    tg.HapticFeedback?.impactOccurred('light');
+    // Open chat with trainer using their Telegram username
+    if (trainerUsername) {
+      tg.openLink(`https://t.me/${trainerUsername.replace('@', '')}`);
+    } else {
       tg.showPopup({
         title: 'Ошибка',
-        message: 'Не удалось отменить запись',
-        buttons: [{ type: 'ok' }],
+        message: 'Username тренера не найден',
+        buttons: [{ type: 'ok' }]
       });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-telegram-hint">Загрузка...</div>
-      </div>
-    );
-  }
+  const showMyTrainers = () => {
+    tg.HapticFeedback?.impactOccurred('light');
+    // Navigate to trainers page
+  };
 
-  const upcomingBookings = bookings.filter(
-    b => new Date(b.date) >= new Date()
-  );
-  const pastBookings = bookings.filter(
-    b => new Date(b.date) < new Date()
-  );
+  const showHistoryStats = () => {
+    tg.HapticFeedback?.impactOccurred('light');
+    tg.showPopup({
+      title: 'Статистика',
+      message: 'Тренировок в этом месяце: 12\nПотрачено: 36,000₽\nЛюбимый тренер: Иван Петров',
+      buttons: [{ type: 'ok' }]
+    });
+  };
+
+  const newBooking = () => {
+    tg.HapticFeedback?.impactOccurred('light');
+    window.open('https://trenergram.ru', '_blank');
+  };
+
+  const getBookings = () => {
+    switch(activeTab) {
+      case 'upcoming': return upcomingBookings;
+      case 'past': return pastBookings;
+      case 'cancelled': return cancelledBookings;
+      default: return [];
+    }
+  };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Мои тренировки</h1>
+    <div className="container">
+      {/* Header */}
+      <div className="header">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="header-title">Мои тренировки</div>
+          </div>
+          <div className="header-actions">
+            <span className="header-action">🔔</span>
+            <span className="header-action">👤</span>
+          </div>
+        </div>
+      </div>
 
-      {/* Upcoming Bookings */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Предстоящие</h2>
-        {upcomingBookings.length > 0 ? (
-          <div className="space-y-3">
-            {upcomingBookings.map((booking) => (
-              <div key={booking.id} className="card">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-semibold">
-                      {booking.trainerName}
-                    </div>
-                    <div className="text-sm text-telegram-hint mt-1">
-                      📅 {booking.date} в {booking.time}
-                    </div>
-                    {booking.address && (
-                      <div className="text-sm text-telegram-hint mt-1">
-                        📍 {booking.address}
-                      </div>
-                    )}
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <button className="quick-action" onClick={showMyTrainers}>
+          🏆 Мои тренеры
+          <span className="badge info">5</span>
+        </button>
+        <button className="quick-action" onClick={showHistoryStats}>
+          📊 История и статистика
+        </button>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="category-tabs">
+        <button
+          className={`category-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
+          onClick={() => selectTab('upcoming')}
+        >
+          Предстоящие
+        </button>
+        <button
+          className={`category-tab ${activeTab === 'past' ? 'active' : ''}`}
+          onClick={() => selectTab('past')}
+        >
+          Прошедшие
+        </button>
+        <button
+          className={`category-tab ${activeTab === 'cancelled' ? 'active' : ''}`}
+          onClick={() => selectTab('cancelled')}
+        >
+          Отмененные
+        </button>
+      </div>
+
+      {/* Bookings Section */}
+      <div className="bookings-section">
+        {bookings.length > 0 ? (
+          bookings.map(booking => (
+            <div
+              key={booking.id}
+              className="booking-card"
+              onClick={() => openBookingDetails(booking)}
+            >
+              <div className="booking-header">
+                <div className="booking-trainer">
+                  <div className="trainer-avatar">{booking.trainerInitials}</div>
+                  <div className="trainer-info">
+                    <div className="trainer-name">{booking.trainerName}</div>
+                    <div className="trainer-type">{booking.trainerType}</div>
                   </div>
-                  <button
-                    onClick={() => cancelBooking(booking.id)}
-                    className="text-telegram-destructive text-sm font-medium"
-                  >
-                    Отменить
-                  </button>
+                </div>
+                {booking.status && (
+                  <div className={`booking-status ${booking.status}`}>
+                    <span className="status-icon">
+                      {booking.status === 'pending' && '⏳'}
+                      {booking.status === 'confirmed' && '✅'}
+                      {booking.status === 'cancelled' && '❌'}
+                      {booking.status === 'completed' && '✓'}
+                    </span>
+                    <span className="status-text">
+                      {booking.status === 'pending' && 'Ожидание'}
+                      {booking.status === 'confirmed' && 'Подтверждено'}
+                      {booking.status === 'cancelled' && 'Отменено'}
+                      {booking.status === 'completed' && 'Завершено'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="booking-details">
+                <div className="booking-detail">
+                  <span>📅</span>
+                  <span>{booking.date}</span>
+                </div>
+                <div className="booking-detail">
+                  <span>🕐</span>
+                  <span>{booking.time}</span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {booking.location && (
+                <div className="booking-details">
+                  <div className="booking-detail">
+                    <span>📍</span>
+                    <span>{booking.location}</span>
+                  </div>
+                </div>
+              )}
+
+              {booking.balance !== undefined && activeTab === 'upcoming' && (
+                <div className="booking-footer">
+                  <div className="booking-balance">
+                    <span className="balance-label">Баланс:</span>
+                    <span className={`balance-amount ${booking.balance < 0 ? 'negative' : ''}`}>
+                      {booking.balance} ₽
+                    </span>
+                  </div>
+                  {booking.balance < 0 && (
+                    <div className="booking-actions">
+                      <button className="booking-action">Пополнить</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {booking.cancelReason && (
+                <div className="booking-details">
+                  <div className="booking-detail">
+                    <span>ℹ️</span>
+                    <span>{booking.cancelReason}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
         ) : (
-          <div className="card text-center text-telegram-hint">
-            Нет предстоящих тренировок
+          <div className="empty-state">
+            <div className="empty-icon">
+              {activeTab === 'upcoming' && '📅'}
+              {activeTab === 'past' && '📆'}
+              {activeTab === 'cancelled' && '❌'}
+            </div>
+            <div className="empty-title">
+              {activeTab === 'upcoming' && 'Нет предстоящих тренировок'}
+              {activeTab === 'past' && 'Нет прошедших тренировок'}
+              {activeTab === 'cancelled' && 'Нет отмененных тренировок'}
+            </div>
+            <div className="empty-description">
+              {activeTab === 'upcoming' && 'Запишитесь на тренировку к вашему тренеру'}
+              {activeTab === 'past' && 'Здесь будет история ваших тренировок'}
+              {activeTab === 'cancelled' && 'Здесь будут отмененные тренировки'}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Past Bookings */}
-      {pastBookings.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">История</h2>
-          <div className="space-y-3">
-            {pastBookings.slice(0, 5).map((booking) => (
-              <div key={booking.id} className="card opacity-75">
-                <div className="font-medium">{booking.trainerName}</div>
-                <div className="text-sm text-telegram-hint mt-1">
-                  {booking.date} в {booking.time}
+      {/* FAB Button */}
+      <button className="fab" onClick={newBooking}>+</button>
+
+      {/* Overlay */}
+      <div className={`overlay ${showOverlay ? 'active' : ''}`} onClick={closeBookingDetails}></div>
+
+      {/* Booking Details Bottom Sheet */}
+      {showBookingDetails && (
+        <div className={`bottom-sheet ${showBookingDetails ? 'active' : ''}`}>
+          <div className="sheet-header">
+            <div className="sheet-title">Детали записи</div>
+            <div className="sheet-close" onClick={closeBookingDetails}>Закрыть</div>
+          </div>
+          <div className="sheet-content">
+            <div className="booking-trainer" style={{marginBottom: '20px'}}>
+              <div className="trainer-avatar" style={{width: '48px', height: '48px', fontSize: '16px'}}>
+                {showBookingDetails.trainerInitials}
+              </div>
+              <div className="trainer-info">
+                <div className="trainer-name" style={{fontSize: '18px'}}>
+                  {showBookingDetails.trainerName}
+                </div>
+                <div className="trainer-type">
+                  {showBookingDetails.trainerType}
                 </div>
               </div>
-            ))}
+            </div>
+
+            <div style={{background: 'var(--tg-theme-secondary-bg-color)', borderRadius: '10px', padding: '16px', marginBottom: '20px'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.33px solid rgba(0, 0, 0, 0.08)'}}>
+                <span style={{color: 'var(--tg-theme-hint-color)'}}>Дата</span>
+                <span style={{fontWeight: '500'}}>{showBookingDetails.date}</span>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.33px solid rgba(0, 0, 0, 0.08)'}}>
+                <span style={{color: 'var(--tg-theme-hint-color)'}}>Время</span>
+                <span style={{fontWeight: '500'}}>{showBookingDetails.time}</span>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.33px solid rgba(0, 0, 0, 0.08)'}}>
+                <span style={{color: 'var(--tg-theme-hint-color)'}}>Место</span>
+                <span style={{fontWeight: '500', textAlign: 'right'}}>{showBookingDetails.location}</span>
+              </div>
+              {showBookingDetails.balance !== undefined && (
+                <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0'}}>
+                  <span style={{color: 'var(--tg-theme-hint-color)'}}>Ваш баланс</span>
+                  <span style={{fontWeight: '500', color: showBookingDetails.balance < 0 ? 'var(--tg-theme-destructive-text-color)' : 'var(--tg-theme-text-color)'}}>
+                    {showBookingDetails.balance} ₽
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="action-buttons">
+              {showBookingDetails.status === 'pending' && (
+                <button className="action-button confirm" onClick={confirmBooking}>
+                  ✅ Подтвердить участие
+                </button>
+              )}
+              <button className="action-button" onClick={() => contactTrainer(showBookingDetails.trainerUsername)}>
+                💬 Связаться с тренером
+              </button>
+              {showBookingDetails.status !== 'cancelled' && showBookingDetails.status !== 'completed' && (
+                <>
+                  <button className="action-button reschedule" onClick={rescheduleBooking}>
+                    📅 Перенести
+                  </button>
+                  <button className="action-button cancel" onClick={cancelBooking}>
+                    ❌ Отменить запись
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

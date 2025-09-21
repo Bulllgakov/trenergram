@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ContextTypes
 from app.services import registration as reg_service
 import asyncio
@@ -17,24 +17,48 @@ async def handle_role_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def start_trainer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start trainer registration flow"""
+    # Request contact with phone button
+    contact_button = KeyboardButton("📱 Поделиться контактом", request_contact=True)
+    reply_markup = ReplyKeyboardMarkup(
+        [[contact_button]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
     await update.callback_query.edit_message_text(
         "💪 *Регистрация тренера*\n\n"
-        "Как вас зовут? (Это увидят клиенты)",
+        "Для регистрации нам нужны ваши контактные данные.",
         parse_mode='Markdown'
     )
-    context.user_data['registration_step'] = 'trainer_name'
+
+    await update.callback_query.message.reply_text(
+        "Нажмите кнопку ниже, чтобы поделиться контактом:",
+        reply_markup=reply_markup
+    )
+
+    context.user_data['registration_step'] = 'trainer_contact'
     context.user_data['role'] = 'trainer'
 
 
 async def start_client_registration(update: Update, context: ContextTypes.DEFAULT_TYPE, trainer_id: str = None):
     """Start client registration from trainer link"""
-    context.user_data['registration_step'] = 'client_name'
+    context.user_data['registration_step'] = 'client_contact'
     context.user_data['role'] = 'client'
     context.user_data['trainer_id'] = trainer_id
 
+    # Request contact with phone button
+    contact_button = KeyboardButton("📱 Поделиться контактом", request_contact=True)
+    reply_markup = ReplyKeyboardMarkup(
+        [[contact_button]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
     await update.message.reply_text(
         "🏃 *Регистрация клиента*\n\n"
-        "Как вас зовут?",
+        "Для записи на тренировки нам нужны ваши контактные данные.\n\n"
+        "Нажмите кнопку ниже:",
+        reply_markup=reply_markup,
         parse_mode='Markdown'
     )
 
@@ -160,17 +184,32 @@ async def handle_copy_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle text input during registration flow"""
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle contact sharing during registration"""
     step = context.user_data.get('registration_step')
 
-    if not step:
+    if not step or not update.message.contact:
         return
 
-    text = update.message.text
+    contact = update.message.contact
 
-    if step == 'trainer_name':
-        context.user_data['name'] = text
+    # Store contact information
+    context.user_data['phone'] = contact.phone_number
+    context.user_data['first_name'] = contact.first_name or ""
+    context.user_data['last_name'] = contact.last_name or ""
+    # Create full name from contact
+    full_name = f"{contact.first_name or ''}"
+    if contact.last_name:
+        full_name += f" {contact.last_name}"
+    context.user_data['name'] = full_name.strip() or "Пользователь"
+
+    # Remove keyboard
+    await update.message.reply_text(
+        "✅ Контакт получен!",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    if step == 'trainer_contact':
         # Ask for club
         keyboard = [
             [InlineKeyboardButton("🏢 Выбрать клуб", callback_data="club_list")],
@@ -184,7 +223,21 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         context.user_data['registration_step'] = 'trainer_club'
 
-    elif step == 'trainer_price':
+    elif step == 'client_contact':
+        await complete_client_registration(update, context)
+
+
+async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle text input during registration flow"""
+    step = context.user_data.get('registration_step')
+
+    if not step:
+        return
+
+    text = update.message.text
+
+    # Only handle price input for trainers now
+    if step == 'trainer_price':
         try:
             price = int(text)
             context.user_data['price'] = price
@@ -192,10 +245,6 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await complete_trainer_registration(update, context)
         except ValueError:
             await update.message.reply_text("Пожалуйста, введите число (например: 2000)")
-
-    elif step == 'client_name':
-        context.user_data['name'] = text
-        await complete_client_registration(update, context)
 
 
 async def complete_trainer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -208,9 +257,10 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
         trainer = await reg_service.register_trainer(
             telegram_id=trainer_id,
             telegram_username=user.username,
-            telegram_first_name=user.first_name,
-            telegram_last_name=user.last_name,
+            telegram_first_name=context.user_data.get('first_name') or user.first_name,
+            telegram_last_name=context.user_data.get('last_name') or user.last_name,
             name=context.user_data.get('name'),
+            phone=context.user_data.get('phone'),
             price=context.user_data.get('price'),
             club_id=context.user_data.get('club_id')
         )
@@ -262,9 +312,10 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
         client = await reg_service.register_client(
             telegram_id=client_id,
             telegram_username=user.username,
-            telegram_first_name=user.first_name,
-            telegram_last_name=user.last_name,
+            telegram_first_name=context.user_data.get('first_name') or user.first_name,
+            telegram_last_name=context.user_data.get('last_name') or user.last_name,
             name=context.user_data.get('name'),
+            phone=context.user_data.get('phone'),
             trainer_id=trainer_id
         )
     except Exception as e:

@@ -1,5 +1,88 @@
 # 🚀 Deployment Guide - Trenergram
 
+## Quick Deploy Commands
+
+```bash
+# Deploy frontend only
+./deploy.sh frontend
+
+# Deploy backend only
+./deploy.sh backend
+
+# Deploy everything
+./deploy.sh all
+
+# Quick frontend deploy (fastest, no git)
+./deploy.sh quick
+
+# Check server status
+./deploy.sh status
+
+# View logs
+./deploy.sh logs
+```
+
+## SSH Configuration
+- **Server**: trenergram.ru
+- **User**: root
+- **SSH Key**: `~/.ssh/trenergram_vds` (ALWAYS USED)
+- **Authentication**: SSH key only (no passwords)
+
+## Server Paths
+- **Frontend**: `/var/www/trenergram/`
+- **Backend**: `/home/trenergram/trenergram/backend/`
+- **Nginx Config**: `/etc/nginx/sites-available/trenergram`
+- **SSL Certificates**: `/etc/letsencrypt/live/trenergram.ru/`
+
+## Services
+- **Nginx**: Serves frontend and proxies API
+- **trenergram-backend**: FastAPI backend service
+- **trenergram-bot**: Telegram bot service
+
+## Manual Deploy Commands (always using SSH key)
+
+### Frontend Deploy
+```bash
+cd frontend
+npm run build
+tar -czf dist.tar.gz dist/
+scp -i ~/.ssh/trenergram_vds dist.tar.gz root@trenergram.ru:/tmp/
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "cd /tmp && tar -xzf dist.tar.gz && cp -r dist/* /var/www/trenergram/ && rm -rf dist dist.tar.gz && systemctl reload nginx"
+rm dist.tar.gz
+```
+
+### Backend Deploy
+```bash
+tar -czf backend.tar.gz backend/
+scp -i ~/.ssh/trenergram_vds backend.tar.gz root@trenergram.ru:/tmp/
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "cd /home/trenergram && tar -xzf /tmp/backend.tar.gz && systemctl restart trenergram-backend trenergram-bot"
+rm backend.tar.gz
+```
+
+### Check Services
+```bash
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "systemctl status nginx trenergram-backend trenergram-bot"
+```
+
+### View Logs
+```bash
+# Backend logs
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "journalctl -u trenergram-backend -f"
+
+# Bot logs
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "journalctl -u trenergram-bot -f"
+
+# Nginx logs
+ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "tail -f /var/log/nginx/error.log"
+```
+
+## URLs
+- **Production App**: https://trenergram.ru/app/
+- **API**: https://trenergram.ru/api/v1/
+- **Bot**: @trenergram_bot
+
+---
+
 ## Рекомендуемая стратегия развертывания
 
 ### Этап 1: MVP и тестирование

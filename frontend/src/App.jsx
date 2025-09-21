@@ -3,8 +3,6 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useTelegram } from './hooks/useTelegram';
 import TrainerDashboard from './pages/TrainerDashboard';
 import ClientDashboard from './pages/ClientDashboard';
-import BookingPage from './pages/BookingPage';
-import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { tg, user } = useTelegram();
@@ -37,12 +35,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-telegram-bg">
+    <div className="min-h-screen">
       <Routes>
         <Route path="/trainer/:id" element={<TrainerDashboard />} />
-        <Route path="/trainer/:id/settings" element={<SettingsPage />} />
         <Route path="/client/:id" element={<ClientDashboard />} />
-        <Route path="/booking/:trainerId" element={<BookingPage />} />
       </Routes>
     </div>
   );

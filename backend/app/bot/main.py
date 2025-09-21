@@ -185,6 +185,7 @@ def main():
     application.add_handler(CommandHandler("my", client.my_bookings_command))
 
     # Message handlers for registration flow
+    application.add_handler(MessageHandler(filters.CONTACT, registration.handle_contact))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registration.handle_text_input))
 
     # Start the bot

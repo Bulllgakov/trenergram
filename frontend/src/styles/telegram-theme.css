@@ -1,0 +1,383 @@
+/* Telegram Theme Variables */
+:root {
+  /* Use Telegram WebApp theme variables */
+  --tg-color-scheme: light;
+
+  /* Primary colors from Telegram */
+  --primary-color: var(--tg-theme-button-color, #3390ec);
+  --primary-text: var(--tg-theme-button-text-color, #ffffff);
+
+  /* Background colors */
+  --bg-primary: var(--tg-theme-bg-color, #ffffff);
+  --bg-secondary: var(--tg-theme-secondary-bg-color, #f1f1f1);
+
+  /* Text colors */
+  --text-primary: var(--tg-theme-text-color, #000000);
+  --text-secondary: var(--tg-theme-hint-color, #999999);
+  --text-link: var(--tg-theme-link-color, #3390ec);
+
+  /* Status colors */
+  --success: #34c759;
+  --warning: #ff9500;
+  --danger: #ff3b30;
+  --info: #007aff;
+  --purple: #af52de;
+
+  /* UI elements */
+  --section-bg: var(--tg-theme-section-bg-color, #ffffff);
+  --section-header: var(--tg-theme-section-header-text-color, #8e8e93);
+  --destructive: var(--tg-theme-destructive-text-color, #ff3b30);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+  /* Font */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Dark theme overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tg-color-scheme: dark;
+  }
+}
+
+/* Base styles */
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container styles */
+.container {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+/* Card styles */
+.card {
+  background-color: var(--section-bg);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Button styles */
+.btn {
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: var(--font-family);
+}
+
+.btn:active {
+  opacity: 0.8;
+}
+
+.btn-success {
+  background-color: var(--success);
+}
+
+.btn-warning {
+  background-color: var(--warning);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+}
+
+.status-confirmed {
+  background-color: rgba(52, 199, 89, 0.1);
+  color: var(--success);
+}
+
+.status-pending {
+  background-color: rgba(255, 149, 0, 0.1);
+  color: var(--warning);
+}
+
+.status-waiting {
+  background-color: rgba(0, 122, 255, 0.1);
+  color: var(--info);
+}
+
+.status-reminder {
+  background-color: rgba(175, 82, 222, 0.1);
+  color: var(--purple);
+}
+
+.status-cancelled {
+  background-color: rgba(142, 142, 147, 0.1);
+  color: var(--text-secondary);
+}
+
+/* List styles */
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--section-bg);
+  border-bottom: 1px solid var(--bg-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.list-item:active {
+  background-color: var(--bg-secondary);
+}
+
+/* Input styles */
+.input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: var(--primary-color);
+}
+
+/* FAB styles */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 1000;
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fab-secondary {
+  bottom: 90px;
+  width: 48px;
+  height: 48px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--bg-secondary);
+}
+
+/* Bottom sheet styles */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--bg-primary);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 2000;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.bottom-sheet.active {
+  transform: translateY(0);
+}
+
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background-color: var(--bg-secondary);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+/* Date tabs */
+.date-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--bg-secondary);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.date-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.date-tab {
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  min-width: 60px;
+}
+
+.date-tab.active {
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+}
+
+/* Quick actions grid */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--section-bg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform 0.2s;
+  text-align: center;
+}
+
+.quick-action:active {
+  transform: scale(0.95);
+}
+
+.quick-action-icon {
+  font-size: 24px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.quick-action-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.quick-action-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+/* Schedule grid */
+.schedule-grid {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
+}
+
+.time-slot {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--section-bg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.time-slot.free {
+  border-left-color: var(--info);
+}
+
+.time-slot.booked {
+  border-left-color: var(--success);
+}
+
+.time-slot.pending {
+  border-left-color: var(--warning);
+}
+
+.time-slot.cancelled {
+  border-left-color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.time-slot:active {
+  transform: translateX(4px);
+}
+
+.time-slot-time {
+  font-weight: 600;
+  margin-right: var(--spacing-md);
+  min-width: 60px;
+}
+
+.time-slot-info {
+  flex: 1;
+}
+
+.time-slot-client {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.time-slot-details {
+  font-size: 14px;
+  color: var(--text-secondary);
+}

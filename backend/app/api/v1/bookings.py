@@ -47,6 +47,9 @@ class BookingResponse(BaseModel):
     trainer_name: Optional[str] = None
     client_name: Optional[str] = None
     club_name: Optional[str] = None
+    trainer_telegram_id: Optional[str] = None
+    client_telegram_id: Optional[str] = None
+    trainer_telegram_username: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -104,6 +107,9 @@ async def create_booking(
     response = BookingResponse.from_orm(new_booking)
     response.trainer_name = trainer.name
     response.client_name = client.name
+    response.trainer_telegram_id = trainer.telegram_id
+    response.client_telegram_id = client.telegram_id
+    response.trainer_telegram_username = trainer.telegram_username
 
     return response
 
@@ -145,6 +151,10 @@ async def get_trainer_bookings(
         response = BookingResponse.from_orm(booking)
         response.trainer_name = trainer.name
         response.client_name = client.name if client else None
+        response.trainer_telegram_id = trainer.telegram_id
+        response.trainer_telegram_username = trainer.telegram_username
+        if client:
+            response.client_telegram_id = client.telegram_id
         if booking.club_id:
             club = db.query(Club).filter_by(id=booking.club_id).first()
             response.club_name = club.name if club else None
@@ -189,6 +199,10 @@ async def get_client_bookings(
         response = BookingResponse.from_orm(booking)
         response.trainer_name = trainer.name if trainer else None
         response.client_name = client.name
+        response.client_telegram_id = client.telegram_id
+        if trainer:
+            response.trainer_telegram_id = trainer.telegram_id
+            response.trainer_telegram_username = trainer.telegram_username
         if booking.club_id:
             club = db.query(Club).filter_by(id=booking.club_id).first()
             response.club_name = club.name if club else None
@@ -214,6 +228,12 @@ async def get_booking(
     response = BookingResponse.from_orm(booking)
     response.trainer_name = trainer.name if trainer else None
     response.client_name = client.name if client else None
+
+    if trainer:
+        response.trainer_telegram_id = trainer.telegram_id
+        response.trainer_telegram_username = trainer.telegram_username
+    if client:
+        response.client_telegram_id = client.telegram_id
 
     if booking.club_id:
         club = db.query(Club).filter_by(id=booking.club_id).first()
@@ -283,6 +303,12 @@ async def update_booking(
     response = BookingResponse.from_orm(booking)
     response.trainer_name = trainer.name if trainer else None
     response.client_name = client.name if client else None
+
+    if trainer:
+        response.trainer_telegram_id = trainer.telegram_id
+        response.trainer_telegram_username = trainer.telegram_username
+    if client:
+        response.client_telegram_id = client.telegram_id
 
     return response
 

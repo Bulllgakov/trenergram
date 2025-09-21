@@ -16,6 +16,7 @@ async def register_trainer(
     telegram_username: Optional[str],
     name: str,
     price: int,
+    phone: Optional[str] = None,
     club_id: Optional[int] = None,
     specialization: Optional[str] = None,
     telegram_first_name: Optional[str] = None,
@@ -30,6 +31,7 @@ async def register_trainer(
             # Update existing user to trainer
             existing_user.role = UserRole.TRAINER
             existing_user.name = name
+            existing_user.phone = phone
             existing_user.price = price
             existing_user.club_id = club_id
             existing_user.specialization = specialization or "fitness"
@@ -45,6 +47,7 @@ async def register_trainer(
             telegram_first_name=telegram_first_name,
             telegram_last_name=telegram_last_name,
             name=name,
+            phone=phone,
             role=UserRole.TRAINER,
             price=price,
             club_id=club_id,

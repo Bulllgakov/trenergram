@@ -12,6 +12,7 @@ class Trainer(Base):
     telegram_id = Column(String(50), unique=True, nullable=False)
     telegram_username = Column(String(100))
     name = Column(String(200), nullable=False)
+    phone = Column(String(20))
     club_id = Column(Integer, ForeignKey("clubs.id"))
     specialization = Column(JSON)
     price = Column(Integer, default=2000)

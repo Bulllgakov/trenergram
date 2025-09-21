@@ -1,22 +1,27 @@
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
-from app.db.base import Base
-from app.core.config import settings
-from app.models import *  # Import all models
+#!/usr/bin/env python
+"""
+Initialize database with all tables
+"""
 
-async def init_db():
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from app.db.base_sync import Base
+from app.db.session import engine
+from app.models import User, UserRole, TrainerClient, Club, Booking, Schedule, TimeSlot
+
+def init_db():
     """Initialize database with tables"""
-    engine = create_async_engine(
-        settings.DATABASE_URL,
-        echo=True,
-    )
+    print("Creating database tables...")
 
-    async with engine.begin() as conn:
-        # Create all tables
-        await conn.run_sync(Base.metadata.create_all)
-        print("✅ Database tables created successfully!")
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
 
-    await engine.dispose()
+    print("✅ Database tables created successfully!")
+    print("\nCreated tables:")
+    for table_name in Base.metadata.tables.keys():
+        print(f"  - {table_name}")
 
 if __name__ == "__main__":
-    asyncio.run(init_db())
+    init_db()
