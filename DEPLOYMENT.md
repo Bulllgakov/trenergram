@@ -1,311 +1,171 @@
 # 🚀 Deployment Guide - Trenergram
 
-## Quick Deploy Commands
+## ⚠️ ВАЖНО: Деплой происходит ТОЛЬКО через GitHub Actions!
+
+При push в main ветку автоматически запускается деплой на сервер.
+Ручной деплой не требуется и не рекомендуется.
+
+## Автоматический деплой через GitHub
 
 ```bash
-# Deploy frontend only
+# Делаем изменения локально
+git add -A
+git commit -m "Описание изменений"
+git push origin main
+
+# GitHub Actions автоматически:
+# 1. Запускает тесты
+# 2. Деплоит на сервер
+# 3. Перезапускает Docker контейнеры
+```
+
+## Инфраструктура на сервере
+
+### Docker контейнеры
+- **trenergram-backend-1**: FastAPI backend (port 8000)
+- **trenergram-bot-1**: Telegram bot
+- **trenergram-postgres-1**: PostgreSQL database
+- **trenergram-redis-1**: Redis cache
+
+### Пути на сервере
+- **Проект**: `/opt/trenergram/`
+- **Frontend**: `/var/www/trenergram/`
+- **Nginx конфиг**: `/etc/nginx/sites-available/trenergram`
+- **Docker Compose**: `/opt/trenergram/docker-compose.yml`
+
+## Ручной деплой (только для экстренных случаев)
+
+### Использование deploy.sh скрипта
+```bash
+# Деплой только frontend
 ./deploy.sh frontend
 
-# Deploy backend only
+# Деплой только backend
 ./deploy.sh backend
 
-# Deploy everything
+# Деплой всего проекта
 ./deploy.sh all
 
-# Quick frontend deploy (fastest, no git)
-./deploy.sh quick
-
-# Check server status
+# Проверка статуса
 ./deploy.sh status
 
-# View logs
+# Просмотр логов
 ./deploy.sh logs
 ```
 
-## SSH Configuration
-- **Server**: trenergram.ru
-- **User**: root
-- **SSH Key**: `~/.ssh/trenergram_vds` (ALWAYS USED)
-- **Authentication**: SSH key only (no passwords)
-
-## Server Paths
-- **Frontend**: `/var/www/trenergram/`
-- **Backend**: `/home/trenergram/trenergram/backend/`
-- **Nginx Config**: `/etc/nginx/sites-available/trenergram`
-- **SSL Certificates**: `/etc/letsencrypt/live/trenergram.ru/`
-
-## Services
-- **Nginx**: Serves frontend and proxies API
-- **trenergram-backend**: FastAPI backend service
-- **trenergram-bot**: Telegram bot service
-
-## Manual Deploy Commands (always using SSH key)
-
-### Frontend Deploy
+### Прямые команды на сервере
 ```bash
-cd frontend
-npm run build
-tar -czf dist.tar.gz dist/
-scp -i ~/.ssh/trenergram_vds dist.tar.gz root@trenergram.ru:/tmp/
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "cd /tmp && tar -xzf dist.tar.gz && cp -r dist/* /var/www/trenergram/ && rm -rf dist dist.tar.gz && systemctl reload nginx"
-rm dist.tar.gz
+# Подключение к серверу
+ssh -i ~/.ssh/trenergram_vds root@81.200.157.102
+
+# Обновление кода
+cd /opt/trenergram
+git pull origin main
+
+# Перезапуск контейнеров
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+
+# Проверка статуса
+docker-compose ps
+
+# Просмотр логов
+docker-compose logs -f backend
+docker-compose logs -f bot
 ```
 
-### Backend Deploy
+## Работа с базой данных
+
+### Подключение к PostgreSQL
 ```bash
-tar -czf backend.tar.gz backend/
-scp -i ~/.ssh/trenergram_vds backend.tar.gz root@trenergram.ru:/tmp/
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "cd /home/trenergram && tar -xzf /tmp/backend.tar.gz && systemctl restart trenergram-backend trenergram-bot"
-rm backend.tar.gz
+ssh -i ~/.ssh/trenergram_vds root@81.200.157.102
+cd /opt/trenergram
+docker-compose exec postgres psql -U trenergram -d trenergram
 ```
 
-### Check Services
+### Инициализация базы данных
 ```bash
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "systemctl status nginx trenergram-backend trenergram-bot"
+# На сервере
+cd /opt/trenergram
+docker-compose exec backend python init_db.py
 ```
 
-### View Logs
+## Мониторинг
+
+### Проверка здоровья API
 ```bash
-# Backend logs
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "journalctl -u trenergram-backend -f"
-
-# Bot logs
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "journalctl -u trenergram-bot -f"
-
-# Nginx logs
-ssh -i ~/.ssh/trenergram_vds root@trenergram.ru "tail -f /var/log/nginx/error.log"
+curl https://trenergram.ru/api/v1/health
 ```
 
-## URLs
-- **Production App**: https://trenergram.ru/app/
-- **API**: https://trenergram.ru/api/v1/
-- **Bot**: @trenergram_bot
-
----
-
-## Рекомендуемая стратегия развертывания
-
-### Этап 1: MVP и тестирование
-**Платформа: Railway.app**
-
-#### Почему Railway:
-- ✅ Быстрый старт (5 минут до деплоя)
-- ✅ PostgreSQL и Redis включены
-- ✅ Автодеплой из GitHub
-- ✅ HTTPS автоматически
-- ✅ Хватит бесплатных $5 на тестирование
-- ✅ Легко масштабировать
-
-#### Как развернуть на Railway:
+### Проверка контейнеров
 ```bash
-# 1. Установите Railway CLI
-npm install -g @railway/cli
-
-# 2. Логин
-railway login
-
-# 3. Инициализация проекта
-railway init
-
-# 4. Добавьте сервисы
-railway add postgresql
-railway add redis
-
-# 5. Деплой
-railway up
+ssh -i ~/.ssh/trenergram_vds root@81.200.157.102 "docker-compose ps"
 ```
 
-### Этап 2: Первые клиенты (10-50 клубов)
-**Платформа: DigitalOcean App Platform или Hetzner VPS**
-
-#### DigitalOcean App Platform:
-```yaml
-# app.yaml
-name: trenergram
-services:
-- name: api
-  github:
-    repo: Bulllgakov/trenergram
-    branch: main
-    deploy_on_push: true
-  build_command: pip install -r requirements.txt
-  run_command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8080
-
-- name: bot
-  github:
-    repo: Bulllgakov/trenergram
-    branch: main
-  run_command: python backend/app/bot/main.py
-
-databases:
-- name: db
-  engine: postgresql
-  production: true
-```
-
-### Этап 3: Масштабирование (50+ клубов)
-**Инфраструктура: Kubernetes на DigitalOcean/Yandex Cloud**
-
-## 📦 Docker конфигурация
-
-### Dockerfile для Backend:
-```dockerfile
-FROM python:3.10-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY backend/ ./backend/
-COPY webapp/ ./webapp/
-
-# API сервер
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### docker-compose.yml:
-```yaml
-version: '3.8'
-
-services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/trenergram
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - db
-      - redis
-
-  bot:
-    build: .
-    command: python backend/app/bot/main.py
-    environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - DATABASE_URL=postgresql://user:pass@db:5432/trenergram
-    depends_on:
-      - db
-
-  db:
-    image: postgres:14
-    environment:
-      - POSTGRES_DB=trenergram
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-volumes:
-  postgres_data:
-```
-
-## 🔧 Переменные окружения для продакшена
-
+### Просмотр логов в реальном времени
 ```bash
-# Production .env
+# Backend логи
+ssh -i ~/.ssh/trenergram_vds root@81.200.157.102 "cd /opt/trenergram && docker-compose logs -f backend"
+
+# Bot логи
+ssh -i ~/.ssh/trenergram_vds root@81.200.157.102 "cd /opt/trenergram && docker-compose logs -f bot"
+```
+
+## Переменные окружения
+
+Файл `.env` на сервере в `/opt/trenergram/.env`:
+```bash
+# Telegram Bot
 BOT_TOKEN=8229544461:AAFr-MA466IKP_egh448meK6LLKWEZagofI
 BOT_USERNAME=trenergram_bot
 
-# Database (используйте connection string от провайдера)
-DATABASE_URL=postgresql://user:password@host:5432/trenergram
+# Database
+DATABASE_URL=postgresql://trenergram:trenergram123@postgres:5432/trenergram
 
 # Redis
 REDIS_URL=redis://redis:6379/0
 
-# Security
-SECRET_KEY=$(openssl rand -hex 32)
+# Environment
 ENVIRONMENT=production
 DEBUG=False
-
-# Domain
-DOMAIN=trenergram.ru
-WEBAPP_URL=https://trenergram.ru
 ```
 
-## 🌐 Настройка домена
+## URLs проекта
+- **Production App**: https://trenergram.ru/app/
+- **API**: https://trenergram.ru/api/v1/
+- **Telegram Bot**: @trenergram_bot
 
-### 1. Купите домен trenergram.ru
-- Рекомендую: Namecheap, Reg.ru, или Yandex Domains
+## Решение проблем
 
-### 2. Настройте DNS:
-```
-A     @      IP_ВАШЕГО_СЕРВЕРА
-A     www    IP_ВАШЕГО_СЕРВЕРА
-A     api    IP_ВАШЕГО_СЕРВЕРА
-```
+### Если GitHub Actions падает
+1. Проверьте логи: `gh run view --log-failed`
+2. Очистите конфликты на сервере:
+   ```bash
+   ssh -i ~/.ssh/trenergram_vds root@81.200.157.102
+   cd /opt/trenergram
+   git stash
+   git clean -fd
+   git pull origin main
+   ```
 
-### 3. Настройте SSL (Let's Encrypt):
+### Если контейнеры не запускаются
 ```bash
-# На сервере
-sudo apt update
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d trenergram.ru -d www.trenergram.ru -d api.trenergram.ru
+# Проверка логов
+docker-compose logs
+
+# Пересборка с нуля
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
-## 📱 Настройка Telegram Webhook
-
-```python
-# setup_webhook.py
-import asyncio
-from telegram import Bot
-
-BOT_TOKEN = "your_token"
-WEBHOOK_URL = "https://api.trenergram.ru/webhook"
-
-async def setup_webhook():
-    bot = Bot(token=BOT_TOKEN)
-    await bot.set_webhook(
-        url=WEBHOOK_URL,
-        allowed_updates=["message", "callback_query", "inline_query"]
-    )
-    info = await bot.get_webhook_info()
-    print(f"Webhook set: {info.url}")
-
-asyncio.run(setup_webhook())
-```
-
-## 📊 Мониторинг
-
-### Рекомендуемые сервисы:
-1. **Sentry** - для отслеживания ошибок
-2. **Grafana + Prometheus** - метрики
-3. **Uptime Robot** - мониторинг доступности
-
-## 💰 Бюджет на разных этапах
-
-| Этап | Платформа | Стоимость/мес |
-|------|-----------|---------------|
-| MVP | Railway | $0-5 |
-| Старт (до 10 клубов) | Railway Pro | $10-20 |
-| Рост (10-50 клубов) | DigitalOcean | $30-50 |
-| Масштаб (50+ клубов) | DO + CDN | $100+ |
-
-## 🚀 Quick Start на Railway
-
+### Если база данных пустая
 ```bash
-# 1. Форкните проект
-# 2. Зайдите на railway.app
-# 3. New Project -> Deploy from GitHub
-# 4. Выберите репозиторий trenergram
-# 5. Добавьте переменные окружения
-# 6. Deploy!
+cd /opt/trenergram
+docker-compose exec backend python init_db.py
 ```
 
-## 📝 Чеклист перед деплоем
+---
 
-- [ ] Изменить SECRET_KEY на продакшн
-- [ ] Настроить PostgreSQL вместо SQLite
-- [ ] Включить Redis для кеширования
-- [ ] Настроить Webhook для бота
-- [ ] Проверить CORS настройки
-- [ ] Настроить backup базы данных
-- [ ] Настроить SSL сертификат
-- [ ] Добавить мониторинг ошибок
+**Последнее обновление**: 21.09.2025
