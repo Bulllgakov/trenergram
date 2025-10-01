@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: trenergram-postgres
+    environment:
+      POSTGRES_USER: trenergram
+      POSTGRES_PASSWORD: trenergram123
+      POSTGRES_DB: trenergram
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - trenergram-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trenergram"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: trenergram-redis
+    networks:
+      - trenergram-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: trenergram-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trenergram:trenergram123@postgres:5432/trenergram
+      REDIS_URL: redis://redis:6379/0
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME}
+      ENVIRONMENT: production
+      DEBUG: "False"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trenergram-network
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  bot:
+    build: .
+    container_name: trenergram-bot
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trenergram:trenergram123@postgres:5432/trenergram
+      REDIS_URL: redis://redis:6379/0
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME}
+      ENVIRONMENT: production
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - trenergram-network
+    command: python -m app.bot.main
+    restart: unless-stopped
+
+networks:
+  trenergram-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

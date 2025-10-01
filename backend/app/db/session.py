@@ -11,7 +11,11 @@ from app.core.config import settings
 if "sqlite" in settings.DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("sqlite+aiosqlite", "sqlite")
 else:
-    SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
+    # Handle both postgresql:// and postgresql+asyncpg:// URLs
+    if "postgresql+asyncpg://" in settings.DATABASE_URL:
+        SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    else:
+        SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
 
 # For SQLite, we need special connect_args
 connect_args = {"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
