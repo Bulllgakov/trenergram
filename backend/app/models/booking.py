@@ -27,22 +27,25 @@ class Booking(Base):
     id = Column(Integer, primary_key=True, index=True)
     trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    date = Column(Date, nullable=False)
-    time = Column(Time, nullable=False)
+    datetime = Column(DateTime, nullable=False)  # Combined date and time
+    duration = Column(Integer, default=60)  # Duration in minutes
+    price = Column(Integer)  # Price in minimal currency units
     status = Column(String(20), default="pending")  # pending, confirmed, cancelled, completed, no_show
+    notes = Column(Text)
+    is_paid = Column(Boolean, default=False)
+    payment_method = Column(String(50))
 
     # Reminders
-    reminder_sent_1 = Column(Boolean, default=False)
-    reminder_sent_2 = Column(Boolean, default=False)
-    reminder_sent_3 = Column(Boolean, default=False)
+    reminder_24h_sent = Column(Boolean, default=False)
+    reminder_2h_sent = Column(Boolean, default=False)
 
     # Cancellation info
-    cancelled_by = Column(String(20))  # trainer, client, system
-    cancel_reason = Column(Text)
-    cancelled_at = Column(DateTime(timezone=True))
+    cancellation_reason = Column(Text)
+    cancelled_at = Column(DateTime)
+    confirmed_at = Column(DateTime)
+    completed_at = Column(DateTime)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     # Relationships
     trainer = relationship("Trainer", back_populates="bookings")
@@ -55,12 +58,11 @@ class Invitation(Base):
     id = Column(Integer, primary_key=True, index=True)
     trainer_id = Column(Integer, ForeignKey("trainers.id"), nullable=False)
     client_id = Column(Integer, ForeignKey("clients.id"))
-    date = Column(Date, nullable=False)
-    time = Column(Time, nullable=False)
+    datetime = Column(DateTime, nullable=False)  # Combined date and time
     temp_client_username = Column(String(100))
     status = Column(String(20), default="pending")  # pending, accepted, declined, expired
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    expires_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime)
 
     # Relationships
     trainer = relationship("Trainer", back_populates="invitations")

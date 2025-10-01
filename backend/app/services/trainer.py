@@ -39,20 +39,23 @@ class TrainerService:
             return []
 
         today = date.today()
+        start_of_day = datetime.combine(today, datetime.min.time())
+        end_of_day = datetime.combine(today, datetime.max.time())
 
         result = await db.execute(
             select(Booking)
             .options(selectinload(Booking.client))
             .where(Booking.trainer_id == trainer.id)
-            .where(Booking.date == today)
-            .order_by(Booking.time)
+            .where(Booking.datetime >= start_of_day)
+            .where(Booking.datetime <= end_of_day)
+            .order_by(Booking.datetime)
         )
         bookings = result.scalars().all()
 
         schedule = []
         for booking in bookings:
             schedule.append({
-                'time': booking.time.strftime('%H:%M') if booking.time else '00:00',
+                'time': booking.datetime.strftime('%H:%M') if booking.datetime else '00:00',
                 'client_name': booking.client.name if booking.client else 'Неизвестный',
                 'status': booking.status,
                 'is_confirmed': booking.status == BookingStatus.CONFIRMED.value
@@ -87,20 +90,23 @@ class TrainerService:
             return []
 
         tomorrow = date.today() + timedelta(days=1)
+        start_of_tomorrow = datetime.combine(tomorrow, datetime.min.time())
+        end_of_tomorrow = datetime.combine(tomorrow, datetime.max.time())
 
         result = await db.execute(
             select(Booking)
             .options(selectinload(Booking.client))
             .where(Booking.trainer_id == trainer.id)
-            .where(Booking.date == tomorrow)
-            .order_by(Booking.time)
+            .where(Booking.datetime >= start_of_tomorrow)
+            .where(Booking.datetime <= end_of_tomorrow)
+            .order_by(Booking.datetime)
         )
         bookings = result.scalars().all()
 
         clients = []
         for booking in bookings:
             clients.append({
-                'time': booking.time.strftime('%H:%M') if booking.time else '00:00',
+                'time': booking.datetime.strftime('%H:%M') if booking.datetime else '00:00',
                 'name': booking.client.name if booking.client else 'Неизвестный',
                 'status': booking.status
             })
@@ -127,12 +133,13 @@ class TrainerService:
         # Current month boundaries
         today = date.today()
         month_start = date(today.year, today.month, 1)
+        month_start_datetime = datetime.combine(month_start, datetime.min.time())
 
         # Count completed trainings this month
         result = await db.execute(
             select(func.count(Booking.id))
             .where(Booking.trainer_id == trainer.id)
-            .where(Booking.date >= month_start)
+            .where(Booking.datetime >= month_start_datetime)
             .where(Booking.status == BookingStatus.COMPLETED.value)
         )
         month_completed = result.scalar() or 0
@@ -141,7 +148,7 @@ class TrainerService:
         result = await db.execute(
             select(func.count(Booking.id))
             .where(Booking.trainer_id == trainer.id)
-            .where(Booking.date >= month_start)
+            .where(Booking.datetime >= month_start_datetime)
             .where(Booking.status == BookingStatus.CANCELLED.value)
         )
         month_cancelled = result.scalar() or 0
@@ -150,7 +157,7 @@ class TrainerService:
         result = await db.execute(
             select(func.count(func.distinct(Booking.client_id)))
             .where(Booking.trainer_id == trainer.id)
-            .where(Booking.created_at >= datetime.combine(month_start, datetime.min.time()))
+            .where(Booking.created_at >= month_start_datetime)
         )
         month_new_clients = result.scalar() or 0
 
