@@ -38,8 +38,9 @@ function ClientDashboard() {
       setBookings(bookingsList);
     } catch (error) {
       console.error('Failed to load client data:', error);
-      // Fallback to mock data if API fails
-      setMockData();
+      // Don't use mock data - show empty state instead
+      setTrainers([]);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -270,10 +271,53 @@ function ClientDashboard() {
   };
 
   const getBookings = () => {
+    const now = new Date();
     switch(activeTab) {
-      case 'upcoming': return upcomingBookings;
-      case 'past': return pastBookings;
-      case 'cancelled': return cancelledBookings;
+      case 'upcoming':
+        return bookings
+          .filter(b => new Date(b.datetime) >= now && b.status !== 'CANCELLED')
+          .map(b => ({
+            id: b.id,
+            trainerId: b.trainer_telegram_id,
+            trainerName: b.trainer_name,
+            trainerInitials: b.trainer_name ? b.trainer_name.split(' ').map(n => n[0]).join('') : 'T',
+            trainerUsername: b.trainer_telegram_username,
+            date: new Date(b.datetime).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }),
+            time: new Date(b.datetime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            location: b.club_name || 'Место не указано',
+            status: b.status.toLowerCase(),
+            balance: -b.price
+          }));
+      case 'past':
+        return bookings
+          .filter(b => new Date(b.datetime) < now && b.status !== 'CANCELLED')
+          .map(b => ({
+            id: b.id,
+            trainerId: b.trainer_telegram_id,
+            trainerName: b.trainer_name,
+            trainerInitials: b.trainer_name ? b.trainer_name.split(' ').map(n => n[0]).join('') : 'T',
+            trainerUsername: b.trainer_telegram_username,
+            date: new Date(b.datetime).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }),
+            time: new Date(b.datetime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            location: b.club_name || 'Место не указано',
+            status: 'past',
+            balance: -b.price
+          }));
+      case 'cancelled':
+        return bookings
+          .filter(b => b.status === 'CANCELLED')
+          .map(b => ({
+            id: b.id,
+            trainerId: b.trainer_telegram_id,
+            trainerName: b.trainer_name,
+            trainerInitials: b.trainer_name ? b.trainer_name.split(' ').map(n => n[0]).join('') : 'T',
+            trainerUsername: b.trainer_telegram_username,
+            date: new Date(b.datetime).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }),
+            time: new Date(b.datetime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            location: b.club_name || 'Место не указано',
+            status: 'cancelled',
+            balance: 0
+          }));
       default: return [];
     }
   };
