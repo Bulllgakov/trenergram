@@ -129,6 +129,31 @@ class ApiService {
     const clientInfo = await this.getClientInfo(telegramId);
     return clientInfo.trainers || [];
   }
+
+  // Slot endpoints
+  async getTrainerSlots(telegramId) {
+    return this.request(`/slots/trainer/${telegramId}`);
+  }
+
+  async createSlot(telegramId, data) {
+    return this.request(`/slots/trainer/${telegramId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSlot(slotId, telegramId, data) {
+    return this.request(`/slots/${slotId}?telegram_id=${telegramId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSlot(slotId, telegramId) {
+    return this.request(`/slots/${slotId}?telegram_id=${telegramId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export default new ApiService();

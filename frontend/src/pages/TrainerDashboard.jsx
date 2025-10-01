@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTelegram } from '../hooks/useTelegram';
 import api from '../services/api';
+import SlotManager from '../components/SlotManager';
 import '../styles/telegram-webapp.css';
 
 function TrainerDashboard() {
@@ -10,6 +11,7 @@ function TrainerDashboard() {
   const [selectedDate, setSelectedDate] = useState('2025-08-13');
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
+  const [showSlotManager, setShowSlotManager] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -470,6 +472,17 @@ function TrainerDashboard() {
           </div>
 
           <div className="settings-list">
+            <div className="setting-item" onClick={() => {
+              setShowSettingsSheet(false);
+              setShowSlotManager(true);
+            }}>
+              <div className="setting-info">
+                <div className="setting-label">Управление слотами</div>
+                <div className="setting-description">Настройка доступных слотов</div>
+              </div>
+              <div className="setting-arrow">›</div>
+            </div>
+
             <div className="setting-item">
               <div className="setting-info">
                 <div className="setting-label">Понедельник - Пятница</div>
@@ -502,6 +515,16 @@ function TrainerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Slot Manager Modal */}
+      {showSlotManager && (
+        <div className="modal-overlay">
+          <SlotManager
+            trainerId={id}
+            onClose={() => setShowSlotManager(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }
