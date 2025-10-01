@@ -7,7 +7,7 @@ from sqlalchemy import select, and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.user import User, UserRole
+from app.models.user import Trainer, Client
 from app.models.booking import Booking, BookingStatus
 from app.models.club import Club
 
@@ -19,12 +19,11 @@ class TrainerService:
     async def get_trainer_by_telegram_id(
         db: AsyncSession,
         telegram_id: str
-    ) -> Optional[User]:
+    ) -> Optional[Trainer]:
         """Get trainer by telegram ID"""
         result = await db.execute(
-            select(User)
-            .where(User.telegram_id == telegram_id)
-            .where(User.role == UserRole.TRAINER)
+            select(Trainer)
+            .where(Trainer.telegram_id == telegram_id)
         )
         return result.scalar_one_or_none()
 
@@ -208,9 +207,8 @@ class TrainerService:
 
         # Count trainers in club
         result = await db.execute(
-            select(func.count(User.id))
-            .where(User.club_id == club.id)
-            .where(User.role == UserRole.TRAINER)
+            select(func.count(Trainer.id))
+            .where(Trainer.club_id == club.id)
         )
         trainer_count = result.scalar() or 0
 

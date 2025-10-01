@@ -1,9 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.db.base import async_session
-from app.models.user import User, UserRole
+from app.models.user import Trainer, Client
 
 
 async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -14,23 +14,30 @@ async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check user role from database
     async with async_session() as db:
+        # Check if user is a trainer
         result = await db.execute(
-            select(User).where(User.telegram_id == telegram_id)
+            select(Trainer).where(Trainer.telegram_id == telegram_id)
         )
-        user = result.scalar_one_or_none()
+        trainer = result.scalar_one_or_none()
 
-    if not user:
-        await update.message.reply_text(
-            "⚠️ Вы еще не зарегистрированы в системе.\n"
-            "Используйте /start для начала работы.",
-            parse_mode='Markdown'
-        )
-        return
+        if not trainer:
+            # Check if user is a client
+            result = await db.execute(
+                select(Client).where(Client.telegram_id == telegram_id)
+            )
+            client = result.scalar_one_or_none()
 
-    if user.role != UserRole.TRAINER:
-        # Redirect to client cabinet
-        await client_cabinet_command(update, context)
-        return
+            if client:
+                # Redirect to client cabinet
+                await client_cabinet_command(update, context)
+                return
+            else:
+                await update.message.reply_text(
+                    "⚠️ Вы еще не зарегистрированы в системе.\n"
+                    "Используйте /start для начала работы.",
+                    parse_mode='Markdown'
+                )
+                return
 
     keyboard = [
         [InlineKeyboardButton(
