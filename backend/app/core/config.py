@@ -11,18 +11,18 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="production")
 
     # Security
-    SECRET_KEY: str = Field(..., description="Secret key for JWT encoding")
+    SECRET_KEY: str = Field(default="test-secret-key-for-ci", description="Secret key for JWT encoding")
     ALGORITHM: str = Field(default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=10080)  # 7 days
 
     # Database
-    DATABASE_URL: str = Field(..., description="Database connection URL")
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./test.db", description="Database connection URL")
 
     # Redis
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
 
     # Telegram Bot
-    BOT_TOKEN: str = Field(..., description="Telegram bot token")
+    BOT_TOKEN: str = Field(default="test-bot-token", description="Telegram bot token")
     BOT_USERNAME: str = Field(default="trenergram_bot")
 
     # Domain
