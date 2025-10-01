@@ -1,14 +1,36 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
+from sqlalchemy import select
+
+from app.db.base import async_session
+from app.models.user import User, UserRole
 
 
 async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Open trainer's web app (mini app)"""
     user_id = update.effective_user.id
+    telegram_id = str(user_id)
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{user_id}"
 
-    # TODO: Check if user is trainer or client from database
-    # For now, assume trainer
+    # Check user role from database
+    async with async_session() as db:
+        result = await db.execute(
+            select(User).where(User.telegram_id == telegram_id)
+        )
+        user = result.scalar_one_or_none()
+
+    if not user:
+        await update.message.reply_text(
+            "⚠️ Вы еще не зарегистрированы в системе.\n"
+            "Используйте /start для начала работы.",
+            parse_mode='Markdown'
+        )
+        return
+
+    if user.role != UserRole.TRAINER:
+        # Redirect to client cabinet
+        await client_cabinet_command(update, context)
+        return
 
     keyboard = [
         [InlineKeyboardButton(

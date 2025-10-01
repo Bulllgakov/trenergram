@@ -1,49 +1,83 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
 
+from app.db.base import async_session
+from app.services.trainer import TrainerService
+from app.models.booking import BookingStatus
+
 
 async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show trainer's schedule for today"""
-    # TODO: Load schedule from database
-    await update.message.reply_text(
-        "📅 *Ваше расписание на сегодня*\n\n"
-        "09:00 - Мария Сидорова ✅\n"
-        "10:00 - Александр Смирнов ✅\n"
-        "11:00 - [СВОБОДНО]\n"
-        "15:00 - Иван Петров ⏳\n"
-        "16:00 - [СВОБОДНО]\n"
-        "17:00 - Елена Козлова ✅\n\n"
-        "✅ - подтверждено\n"
-        "⏳ - ожидает подтверждения",
-        parse_mode='Markdown'
-    )
+    telegram_id = str(update.effective_user.id)
+
+    async with async_session() as db:
+        schedule = await TrainerService.get_today_schedule(db, telegram_id)
+
+    if not schedule:
+        await update.message.reply_text(
+            "📅 *Ваше расписание на сегодня*\n\n"
+            "У вас пока нет записей на сегодня.",
+            parse_mode='Markdown'
+        )
+        return
+
+    message = "📅 *Ваше расписание на сегодня*\n\n"
+
+    for item in schedule:
+        status_emoji = "✅" if item['status'] == BookingStatus.CONFIRMED else "⏳"
+        message += f"{item['time']} - {item['client_name']} {status_emoji}\n"
+
+    message += "\n✅ - подтверждено\n⏳ - ожидает подтверждения"
+
+    await update.message.reply_text(message, parse_mode='Markdown')
 
 
 async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show clients for today"""
-    # TODO: Load from database
-    await update.message.reply_text(
-        "👥 *Клиенты на сегодня*\n\n"
-        "1. 09:00 - Мария Сидорова\n"
-        "2. 10:00 - Александр Смирнов\n"
-        "3. 15:00 - Иван Петров\n"
-        "4. 17:00 - Елена Козлова\n\n"
-        "Всего: 4 клиента",
-        parse_mode='Markdown'
-    )
+    telegram_id = str(update.effective_user.id)
+
+    async with async_session() as db:
+        clients = await TrainerService.get_today_clients(db, telegram_id)
+
+    if not clients:
+        await update.message.reply_text(
+            "👥 *Клиенты на сегодня*\n\n"
+            "У вас пока нет записей на сегодня.",
+            parse_mode='Markdown'
+        )
+        return
+
+    message = "👥 *Клиенты на сегодня*\n\n"
+    for i, client in enumerate(clients, 1):
+        message += f"{i}. {client['time']} - {client['name']}\n"
+
+    message += f"\nВсего: {len(clients)} клиент(ов)"
+
+    await update.message.reply_text(message, parse_mode='Markdown')
 
 
 async def tomorrow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show clients for tomorrow"""
-    # TODO: Load from database
-    await update.message.reply_text(
-        "👥 *Клиенты на завтра*\n\n"
-        "1. 08:00 - Петр Иванов\n"
-        "2. 10:00 - Ольга Смирнова\n"
-        "3. 14:00 - Дмитрий Козлов\n\n"
-        "Всего: 3 клиента",
-        parse_mode='Markdown'
-    )
+    telegram_id = str(update.effective_user.id)
+
+    async with async_session() as db:
+        clients = await TrainerService.get_tomorrow_clients(db, telegram_id)
+
+    if not clients:
+        await update.message.reply_text(
+            "👥 *Клиенты на завтра*\n\n"
+            "У вас пока нет записей на завтра.",
+            parse_mode='Markdown'
+        )
+        return
+
+    message = "👥 *Клиенты на завтра*\n\n"
+    for i, client in enumerate(clients, 1):
+        message += f"{i}. {client['time']} - {client['name']}\n"
+
+    message += f"\nВсего: {len(clients)} клиент(ов)"
+
+    await update.message.reply_text(message, parse_mode='Markdown')
 
 
 async def my_link_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,31 +119,47 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show trainer statistics"""
-    # TODO: Load real stats from database
+    telegram_id = str(update.effective_user.id)
+
+    async with async_session() as db:
+        stats = await TrainerService.get_trainer_stats(db, telegram_id)
+
     await update.message.reply_text(
-        "📊 *Ваша статистика*\n\n"
-        "*За текущий месяц:*\n"
-        "• Проведено тренировок: 47\n"
-        "• Отменено: 3\n"
-        "• Новых клиентов: 5\n"
-        "• Общий доход: 94,000₽\n\n"
-        "*Всего:*\n"
-        "• Активных клиентов: 24\n"
-        "• Проведено тренировок: 312",
+        f"📊 *Ваша статистика*\n\n"
+        f"*За текущий месяц:*\n"
+        f"• Проведено тренировок: {stats['month_completed']}\n"
+        f"• Отменено: {stats['month_cancelled']}\n"
+        f"• Новых клиентов: {stats['month_new_clients']}\n"
+        f"• Общий доход: {stats['month_revenue']:,}₽\n\n"
+        f"*Всего:*\n"
+        f"• Активных клиентов: {stats['total_clients']}\n"
+        f"• Проведено тренировок: {stats['total_completed']}",
         parse_mode='Markdown'
     )
 
 
 async def my_club_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show trainer's club info"""
-    # TODO: Load from database
+    telegram_id = str(update.effective_user.id)
+
+    async with async_session() as db:
+        club_info = await TrainerService.get_trainer_club(db, telegram_id)
+
+    if not club_info:
+        await update.message.reply_text(
+            "🏢 *Ваш клуб*\n\n"
+            "Вы не привязаны к клубу. Вы работаете как частный тренер.",
+            parse_mode='Markdown'
+        )
+        return
+
     await update.message.reply_text(
-        "🏢 *Ваш клуб*\n\n"
-        "*Фитнес ЭНЕРГИЯ*\n"
-        "📍 ул. Пушкина 15\n"
-        "📞 +7 (999) 123-45-67\n"
-        "⏰ 07:00 - 23:00\n\n"
-        "Тариф клуба: Стандарт\n"
-        "Тренеров в клубе: 12",
+        f"🏢 *Ваш клуб*\n\n"
+        f"*{club_info['name']}*\n"
+        f"📍 {club_info['address'] or 'Адрес не указан'}\n"
+        f"📞 {club_info['phone'] or 'Телефон не указан'}\n"
+        f"⏰ {club_info['working_hours']}\n\n"
+        f"Тариф клуба: {club_info['tariff'].title()}\n"
+        f"Тренеров в клубе: {club_info['trainer_count']}",
         parse_mode='Markdown'
     )
