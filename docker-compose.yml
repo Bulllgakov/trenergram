@@ -37,6 +37,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       BOT_TOKEN: ${BOT_TOKEN}
       BOT_USERNAME: ${BOT_USERNAME}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
       ENVIRONMENT: production
       DEBUG: "False"
     ports:
@@ -59,6 +60,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       BOT_TOKEN: ${BOT_TOKEN}
       BOT_USERNAME: ${BOT_USERNAME}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
       ENVIRONMENT: production
       DEBUG: "False"
     depends_on:
