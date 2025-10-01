@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 
 from app.db.base import async_session
 from app.services.trainer import TrainerService
-from app.models.booking import BookingStatus
+from app.models.enums import BookingStatus
 
 
 async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
