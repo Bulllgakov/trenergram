@@ -1217,7 +1217,7 @@
 
         // Working hours management
         let currentDay = '';
-        let workingHoursData = {
+        window.workingHoursData = {
             monday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: true },
             tuesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: true },
             wednesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: true },
@@ -1241,7 +1241,7 @@
             if (!day) return;
 
             currentDay = day;
-            const dayData = workingHoursData[day];
+            const dayData = window.workingHoursData[day];
 
             // Update title
             document.getElementById('workingHoursTitle').textContent = `Рабочие часы - ${dayNames[day]}`;
@@ -1305,7 +1305,7 @@
                 const endMinute = document.getElementById('endMinute').value.padStart(2, '0');
                 const hasBreak = document.getElementById('breakToggle').checked;
 
-                workingHoursData[currentDay] = {
+                window.workingHoursData[currentDay] = {
                     isWorkingDay: true,
                     start: `${startHour}:${startMinute}`,
                     end: `${endHour}:${endMinute}`,
@@ -1318,7 +1318,7 @@
                     hoursDisplay.textContent = `${startHour}:${startMinute} - ${endHour}:${endMinute}`;
                 }
             } else {
-                workingHoursData[currentDay].isWorkingDay = false;
+                window.workingHoursData[currentDay].isWorkingDay = false;
 
                 // Update display in settings
                 const hoursDisplay = document.getElementById(`hours-${currentDay}`);
@@ -1329,7 +1329,7 @@
 
             // Save to API (will be implemented)
             if (window.saveWorkingHoursAPI) {
-                window.saveWorkingHoursAPI(workingHoursData);
+                window.saveWorkingHoursAPI(window.workingHoursData);
             }
 
             showNotification('✅ Рабочие часы сохранены');

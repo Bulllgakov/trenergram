@@ -128,13 +128,26 @@ function updateScheduleDisplay() {
         return;
     }
 
-    console.log('Updating schedule display, bookings:', bookings);
+    console.log('Updating schedule display for date:', currentDate);
+    console.log('Current bookings:', bookings);
 
     // Clear current schedule
     scheduleSection.innerHTML = '';
 
     // Get working hours for current day
     const workingHours = getWorkingHoursForDate(currentDate);
+
+    // If it's a day off, show message
+    if (workingHours.length === 0) {
+        scheduleSection.innerHTML = `
+            <div style="padding: 40px 20px; text-align: center; color: var(--tg-theme-hint-color);">
+                <div style="font-size: 48px; margin-bottom: 16px;">🏖️</div>
+                <div style="font-size: 17px; font-weight: 500;">Выходной день</div>
+                <div style="font-size: 14px; margin-top: 8px;">В этот день нет приёма</div>
+            </div>
+        `;
+        return;
+    }
 
     workingHours.forEach(hour => {
         const timeStr = `${hour.toString().padStart(2, '0')}:00`;
@@ -398,6 +411,8 @@ window.showLink = function() {
 // Override selectDate to reload data
 const originalSelectDate = window.selectDate;
 window.selectDate = async function(element, date) {
+    console.log('selectDate called with:', date);
+
     // Call original function for UI update
     if (originalSelectDate) {
         originalSelectDate(element, date);
@@ -406,6 +421,8 @@ window.selectDate = async function(element, date) {
     // Parse date properly
     const [year, month, day] = date.split('-').map(Number);
     currentDate = new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+
+    console.log('Parsed date:', currentDate);
 
     // Reload schedule for new date
     await loadSchedule();
@@ -530,11 +547,16 @@ window.openBookingSheet = function() {
 function getWorkingHoursForDate(date) {
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
+    console.log('Getting working hours for:', dayOfWeek, date);
+    console.log('Available workingHoursData:', window.workingHoursData);
+
     // Access workingHoursData from main HTML if available
     if (window.workingHoursData && window.workingHoursData[dayOfWeek]) {
         const dayData = window.workingHoursData[dayOfWeek];
+        console.log('Day data for', dayOfWeek, ':', dayData);
 
         if (!dayData.isWorkingDay) {
+            console.log(dayOfWeek, 'is a day off');
             return []; // Day off
         }
 
@@ -551,9 +573,11 @@ function getWorkingHoursForDate(date) {
             }
         }
 
+        console.log('Working hours for', dayOfWeek, ':', hours);
         return hours;
     }
 
+    console.log('Using default working hours');
     // Default working hours if no data
     return [9, 10, 11, 12, 15, 16, 17, 18, 19];
 }
