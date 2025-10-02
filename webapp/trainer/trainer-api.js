@@ -15,8 +15,12 @@ let currentDate = new Date();
 
 // Initialize API integration
 async function initializeAPI() {
+    console.log('Initializing API with trainer ID:', trainerId);
+
     if (!trainerId) {
         console.error('No trainer ID found');
+        // Still show empty schedule even without trainer ID for testing
+        updateScheduleDisplay();
         return;
     }
 
@@ -28,6 +32,8 @@ async function initializeAPI() {
 
     // Update UI with real data
     updateUIWithData();
+
+    console.log('API initialization complete');
 }
 
 // Load trainer data
@@ -117,7 +123,12 @@ function updateDateDisplay() {
 // Update schedule display while preserving design
 function updateScheduleDisplay() {
     const scheduleSection = document.getElementById('scheduleSection');
-    if (!scheduleSection) return;
+    if (!scheduleSection) {
+        console.error('Schedule section not found');
+        return;
+    }
+
+    console.log('Updating schedule display, bookings:', bookings);
 
     // Clear current schedule
     scheduleSection.innerHTML = '';
@@ -258,9 +269,13 @@ function openBookingActionsAPI(booking) {
 
 // Quick book for API
 async function quickBookAPI(time) {
+    console.log('quickBookAPI called for time:', time);
+
     if (clients.length === 0) {
         showNotification('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
-        showLink();
+        if (window.showLink) {
+            window.showLink();
+        }
         return;
     }
 
@@ -268,7 +283,27 @@ async function quickBookAPI(time) {
     window.selectedTimeForBooking = time;
 
     // Open the booking sheet (uses existing UI)
-    quickBook(time);
+    if (window.quickBook) {
+        window.quickBook(time);
+    } else {
+        console.error('quickBook function not found');
+        // Fallback - directly open booking sheet
+        if (window.openBookingSheet) {
+            window.openBookingSheet();
+        }
+    }
+}
+
+// Ensure showNotification exists
+if (!window.showNotification) {
+    window.showNotification = function(message) {
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.showAlert(message);
+        } else {
+            console.log('Notification:', message);
+            alert(message);
+        }
+    };
 }
 
 // Confirm booking via API
