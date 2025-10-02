@@ -133,8 +133,8 @@ function updateScheduleDisplay() {
     // Clear current schedule
     scheduleSection.innerHTML = '';
 
-    // Define working hours
-    const workingHours = [9, 10, 11, 12, 15, 16, 17, 18, 19];
+    // Get working hours for current day
+    const workingHours = getWorkingHoursForDate(currentDate);
 
     workingHours.forEach(hour => {
         const timeStr = `${hour.toString().padStart(2, '0')}:00`;
@@ -526,9 +526,156 @@ window.openBookingSheet = function() {
     }
 };
 
+// Get working hours for specific date
+function getWorkingHoursForDate(date) {
+    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+
+    // Access workingHoursData from main HTML if available
+    if (window.workingHoursData && window.workingHoursData[dayOfWeek]) {
+        const dayData = window.workingHoursData[dayOfWeek];
+
+        if (!dayData.isWorkingDay) {
+            return []; // Day off
+        }
+
+        const [startHour, startMinute] = dayData.start.split(':').map(Number);
+        const [endHour, endMinute] = dayData.end.split(':').map(Number);
+
+        const hours = [];
+        for (let hour = startHour; hour <= endHour; hour++) {
+            // Skip lunch break if enabled
+            if (dayData.hasBreak && hour === 12) {
+                hours.push(hour); // Still show as break
+            } else if (hour < endHour || (hour === endHour && endMinute > 0)) {
+                hours.push(hour);
+            }
+        }
+
+        return hours;
+    }
+
+    // Default working hours if no data
+    return [9, 10, 11, 12, 15, 16, 17, 18, 19];
+}
+
+// Save working hours to API
+window.saveWorkingHoursAPI = async function(workingHoursData) {
+    if (!trainerId) return;
+
+    try {
+        // Convert to API format
+        const schedules = [];
+        Object.keys(workingHoursData).forEach(day => {
+            const dayData = workingHoursData[day];
+            if (dayData.isWorkingDay) {
+                schedules.push({
+                    day_of_week: day,
+                    start_time: dayData.start,
+                    end_time: dayData.end,
+                    is_active: true
+                });
+
+                // Add break if needed
+                if (dayData.hasBreak) {
+                    schedules.push({
+                        day_of_week: day,
+                        start_time: '12:00',
+                        end_time: '13:00',
+                        is_active: true,
+                        is_break: true
+                    });
+                }
+            }
+        });
+
+        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ schedules })
+        });
+
+        if (response.ok) {
+            console.log('Working hours saved successfully');
+            // Reload schedule to reflect changes
+            await loadSchedule();
+            updateUIWithData();
+        } else {
+            console.error('Failed to save working hours');
+        }
+    } catch (error) {
+        console.error('Error saving working hours:', error);
+    }
+};
+
+// Load working hours from API
+async function loadWorkingHours() {
+    if (!trainerId) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
+        if (response.ok) {
+            const schedules = await response.json();
+
+            // Convert to UI format
+            const workingHoursData = {
+                monday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                tuesday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                wednesday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                thursday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                friday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                saturday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false },
+                sunday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false }
+            };
+
+            schedules.forEach(schedule => {
+                const day = schedule.day_of_week.toLowerCase();
+                if (!schedule.is_break) {
+                    workingHoursData[day] = {
+                        isWorkingDay: true,
+                        start: schedule.start_time,
+                        end: schedule.end_time,
+                        hasBreak: false // Will be set if break schedule found
+                    };
+                } else if (schedule.is_break && workingHoursData[day]) {
+                    workingHoursData[day].hasBreak = true;
+                }
+            });
+
+            // Update global variable if exists
+            if (window.workingHoursData) {
+                window.workingHoursData = workingHoursData;
+            }
+
+            // Update UI display
+            Object.keys(workingHoursData).forEach(day => {
+                const hoursDisplay = document.getElementById(`hours-${day}`);
+                if (hoursDisplay) {
+                    const dayData = workingHoursData[day];
+                    if (dayData.isWorkingDay) {
+                        hoursDisplay.textContent = `${dayData.start} - ${dayData.end}`;
+                    } else {
+                        hoursDisplay.textContent = 'Выходной';
+                    }
+                }
+            });
+
+            return workingHoursData;
+        }
+    } catch (error) {
+        console.error('Failed to load working hours:', error);
+    }
+
+    return null;
+}
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAPI);
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadWorkingHours();
+        await initializeAPI();
+    });
 } else {
-    initializeAPI();
+    loadWorkingHours().then(() => initializeAPI());
 }
