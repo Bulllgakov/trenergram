@@ -4,14 +4,17 @@ import api from '../services/api';
 import BookingCalendar from './BookingCalendar';
 import './TrainersList.css';
 
-const TrainersList = ({ clientId }) => {
-  const [trainers, setTrainers] = useState([]);
-  const [loading, setLoading] = useState(true);
+const TrainersList = ({ clientId, preloadedTrainers }) => {
+  const [trainers, setTrainers] = useState(preloadedTrainers || []);
+  const [loading, setLoading] = useState(false);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
 
   useEffect(() => {
-    loadTrainers();
+    // Only load if we don't have preloaded trainers
+    if (!preloadedTrainers || preloadedTrainers.length === 0) {
+      loadTrainers();
+    }
   }, []);
 
   const loadTrainers = async () => {

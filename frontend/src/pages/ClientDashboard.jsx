@@ -251,7 +251,7 @@ function ClientDashboard() {
           >
             ← Назад к записям
           </button>
-          <TrainersList clientId={id} />
+          <TrainersList clientId={id} preloadedTrainers={trainers} />
         </div>
       ) : (
         <div className="bookings-section">
