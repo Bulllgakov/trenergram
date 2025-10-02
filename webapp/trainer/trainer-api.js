@@ -368,8 +368,11 @@ window.selectDate = async function(element, date) {
         originalSelectDate(element, date);
     }
 
-    // Update current date and reload schedule
-    currentDate = new Date(date);
+    // Parse date properly
+    const [year, month, day] = date.split('-').map(Number);
+    currentDate = new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+
+    // Reload schedule for new date
     await loadSchedule();
     updateUIWithData();
 };
@@ -449,9 +452,18 @@ window.openBookingSheet = function() {
 
     // Update client list with real data
     const clientList = document.getElementById('clientList');
-    if (clientList && clients.length > 0) {
-        clientList.innerHTML = '';
+    if (!clientList) return;
 
+    clientList.innerHTML = '';
+
+    if (clients.length === 0) {
+        clientList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--tg-theme-hint-color);">
+                У вас пока нет клиентов.<br>
+                Поделитесь своей ссылкой для привлечения клиентов.
+            </div>
+        `;
+    } else {
         clients.forEach(client => {
             const clientItem = document.createElement('div');
             clientItem.className = 'client-item';

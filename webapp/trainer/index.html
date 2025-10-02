@@ -798,100 +798,7 @@
 
         <!-- Schedule List -->
         <div class="schedule-section" id="scheduleSection">
-            <div class="time-slot draggable" data-time="09:00" data-client="Мария Сидорова" data-status="confirmed" onclick="openBookingActions(this)">
-                <div class="time-slot-time">09:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Мария Сидорова</div>
-                    <div class="time-slot-info">Силовая тренировка</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon confirmed">✓</div>
-                </div>
-            </div>
-
-            <div class="time-slot draggable back-to-back" data-time="10:00" data-client="Александр Смирнов" data-status="confirmed" onclick="openBookingActions(this)">
-                <div class="time-slot-time">10:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Александр Смирнов</div>
-                    <div class="time-slot-info">Функциональный тренинг</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon confirmed">✓</div>
-                </div>
-            </div>
-
-            <div class="time-slot empty" data-time="11:00" onclick="quickBook('11:00')">
-                <div class="time-slot-time">11:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Свободно</div>
-                    <div class="time-slot-info">Нажмите для записи</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon free">+</div>
-                </div>
-            </div>
-
-            <div class="time-slot break" data-time="12:00">
-                <div class="time-slot-time">12:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Обеденный перерыв</div>
-                </div>
-            </div>
-
-            <div class="time-slot draggable" data-time="15:00" data-client="Иван Петров" data-status="waiting-confirmation" onclick="openBookingActions(this)">
-                <div class="time-slot-time">15:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Иван Петров</div>
-                    <div class="time-slot-info">Кардио • Ждет подтверждения</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon waiting-confirmation">?</div>
-                </div>
-            </div>
-
-            <div class="time-slot empty" data-time="16:00" onclick="quickBook('16:00')">
-                <div class="time-slot-time">16:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Свободно</div>
-                    <div class="time-slot-info">Нажмите для записи</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon free">+</div>
-                </div>
-            </div>
-
-            <div class="time-slot draggable" data-time="17:00" data-client="Елена Козлова" data-status="reminder-sent" onclick="openBookingActions(this)">
-                <div class="time-slot-time">17:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Елена Козлова</div>
-                    <div class="time-slot-info">Растяжка • Напоминание отправлено</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon reminder-sent">📨</div>
-                </div>
-            </div>
-
-            <div class="time-slot empty" data-time="18:00" onclick="quickBook('18:00')">
-                <div class="time-slot-time">18:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Свободно</div>
-                    <div class="time-slot-info">Нажмите для записи</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon free">+</div>
-                </div>
-            </div>
-
-            <div class="time-slot draggable conflict" data-time="19:00" data-client="Дмитрий Новиков" data-status="confirmed" onclick="openBookingActions(this)">
-                <div class="time-slot-time">19:00</div>
-                <div class="time-slot-content">
-                    <div class="time-slot-name">Дмитрий Новиков</div>
-                    <div class="time-slot-info">Бокс • ⚠️ Долг за 2 тренировки</div>
-                </div>
-                <div class="time-slot-status">
-                    <div class="status-icon confirmed">✓</div>
-                </div>
-            </div>
+            <!-- Schedule will be loaded dynamically from API -->
         </div>
 
         <!-- Status Legend -->
@@ -1082,22 +989,7 @@
                 <input type="text" class="form-input" id="clientSearch" placeholder="Поиск по имени..." oninput="searchClient(this.value)">
                 
                 <div class="client-list" id="clientList">
-                    <div class="client-item" onclick="selectClient('Мария Сидорова')">
-                        <div class="client-avatar">МС</div>
-                        <div class="client-name">Мария Сидорова</div>
-                    </div>
-                    <div class="client-item" onclick="selectClient('Александр Смирнов')">
-                        <div class="client-avatar">АС</div>
-                        <div class="client-name">Александр Смирнов</div>
-                    </div>
-                    <div class="client-item" onclick="selectClient('Иван Петров')">
-                        <div class="client-avatar">ИП</div>
-                        <div class="client-name">Иван Петров</div>
-                    </div>
-                    <div class="client-item" onclick="newClient()">
-                        <div class="client-avatar" style="background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-link-color);">+</div>
-                        <div class="client-name add-new">Добавить нового клиента</div>
-                    </div>
+                    <!-- Client list will be loaded from API -->
                 </div>
             </div>
 
