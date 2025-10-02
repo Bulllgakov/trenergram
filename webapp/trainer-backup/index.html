@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trenergram - Расписание тренера</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Мое расписание</h1>
+            <div class="header-stats">
+                <span class="stat confirmed">✅ 5</span>
+                <span class="stat pending">⏳ 2</span>
+                <span class="stat free">➕ 3</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn" onclick="showClients()">
+                <span class="icon">👥</span>
+                <span>Мои клиенты</span>
+                <span class="badge">24</span>
+            </button>
+            <button class="action-btn" onclick="showLink()">
+                <span class="icon">🔗</span>
+                <span>Моя ссылка</span>
+            </button>
+            <button class="action-btn" onclick="showStats()">
+                <span class="icon">📊</span>
+                <span>Статистика</span>
+            </button>
+            <button class="action-btn" onclick="showSettings()">
+                <span class="icon">⚙️</span>
+                <span>Настройки</span>
+            </button>
+        </div>
+
+        <!-- Date Selector -->
+        <div class="date-selector">
+            <button class="date-btn" onclick="selectDate(-1)">←</button>
+            <div class="date-pills">
+                <button class="date-pill">Пн 11</button>
+                <button class="date-pill">Вт 12</button>
+                <button class="date-pill active">Ср 13</button>
+                <button class="date-pill">Чт 14</button>
+                <button class="date-pill">Пт 15</button>
+            </div>
+            <button class="date-btn" onclick="selectDate(1)">→</button>
+        </div>
+
+        <!-- Schedule -->
+        <div class="schedule">
+            <div class="schedule-header">
+                <h2>СРЕДА, 13 АВГУСТА</h2>
+            </div>
+
+            <div class="schedule-items">
+                <div class="schedule-item confirmed">
+                    <div class="time">09:00</div>
+                    <div class="client-info">
+                        <div class="client-name">Мария Сидорова</div>
+                        <div class="client-status">Подтверждено</div>
+                    </div>
+                    <button class="item-action">💬</button>
+                </div>
+
+                <div class="schedule-item confirmed">
+                    <div class="time">10:00</div>
+                    <div class="client-info">
+                        <div class="client-name">Александр Смирнов</div>
+                        <div class="client-status">Подтверждено</div>
+                    </div>
+                    <button class="item-action">💬</button>
+                </div>
+
+                <div class="schedule-item free">
+                    <div class="time">11:00</div>
+                    <div class="client-info">
+                        <div class="free-slot">СВОБОДНО</div>
+                    </div>
+                    <button class="item-action" onclick="bookSlot('11:00')">➕</button>
+                </div>
+
+                <div class="schedule-item pending">
+                    <div class="time">15:00</div>
+                    <div class="client-info">
+                        <div class="client-name">Иван Петров</div>
+                        <div class="client-status">Ожидает подтверждения</div>
+                    </div>
+                    <button class="item-action">✓</button>
+                </div>
+
+                <div class="schedule-item free">
+                    <div class="time">16:00</div>
+                    <div class="client-info">
+                        <div class="free-slot">СВОБОДНО</div>
+                    </div>
+                    <button class="item-action" onclick="bookSlot('16:00')">➕</button>
+                </div>
+
+                <div class="schedule-item confirmed">
+                    <div class="time">17:00</div>
+                    <div class="client-info">
+                        <div class="client-name">Елена Козлова</div>
+                        <div class="client-status">Подтверждено</div>
+                    </div>
+                    <button class="item-action">💬</button>
+                </div>
+
+                <div class="schedule-item pending">
+                    <div class="time">18:00</div>
+                    <div class="client-info">
+                        <div class="client-name">@новый_клиент</div>
+                        <div class="client-status">Новый клиент</div>
+                    </div>
+                    <button class="item-action">✓</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Button -->
+        <button class="fab" onclick="addBooking()">
+            <span>+</span> Записать
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

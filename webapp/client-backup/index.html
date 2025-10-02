@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trenergram - Мои тренировки</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Мои тренировки</h1>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('trainers')">Тренеры</button>
+                <button class="tab" onclick="switchTab('upcoming')">Предстоящие</button>
+                <button class="tab" onclick="switchTab('history')">История</button>
+            </div>
+        </div>
+
+        <!-- Trainers Tab -->
+        <div id="trainers" class="tab-content active">
+            <div class="section">
+                <h2 class="section-title">Мои тренеры</h2>
+                <div id="trainers-list" class="trainers-list">
+                    <!-- Trainers will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Trainings -->
+        <div id="upcoming" class="tab-content">
+            <div id="upcoming-bookings">
+                <!-- Upcoming bookings will be loaded here -->
+            </div>
+        </div>
+
+        <!-- History -->
+        <div id="history" class="tab-content">
+            <div id="past-bookings">
+                <!-- Past bookings will be loaded here -->
+            </div>
+        </div>
+
+        <!-- FAB -->
+        <button class="fab" onclick="addTrainer()">
+            <span>+</span> Найти тренера
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
