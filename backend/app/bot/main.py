@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from app.core.config import settings
-from app.bot.handlers import registration, trainer, client, common, webapp
+from app.bot.handlers import registration, trainer, client, common, webapp, booking_callbacks
 from app.bot.utils import keyboards
 
 logging.basicConfig(
@@ -193,6 +193,13 @@ def main():
     application.add_handler(CallbackQueryHandler(registration.handle_role_selection, pattern="^role_"))
     application.add_handler(CallbackQueryHandler(registration.handle_club_selection, pattern="^club_"))
     application.add_handler(CallbackQueryHandler(registration.handle_copy_link, pattern="^copy_link$"))
+
+    # Booking callback handlers
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_confirm_booking, pattern="^confirm_booking:"))
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_cancel_booking, pattern="^cancel_booking:"))
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_accept_reschedule, pattern="^accept_reschedule:"))
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_decline_reschedule, pattern="^decline_reschedule:"))
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_confirm_attendance, pattern="^confirm_attendance:"))
 
     # Main commands - simplified interface
     application.add_handler(CommandHandler("cabinet", webapp.cabinet_command))
