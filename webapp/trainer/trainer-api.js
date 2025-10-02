@@ -380,21 +380,132 @@ function getStatusText(status) {
     }
 }
 
-// Override existing showClients to use API data
+// Override existing showClients to use API data and show in sheet
 const originalShowClients = window.showClients;
 window.showClients = function() {
+    // Update stats
+    document.getElementById('totalClientsCount').textContent = clients.length;
+
+    // Count active clients (those with recent bookings)
+    const activeClients = clients.filter(client => {
+        // Consider client active if they have bookings in last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return bookings.some(b =>
+            b.client_telegram_id === client.telegram_id &&
+            new Date(b.datetime) > thirtyDaysAgo
+        );
+    });
+    document.getElementById('activeClientsCount').textContent = activeClients.length;
+
+    // Update clients list
+    const clientsList = document.getElementById('clientsList');
+    clientsList.innerHTML = '';
+
     if (clients.length === 0) {
-        showNotification('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
-        return;
+        clientsList.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--tg-theme-hint-color);">
+                <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                <div style="font-size: 17px; font-weight: 500; margin-bottom: 8px;">У вас пока нет клиентов</div>
+                <div style="font-size: 14px;">Поделитесь ссылкой для привлечения клиентов</div>
+            </div>
+        `;
+    } else {
+        clients.forEach(client => {
+            const clientCard = document.createElement('div');
+            clientCard.className = 'client-item';
+            clientCard.style.cssText = `
+                display: flex;
+                align-items: center;
+                padding: 12px;
+                margin-bottom: 8px;
+                background: var(--tg-theme-bg-color);
+                border-radius: 10px;
+                cursor: pointer;
+            `;
+            clientCard.onclick = () => showClientDetails(client);
+
+            const initials = (client.name || 'К').split(' ').map(n => n[0]).join('').toUpperCase();
+
+            // Count client's bookings
+            const clientBookings = bookings.filter(b => b.client_telegram_id === client.telegram_id);
+            const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date());
+
+            clientCard.innerHTML = `
+                <div class="client-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--tg-theme-button-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px;">
+                    ${initials}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 16px; font-weight: 500;">${client.name || 'Клиент'}</div>
+                    <div style="font-size: 13px; color: var(--tg-theme-hint-color);">
+                        ${clientBookings.length} тренировок • ${upcomingBookings.length} предстоящих
+                    </div>
+                </div>
+                <div style="color: var(--tg-theme-hint-color); font-size: 20px;">›</div>
+            `;
+
+            clientsList.appendChild(clientCard);
+        });
     }
 
-    let clientsList = 'Ваши клиенты:\n\n';
-    clients.forEach(client => {
-        clientsList += `• ${client.name || 'Клиент'}\n`;
-    });
+    // Open the sheet
+    openSheet('clientsSheet');
+};
+
+// Show client details
+function showClientDetails(client) {
+    const clientBookings = bookings.filter(b => b.client_telegram_id === client.telegram_id);
+    const completedBookings = clientBookings.filter(b => b.status === 'COMPLETED').length;
+    const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date() && b.status !== 'CANCELLED');
+
+    let message = `👤 ${client.name || 'Клиент'}\n\n`;
+    message += `📊 Статистика:\n`;
+    message += `• Всего тренировок: ${clientBookings.length}\n`;
+    message += `• Завершено: ${completedBookings}\n`;
+    message += `• Предстоящих: ${upcomingBookings.length}\n\n`;
+
+    if (upcomingBookings.length > 0) {
+        message += `📅 Ближайшие тренировки:\n`;
+        upcomingBookings.slice(0, 3).forEach(booking => {
+            const date = new Date(booking.datetime);
+            message += `• ${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} в ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}\n`;
+        });
+    }
+
+    if (client.telegram_username) {
+        message += `\n💬 Telegram: @${client.telegram_username}`;
+    }
 
     if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.showAlert(clientsList);
+        window.Telegram.WebApp.showPopup({
+            title: 'Информация о клиенте',
+            message: message,
+            buttons: [
+                client.telegram_username ? {id: 'contact', type: 'default', text: 'Написать клиенту'} : null,
+                {id: 'book', type: 'default', text: 'Записать на тренировку'},
+                {type: 'close'}
+            ].filter(Boolean)
+        }, (buttonId) => {
+            if (buttonId === 'contact' && client.telegram_username) {
+                window.Telegram.WebApp.openLink(`https://t.me/${client.telegram_username}`);
+            } else if (buttonId === 'book') {
+                closeSheet('clientsSheet');
+                // Pre-select client in booking form
+                setTimeout(() => {
+                    quickBook();
+                    setTimeout(() => {
+                        selectClient(client.name);
+                    }, 300);
+                }, 300);
+            }
+        });
+    }
+}
+
+// Share trainer link
+window.shareTrainerLink = function() {
+    if (window.showLink) {
+        window.showLink();
     }
 };
 

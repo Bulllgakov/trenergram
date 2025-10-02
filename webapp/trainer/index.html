@@ -1124,6 +1124,34 @@
         </div>
     </div>
 
+    <!-- Clients Sheet -->
+    <div class="bottom-sheet" id="clientsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Мои клиенты</div>
+            <button class="sheet-close" onclick="closeSheet('clientsSheet')">✕</button>
+        </div>
+        <div class="sheet-content" style="padding: 16px;">
+            <div class="clients-stats" style="display: flex; gap: 16px; margin-bottom: 20px;">
+                <div style="flex: 1; padding: 12px; background: var(--tg-theme-secondary-bg-color); border-radius: 10px;">
+                    <div style="font-size: 24px; font-weight: 600;" id="totalClientsCount">0</div>
+                    <div style="font-size: 13px; color: var(--tg-theme-hint-color);">Всего клиентов</div>
+                </div>
+                <div style="flex: 1; padding: 12px; background: var(--tg-theme-secondary-bg-color); border-radius: 10px;">
+                    <div style="font-size: 24px; font-weight: 600;" id="activeClientsCount">0</div>
+                    <div style="font-size: 13px; color: var(--tg-theme-hint-color);">Активных</div>
+                </div>
+            </div>
+
+            <div class="clients-list" id="clientsList">
+                <!-- Will be populated with real clients -->
+            </div>
+
+            <button class="submit-button" style="margin-top: 20px;" onclick="shareTrainerLink()">
+                📤 Поделиться ссылкой для клиентов
+            </button>
+        </div>
+    </div>
+
     <script>
         // Initialize Telegram WebApp
         if (window.Telegram && window.Telegram.WebApp) {
