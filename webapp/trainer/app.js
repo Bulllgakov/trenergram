@@ -12,6 +12,9 @@ const trainerId = pathParts[pathParts.length - 1] || tg.initDataUnsafe?.user?.id
 tg.ready();
 tg.expand();
 
+// Enable closing confirmation
+tg.enableClosingConfirmation();
+
 // Set theme colors
 document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
 document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
@@ -20,13 +23,13 @@ document.documentElement.style.setProperty('--tg-theme-link-color', tg.themePara
 document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#3390ec');
 document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
 
-// Global variables
+// Current date
 let currentDate = new Date();
+let trainerData = {};
 let clients = [];
 let bookings = [];
-let trainerData = {};
 
-// Load trainer data on page load
+// Load data on page load
 window.addEventListener('DOMContentLoaded', () => {
     if (trainerId) {
         loadTrainerData();
@@ -34,155 +37,149 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// API Functions
+// Load trainer data
 async function loadTrainerData() {
     try {
-        // Load trainer info with clients
-        const trainerResponse = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}`);
-        if (trainerResponse.ok) {
-            trainerData = await trainerResponse.json();
+        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}`);
+        if (response.ok) {
+            trainerData = await response.json();
             clients = trainerData.clients || [];
-            updateDashboard();
+            updateClientsBadge();
         }
     } catch (error) {
         console.error('Failed to load trainer data:', error);
     }
 }
 
+// Load schedule for current date
 async function loadSchedule() {
     try {
-        // Format date for API
-        const dateStr = currentDate.toISOString().split('T')[0];
-
-        // Load bookings for the current date
-        const bookingsResponse = await fetch(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
-        if (bookingsResponse.ok) {
-            const allBookings = await bookingsResponse.json();
+        const response = await fetch(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
+        if (response.ok) {
+            const allBookings = await response.json();
             // Filter bookings for current date
             bookings = allBookings.filter(b => {
                 const bookingDate = new Date(b.datetime);
                 return bookingDate.toDateString() === currentDate.toDateString();
             });
-            displaySchedule();
+            updateScheduleDisplay();
+            updateHeaderStats();
         }
     } catch (error) {
         console.error('Failed to load schedule:', error);
     }
-
-    // Update date display
     updateDateDisplay();
 }
 
-// Update dashboard with trainer data
-function updateDashboard() {
-    // Update clients count
-    const clientsCount = document.querySelector('.stats-item:nth-child(1) .stats-value');
-    if (clientsCount) {
-        clientsCount.textContent = clients.length;
+// Update clients badge
+function updateClientsBadge() {
+    const badge = document.querySelector('.action-btn .badge');
+    if (badge) {
+        badge.textContent = clients.length;
     }
+}
 
-    // Update today's trainings count
-    const todayCount = document.querySelector('.stats-item:nth-child(2) .stats-value');
-    if (todayCount) {
-        const todayBookings = bookings.filter(b => b.status !== 'CANCELLED').length;
-        todayCount.textContent = todayBookings;
-    }
+// Update header stats
+function updateHeaderStats() {
+    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
+    const pending = bookings.filter(b => b.status === 'PENDING').length;
 
-    // Update this month's income (if available)
-    const incomeElement = document.querySelector('.stats-item:nth-child(3) .stats-value');
-    if (incomeElement && trainerData.monthly_income) {
-        incomeElement.textContent = `${trainerData.monthly_income} ₽`;
+    // Calculate free slots (assuming 8 working hours)
+    const totalSlots = 8;
+    const busySlots = bookings.filter(b => b.status !== 'CANCELLED').length;
+    const freeSlots = Math.max(0, totalSlots - busySlots);
+
+    const headerStats = document.querySelector('.header-stats');
+    if (headerStats) {
+        headerStats.innerHTML = `
+            <span class="stat confirmed">✅ ${confirmed}</span>
+            <span class="stat pending">⏳ ${pending}</span>
+            <span class="stat free">➕ ${freeSlots}</span>
+        `;
     }
 }
 
 // Update date display
 function updateDateDisplay() {
-    const dateElement = document.querySelector('.date');
-    if (dateElement) {
+    const scheduleHeader = document.querySelector('.schedule-header h2');
+    if (scheduleHeader) {
         const options = { weekday: 'long', day: 'numeric', month: 'long' };
-        dateElement.textContent = currentDate.toLocaleDateString('ru-RU', options);
+        const dateStr = currentDate.toLocaleDateString('ru-RU', options).toUpperCase();
+        scheduleHeader.textContent = dateStr;
+    }
+
+    // Update date pills
+    updateDatePills();
+}
+
+// Update date pills
+function updateDatePills() {
+    const datePills = document.querySelector('.date-pills');
+    if (!datePills) return;
+
+    datePills.innerHTML = '';
+
+    for (let i = -2; i <= 2; i++) {
+        const date = new Date(currentDate);
+        date.setDate(date.getDate() + i);
+
+        const pill = document.createElement('button');
+        pill.className = 'date-pill';
+        if (i === 0) pill.classList.add('active');
+
+        const weekday = date.toLocaleDateString('ru-RU', { weekday: 'short' });
+        const day = date.getDate();
+        pill.textContent = `${weekday} ${day}`;
+        pill.onclick = () => {
+            currentDate = date;
+            loadSchedule();
+        };
+
+        datePills.appendChild(pill);
     }
 }
 
-// Display schedule
-function displaySchedule() {
-    const slotsContainer = document.querySelector('.time-slots');
-    if (!slotsContainer) return;
+// Update schedule display
+function updateScheduleDisplay() {
+    const scheduleItems = document.querySelector('.schedule-items');
+    if (!scheduleItems) return;
 
-    slotsContainer.innerHTML = '';
+    scheduleItems.innerHTML = '';
 
-    // Generate time slots from 8:00 to 21:00
-    for (let hour = 8; hour <= 21; hour++) {
-        const slot = document.createElement('div');
-        slot.className = 'time-slot';
+    // Define working hours
+    const workingHours = [9, 10, 11, 12, 15, 16, 17, 18];
 
-        const time = `${hour}:00`;
+    workingHours.forEach(hour => {
+        const timeStr = `${hour}:00`;
         const booking = bookings.find(b => {
-            const bookingTime = new Date(b.datetime);
-            return bookingTime.getHours() === hour && bookingTime.getMinutes() === 0;
+            const bookingDate = new Date(b.datetime);
+            return bookingDate.getHours() === hour;
         });
 
+        const scheduleItem = document.createElement('div');
+
         if (booking) {
-            slot.classList.add('booked');
-            slot.innerHTML = `
-                <div class="time">${time}</div>
-                <div class="booking-info">
+            scheduleItem.className = `schedule-item ${booking.status.toLowerCase()}`;
+            scheduleItem.innerHTML = `
+                <div class="time">${timeStr}</div>
+                <div class="client-info">
                     <div class="client-name">${booking.client_name || 'Клиент'}</div>
-                    <div class="booking-type">${booking.service_name || 'Тренировка'}</div>
-                    ${booking.status === 'CANCELLED' ? '<div class="cancelled">Отменено</div>' : ''}
+                    <div class="client-status">${getStatusText(booking.status)}</div>
                 </div>
+                <button class="item-action" onclick="handleBookingAction(${booking.id}, '${booking.status}')">${getActionIcon(booking.status)}</button>
             `;
-            slot.onclick = () => showBookingDetails(booking);
         } else {
-            slot.classList.add('available');
-            slot.innerHTML = `
-                <div class="time">${time}</div>
-                <div class="available-text">Свободно</div>
+            scheduleItem.className = 'schedule-item free';
+            scheduleItem.innerHTML = `
+                <div class="time">${timeStr}</div>
+                <div class="client-info">
+                    <div class="free-slot">СВОБОДНО</div>
+                </div>
+                <button class="item-action" onclick="bookSlot('${timeStr}')">➕</button>
             `;
-            slot.onclick = () => bookSlot(time);
         }
 
-        slotsContainer.appendChild(slot);
-    }
-}
-
-// Show booking details
-function showBookingDetails(booking) {
-    const bookingDate = new Date(booking.datetime);
-    const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-    const message = `
-Клиент: ${booking.client_name || 'Не указан'}
-Время: ${timeStr}
-Услуга: ${booking.service_name || 'Тренировка'}
-Длительность: ${booking.duration || 60} мин
-${booking.price ? `Стоимость: ${booking.price} ₽` : ''}
-Статус: ${getStatusText(booking.status)}
-${booking.notes ? `\nКомментарий: ${booking.notes}` : ''}
-    `.trim();
-
-    const buttons = [];
-
-    if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
-        buttons.push({id: 'cancel', type: 'destructive', text: 'Отменить'});
-    }
-
-    if (booking.client_telegram_username) {
-        buttons.push({id: 'contact', type: 'default', text: 'Написать клиенту'});
-    }
-
-    buttons.push({type: 'cancel'});
-
-    tg.showPopup({
-        title: 'Детали записи',
-        message: message,
-        buttons: buttons
-    }, (buttonId) => {
-        if (buttonId === 'cancel') {
-            cancelBooking(booking.id);
-        } else if (buttonId === 'contact' && booking.client_telegram_username) {
-            tg.openLink(`https://t.me/${booking.client_telegram_username}`);
-        }
+        scheduleItems.appendChild(scheduleItem);
     });
 }
 
@@ -190,40 +187,75 @@ ${booking.notes ? `\nКомментарий: ${booking.notes}` : ''}
 function getStatusText(status) {
     switch(status.toUpperCase()) {
         case 'CONFIRMED': return 'Подтверждено';
-        case 'PENDING': return 'Ожидание';
+        case 'PENDING': return 'Ожидает подтверждения';
         case 'CANCELLED': return 'Отменено';
         case 'COMPLETED': return 'Завершено';
         default: return status;
     }
 }
 
-// Cancel booking
-async function cancelBooking(bookingId) {
-    tg.showConfirm('Вы уверены, что хотите отменить запись?', async (confirmed) => {
+// Get action icon based on status
+function getActionIcon(status) {
+    switch(status.toUpperCase()) {
+        case 'CONFIRMED': return '💬';
+        case 'PENDING': return '✓';
+        case 'CANCELLED': return '↻';
+        default: return '•';
+    }
+}
+
+// Handle booking action
+function handleBookingAction(bookingId, status) {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    if (status === 'CONFIRMED') {
+        // Open chat with client
+        if (booking.client_telegram_username) {
+            tg.openLink(`https://t.me/${booking.client_telegram_username}`);
+        } else {
+            tg.showAlert('У клиента нет username для связи');
+        }
+    } else if (status === 'PENDING') {
+        // Confirm booking
+        confirmBooking(bookingId);
+    }
+}
+
+// Confirm booking
+async function confirmBooking(bookingId) {
+    tg.showConfirm('Подтвердить запись?', async (confirmed) => {
         if (!confirmed) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${trainerId}&reason=Отменено тренером`, {
-                method: 'DELETE'
+            const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    telegram_id: trainerId
+                })
             });
 
             if (response.ok) {
-                tg.showAlert('Запись успешно отменена');
+                tg.showAlert('Запись подтверждена');
                 loadSchedule(); // Reload schedule
             } else {
-                tg.showAlert('Не удалось отменить запись');
+                tg.showAlert('Не удалось подтвердить запись');
             }
         } catch (error) {
-            console.error('Failed to cancel booking:', error);
-            tg.showAlert('Ошибка при отмене записи');
+            console.error('Failed to confirm booking:', error);
+            tg.showAlert('Ошибка при подтверждении записи');
         }
     });
 }
 
-// Show clients
+// Functions
 function showClients() {
     if (clients.length === 0) {
         tg.showAlert('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
+        showLink();
         return;
     }
 
@@ -246,13 +278,12 @@ function showClients() {
     });
 }
 
-// Show personal link
 function showLink() {
     const link = `https://t.me/trenergram_bot?start=trainer_${trainerId}`;
 
     tg.showPopup({
         title: 'Ваша персональная ссылка',
-        message: `Поделитесь этой ссылкой с клиентами:\n\n${link}`,
+        message: link,
         buttons: [
             {id: 'copy', type: 'default', text: 'Копировать'},
             {id: 'share', type: 'default', text: 'Поделиться'},
@@ -263,19 +294,22 @@ function showLink() {
             navigator.clipboard.writeText(link);
             tg.showAlert('Ссылка скопирована!');
         } else if (buttonId === 'share') {
-            const text = `Записывайтесь на тренировки: ${link}`;
-            tg.switchInlineQuery(text, ['users', 'groups', 'channels']);
+            tg.switchInlineQuery(link, ['users', 'groups', 'channels']);
         }
     });
 }
 
-// Show statistics
 function showStats() {
+    const totalBookings = bookings.length;
+    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
+    const pending = bookings.filter(b => b.status === 'PENDING').length;
+
     const stats = `
-Всего клиентов: ${clients.length}
-Тренировок сегодня: ${bookings.filter(b => b.status !== 'CANCELLED').length}
-Тренировок в этом месяце: ${trainerData.monthly_bookings || 0}
-${trainerData.monthly_income ? `Доход в этом месяце: ${trainerData.monthly_income} ₽` : ''}
+Клиентов: ${clients.length}
+Записей сегодня: ${totalBookings}
+Подтверждено: ${confirmed}
+Ожидают: ${pending}
+${trainerData.monthly_income ? `Доход за месяц: ${trainerData.monthly_income} ₽` : ''}
     `.trim();
 
     tg.showPopup({
@@ -285,31 +319,15 @@ ${trainerData.monthly_income ? `Доход в этом месяце: ${trainerDa
     });
 }
 
-// Show settings
 function showSettings() {
-    tg.showPopup({
-        title: 'Настройки',
-        message: 'Выберите параметр для настройки',
-        buttons: [
-            {id: 'schedule', type: 'default', text: 'Расписание'},
-            {id: 'services', type: 'default', text: 'Услуги и цены'},
-            {id: 'notifications', type: 'default', text: 'Уведомления'},
-            {type: 'cancel'}
-        ]
-    }, (buttonId) => {
-        if (buttonId) {
-            tg.showAlert(`Настройка "${buttonId}" будет доступна в ближайшее время`);
-        }
-    });
+    tg.showAlert('Настройки будут доступны в ближайшее время');
 }
 
-// Navigate date
 function selectDate(direction) {
     currentDate.setDate(currentDate.getDate() + direction);
     loadSchedule();
 }
 
-// Book time slot
 function bookSlot(time) {
     if (clients.length === 0) {
         tg.showAlert('У вас пока нет клиентов. Сначала пригласите клиентов по вашей персональной ссылке.');
@@ -318,15 +336,15 @@ function bookSlot(time) {
     }
 
     tg.showPopup({
-        title: 'Записать на ' + time,
-        message: 'Выберите клиента для записи',
+        title: 'Записать клиента',
+        message: `Выберите клиента для записи на ${time}`,
         buttons: [
-            {id: 'select', type: 'default', text: 'Выбрать из списка'},
+            {id: 'existing', type: 'default', text: 'Существующий клиент'},
             {id: 'new', type: 'default', text: 'Новый клиент'},
             {type: 'cancel'}
         ]
     }, (buttonId) => {
-        if (buttonId === 'select') {
+        if (buttonId === 'existing') {
             selectClientForBooking(time);
         } else if (buttonId === 'new') {
             tg.showAlert('Для добавления нового клиента поделитесь своей ссылкой');
@@ -335,7 +353,6 @@ function bookSlot(time) {
     });
 }
 
-// Select client for booking
 function selectClientForBooking(time) {
     const buttons = clients.slice(0, 5).map(client => ({
         id: client.telegram_id.toString(),
@@ -356,7 +373,6 @@ function selectClientForBooking(time) {
     });
 }
 
-// Create booking
 async function createBooking(clientId, time) {
     try {
         const [hour, minute] = time.split(':');
@@ -392,7 +408,6 @@ async function createBooking(clientId, time) {
     }
 }
 
-// Add booking (main button)
 function addBooking() {
     bookSlot(new Date().getHours() + ':00');
 }
