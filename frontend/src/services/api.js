@@ -154,6 +154,42 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Trainer endpoints
+  async getTrainers(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    return this.request(`/trainers/${queryParams ? '?' + queryParams : ''}`);
+  }
+
+  async getTrainer(telegramId) {
+    return this.request(`/trainers/${telegramId}`);
+  }
+
+  // Helper methods
+  get(endpoint) {
+    return this.request(endpoint);
+  }
+
+  post(endpoint, data) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  put(endpoint, data) {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  delete(endpoint) {
+    return this.request(endpoint, {
+      method: 'DELETE',
+    });
+  }
 }
 
-export default new ApiService();
+export const api = new ApiService();
+export default api;

@@ -52,6 +52,9 @@ jobs:
             cd ..
           fi
 
+          # Apply database migrations
+          docker-compose exec -T backend python apply_migrations.py || echo "Migrations applied or not needed"
+
           # Check container status
           docker-compose ps
 

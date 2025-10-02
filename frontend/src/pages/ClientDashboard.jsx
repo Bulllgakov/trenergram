@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTelegram } from '../hooks/useTelegram';
 import api from '../services/api';
+import TrainersList from '../components/TrainersList';
 import '../styles/telegram-webapp.css';
 
 function ClientDashboard() {
   const { id } = useParams(); // This is telegram_id from URL
   const { tg } = useTelegram();
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [showTrainersList, setShowTrainersList] = useState(false);
   const [showBookingDetails, setShowBookingDetails] = useState(null);
   const [showOverlay, setShowOverlay] = useState(false);
   const [bookings, setBookings] = useState([]);
@@ -267,7 +269,7 @@ function ClientDashboard() {
 
   const newBooking = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    window.open('https://trenergram.ru', '_blank');
+    setShowTrainersList(true);
   };
 
   const getBookings = () => {
@@ -370,8 +372,28 @@ function ClientDashboard() {
         </button>
       </div>
 
-      {/* Bookings Section */}
-      <div className="bookings-section">
+      {/* Bookings Section or Trainers List */}
+      {showTrainersList ? (
+        <div>
+          <button
+            className="back-button"
+            onClick={() => setShowTrainersList(false)}
+            style={{
+              padding: '10px 20px',
+              margin: '10px 20px',
+              background: 'var(--tg-theme-button-color)',
+              color: 'var(--tg-theme-button-text-color)',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            ← Назад к записям
+          </button>
+          <TrainersList />
+        </div>
+      ) : (
+        <div className="bookings-section">
         {bookings.length > 0 ? (
           bookings.map(booking => (
             <div
@@ -470,10 +492,13 @@ function ClientDashboard() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* FAB Button */}
-      <button className="fab" onClick={newBooking}>+</button>
+      {!showTrainersList && (
+        <button className="fab" onClick={newBooking}>+</button>
+      )}
 
       {/* Overlay */}
       <div className={`overlay ${showOverlay ? 'active' : ''}`} onClick={closeBookingDetails}></div>

@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: trenergram
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
     networks:
       - trenergram-network
     healthcheck:
