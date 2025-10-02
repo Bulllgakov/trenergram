@@ -792,7 +792,14 @@
 
         <!-- Schedule List -->
         <div class="schedule-section" id="scheduleSection">
-            <!-- Schedule will be loaded dynamically from API -->
+            <!-- Default slots will be shown immediately, then updated from API -->
+            <div class="time-slot empty">
+                <div class="time-slot-time">09:00</div>
+                <div class="time-slot-content">
+                    <div class="time-slot-name">Загрузка...</div>
+                    <div class="time-slot-info">Подождите</div>
+                </div>
+            </div>
         </div>
 
         <!-- Status Legend -->
@@ -1584,5 +1591,36 @@
     </script>
     <!-- API Integration -->
     <script src="trainer-api.js"></script>
+    <script>
+        // Ensure slots are shown even if trainer-api.js fails
+        setTimeout(() => {
+            const scheduleSection = document.getElementById('scheduleSection');
+            if (scheduleSection && scheduleSection.children.length <= 1) {
+                console.log('Forcing default slots display...');
+                if (typeof showDefaultSlots === 'function') {
+                    showDefaultSlots();
+                } else {
+                    // Fallback if function not available
+                    const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+                    scheduleSection.innerHTML = '';
+                    hours.forEach(hour => {
+                        const slot = document.createElement('div');
+                        slot.className = 'time-slot empty';
+                        slot.innerHTML = `
+                            <div class="time-slot-time">${hour.toString().padStart(2, '0')}:00</div>
+                            <div class="time-slot-content">
+                                <div class="time-slot-name">Свободно</div>
+                                <div class="time-slot-info">Нажмите для записи</div>
+                            </div>
+                            <div class="time-slot-status">
+                                <div class="status-icon free">+</div>
+                            </div>
+                        `;
+                        scheduleSection.appendChild(slot);
+                    });
+                }
+            }
+        }, 1000);
+    </script>
 </body>
 </html>

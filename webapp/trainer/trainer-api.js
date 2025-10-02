@@ -857,28 +857,64 @@ async function loadWorkingHours() {
     return null;
 }
 
+// Simple function to immediately show slots
+function showDefaultSlots() {
+    const scheduleSection = document.getElementById('scheduleSection');
+    if (!scheduleSection) {
+        console.error('scheduleSection not found!');
+        return;
+    }
+
+    console.log('Showing default slots immediately');
+
+    const defaultHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+    scheduleSection.innerHTML = '';
+
+    defaultHours.forEach(hour => {
+        const timeSlot = document.createElement('div');
+        timeSlot.className = 'time-slot empty';
+        timeSlot.innerHTML = `
+            <div class="time-slot-time">${hour.toString().padStart(2, '0')}:00</div>
+            <div class="time-slot-content">
+                <div class="time-slot-name">Свободно</div>
+                <div class="time-slot-info">Нажмите для записи</div>
+            </div>
+            <div class="time-slot-status">
+                <div class="status-icon free">+</div>
+            </div>
+        `;
+        scheduleSection.appendChild(timeSlot);
+    });
+
+    console.log('Default slots added:', defaultHours.length);
+}
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        console.log('DOM loaded, initializing...');
+
+        // Show slots IMMEDIATELY
+        showDefaultSlots();
+
         // Generate date tabs with real dates
         generateDateTabs();
-
-        // Show schedule immediately with defaults
-        updateScheduleDisplay();
 
         // Update date display
         updateDateDisplay();
 
-        // Then load real data
+        // Then load real data and update
         await loadWorkingHours();
         await initializeAPI();
     });
 } else {
+    console.log('DOM already loaded, initializing...');
+
+    // Show slots IMMEDIATELY
+    showDefaultSlots();
+
     // Generate date tabs with real dates
     generateDateTabs();
-
-    // Show schedule immediately with defaults
-    updateScheduleDisplay();
 
     // Update date display
     updateDateDisplay();
