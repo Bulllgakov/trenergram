@@ -542,6 +542,99 @@ function updateCancelledBookings() {
     }
 }
 
+// Helper function for notifications
+function showNotification(message) {
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.showAlert(message);
+    } else {
+        console.log('Notification:', message);
+        alert(message);
+    }
+}
+
+// Show trainer schedule with working hours
+async function showTrainerScheduleAPI(trainerId) {
+    try {
+        // Load trainer schedule
+        const scheduleResponse = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
+        const bookingsResponse = await fetch(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
+
+        let workingHours = {};
+        let trainerBookings = [];
+
+        if (scheduleResponse.ok) {
+            const schedules = await scheduleResponse.json();
+            // Convert to working hours format
+            schedules.forEach(schedule => {
+                const day = schedule.day_of_week.toLowerCase();
+                if (!schedule.is_break) {
+                    workingHours[day] = {
+                        isWorkingDay: schedule.is_active,
+                        start: schedule.start_time,
+                        end: schedule.end_time
+                    };
+                }
+            });
+        }
+
+        if (bookingsResponse.ok) {
+            trainerBookings = await bookingsResponse.json();
+        }
+
+        // Show schedule in a popup
+        const today = new Date();
+        const dayNames = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+        const currentDay = dayNames[today.getDay()];
+
+        let scheduleText = 'Расписание тренера:\n\n';
+
+        // Show next 7 days
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            const dayName = dayNames[date.getDay()];
+            const dayData = workingHours[dayName] || {};
+
+            if (dayData.isWorkingDay) {
+                scheduleText += `${i === 0 ? 'Сегодня' : i === 1 ? 'Завтра' : dayName}: ${dayData.start} - ${dayData.end}\n`;
+
+                // Count free slots
+                const dayBookings = trainerBookings.filter(b => {
+                    const bookingDate = new Date(b.datetime);
+                    return bookingDate.toDateString() === date.toDateString() && b.status !== 'CANCELLED';
+                });
+
+                const [startHour] = dayData.start.split(':').map(Number);
+                const [endHour] = dayData.end.split(':').map(Number);
+                const totalSlots = endHour - startHour - 1; // minus lunch
+                const freeSlots = totalSlots - dayBookings.length;
+
+                if (freeSlots > 0) {
+                    scheduleText += `   Свободно: ${freeSlots} слотов\n`;
+                } else {
+                    scheduleText += `   Все занято\n`;
+                }
+            } else {
+                if (i < 2) {
+                    scheduleText += `${i === 0 ? 'Сегодня' : 'Завтра'}: Выходной\n`;
+                }
+            }
+        }
+
+        scheduleText += '\nДля записи нажмите "Записаться на тренировку"';
+
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.showAlert(scheduleText);
+        }
+    } catch (error) {
+        console.error('Failed to load trainer schedule:', error);
+        showNotification('Не удалось загрузить расписание');
+    }
+}
+
+// Override selectTrainer in main app.js
+window.showTrainerSchedule = showTrainerScheduleAPI;
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeAPI);

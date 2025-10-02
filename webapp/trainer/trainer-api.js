@@ -560,26 +560,21 @@ function getWorkingHoursForDate(date) {
             return []; // Day off
         }
 
-        const [startHour, startMinute] = dayData.start.split(':').map(Number);
-        const [endHour, endMinute] = dayData.end.split(':').map(Number);
+        const [startHour] = dayData.start.split(':').map(Number);
+        const [endHour] = dayData.end.split(':').map(Number);
 
         const hours = [];
-        for (let hour = startHour; hour <= endHour; hour++) {
-            // Skip lunch break if enabled
-            if (dayData.hasBreak && hour === 12) {
-                hours.push(hour); // Still show as break
-            } else if (hour < endHour || (hour === endHour && endMinute > 0)) {
-                hours.push(hour);
-            }
+        for (let hour = startHour; hour < endHour; hour++) {
+            hours.push(hour);
         }
 
         console.log('Working hours for', dayOfWeek, ':', hours);
         return hours;
     }
 
-    console.log('Using default working hours');
-    // Default working hours if no data
-    return [9, 10, 11, 12, 15, 16, 17, 18, 19];
+    console.log('Using default working hours - workingHoursData not available');
+    // Default working hours if no data - show typical working day
+    return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 }
 
 // Save working hours to API
@@ -697,9 +692,17 @@ async function loadWorkingHours() {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        // Show schedule immediately with defaults
+        updateScheduleDisplay();
+
+        // Then load real data
         await loadWorkingHours();
         await initializeAPI();
     });
 } else {
+    // Show schedule immediately with defaults
+    updateScheduleDisplay();
+
+    // Then load real data
     loadWorkingHours().then(() => initializeAPI());
 }
