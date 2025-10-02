@@ -68,11 +68,7 @@ function ClientDashboard() {
 
   const confirmBooking = () => {
     tg.HapticFeedback?.notificationOccurred('success');
-    tg.showPopup({
-      title: 'Подтверждено',
-      message: 'Вы подтвердили участие в тренировке',
-      buttons: [{ type: 'ok' }]
-    });
+    tg.showAlert('Вы подтвердили участие в тренировке');
     closeBookingDetails();
   };
 
@@ -84,21 +80,13 @@ function ClientDashboard() {
           await api.cancelBooking(showBookingDetails.id, id, 'Отменено клиентом');
 
           tg.HapticFeedback?.notificationOccurred('success');
-          tg.showPopup({
-            title: 'Отменено',
-            message: 'Запись на тренировку отменена',
-            buttons: [{ type: 'ok' }]
-          });
+          tg.showAlert('Запись на тренировку отменена');
 
           closeBookingDetails();
           loadClientData(); // Reload data
         } catch (error) {
           console.error('Failed to cancel booking:', error);
-          tg.showPopup({
-            title: 'Ошибка',
-            message: 'Не удалось отменить запись',
-            buttons: [{ type: 'ok' }]
-          });
+          tg.showAlert('Не удалось отменить запись');
         }
       }
     });
@@ -106,11 +94,7 @@ function ClientDashboard() {
 
   const rescheduleBooking = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    tg.showPopup({
-      title: 'Перенос записи',
-      message: 'Свяжитесь с тренером для переноса тренировки',
-      buttons: [{ type: 'ok' }]
-    });
+    tg.showAlert('Свяжитесь с тренером для переноса тренировки');
   };
 
   const contactTrainer = (trainerUsername) => {
@@ -119,11 +103,7 @@ function ClientDashboard() {
     if (trainerUsername) {
       tg.openLink(`https://t.me/${trainerUsername.replace('@', '')}`);
     } else {
-      tg.showPopup({
-        title: 'Ошибка',
-        message: 'Username тренера не найден',
-        buttons: [{ type: 'ok' }]
-      });
+      tg.showAlert('Username тренера не найден');
     }
   };
 
@@ -133,18 +113,9 @@ function ClientDashboard() {
       const trainersList = trainers.map(t =>
         `${t.name}${t.specialization ? ` - ${t.specialization}` : ''}${t.price ? ` (${t.price}₽)` : ''}`
       ).join('\n');
-
-      tg.showPopup({
-        title: 'Мои тренеры',
-        message: trainersList,
-        buttons: [{ type: 'ok' }]
-      });
+      tg.showAlert(`Мои тренеры:\n${trainersList}`);
     } else {
-      tg.showPopup({
-        title: 'Мои тренеры',
-        message: 'У вас пока нет тренеров. Нажмите "+" чтобы найти тренера.',
-        buttons: [{ type: 'ok' }]
-      });
+      tg.showAlert('У вас пока нет тренеров. Нажмите "+" чтобы найти тренера.');
     }
   };
 

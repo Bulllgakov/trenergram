@@ -17,8 +17,9 @@ const TrainersList = ({ clientId }) => {
   const loadTrainers = async () => {
     setLoading(true);
     try {
-      const response = await api.getTrainers();
-      setTrainers(response);
+      // Get trainers linked to this client
+      const clientData = await api.getClientInfo(clientId);
+      setTrainers(clientData.trainers || []);
     } catch (error) {
       console.error('Error loading trainers:', error);
       setTrainers([]);
