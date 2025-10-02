@@ -37,8 +37,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             trainer_id = source.replace("trainer_", "")
             logger.info(f"User {user.id} came from trainer link: trainer_id={trainer_id}")
 
-            # If user exists as a client, show their dashboard
+            # If user exists as a client, link to trainer
             if existing_user and existing_user.role == "client":
+                # Try to link with trainer
+                from app.services.registration import link_client_to_trainer
+                success = await link_client_to_trainer(str(user.id), trainer_id)
+
+                if success:
+                    await update.message.reply_text(
+                        f"✅ Вы успешно привязаны к тренеру!\n\n"
+                        "Теперь вы можете записываться на тренировки.",
+                        parse_mode='Markdown'
+                    )
+
                 from telegram import WebAppInfo
                 keyboard = [
                     [InlineKeyboardButton(
@@ -53,7 +64,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup = InlineKeyboardMarkup(keyboard)
 
                 await update.message.reply_text(
-                    "С возвращением! 👋\n\n"
                     "Используйте кнопки ниже для управления тренировками.",
                     reply_markup=reply_markup,
                     parse_mode='Markdown'

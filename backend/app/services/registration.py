@@ -220,3 +220,57 @@ def get_clubs() -> list[Club]:
         return clubs
     finally:
         db.close()
+
+
+async def link_client_to_trainer(client_telegram_id: str, trainer_telegram_id: str) -> bool:
+    """Link existing client to trainer"""
+    db = SessionLocal()
+    try:
+        # Get client
+        client = db.query(User).filter_by(
+            telegram_id=client_telegram_id,
+            role=UserRole.CLIENT
+        ).first()
+
+        if not client:
+            logger.error(f"Client {client_telegram_id} not found")
+            return False
+
+        # Get trainer
+        trainer = db.query(User).filter_by(
+            telegram_id=trainer_telegram_id,
+            role=UserRole.TRAINER
+        ).first()
+
+        if not trainer:
+            logger.error(f"Trainer {trainer_telegram_id} not found")
+            return False
+
+        # Check if relationship already exists
+        existing_rel = db.query(TrainerClient).filter_by(
+            trainer_id=trainer.id,
+            client_id=client.id
+        ).first()
+
+        if existing_rel:
+            logger.info(f"Relationship already exists between trainer {trainer.id} and client {client.id}")
+            return True
+
+        # Create new relationship
+        relationship = TrainerClient(
+            trainer_id=trainer.id,
+            client_id=client.id,
+            source="link"
+        )
+        db.add(relationship)
+        db.commit()
+
+        logger.info(f"Created trainer-client relationship: {trainer.id} -> {client.id}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error linking client to trainer: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
