@@ -4,6 +4,7 @@ import { useTelegram } from '../hooks/useTelegram';
 import api from '../services/api';
 import SlotManager from '../components/SlotManager';
 import BookingManager from '../components/BookingManager';
+import WorkingHoursSettings from '../components/WorkingHoursSettings';
 import '../styles/telegram-webapp.css';
 
 function TrainerDashboard() {
@@ -18,6 +19,7 @@ function TrainerDashboard() {
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingManager, setShowBookingManager] = useState(false);
+  const [showWorkingHours, setShowWorkingHours] = useState(false);
   const [trainerInfo, setTrainerInfo] = useState(null);
   const [clients, setClients] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -566,7 +568,10 @@ function TrainerDashboard() {
               <div className="setting-arrow">›</div>
             </div>
 
-            <div className="setting-item">
+            <div className="setting-item" onClick={() => {
+              setShowSettingsSheet(false);
+              setShowWorkingHours(true);
+            }}>
               <div className="setting-info">
                 <div className="setting-label">Понедельник - Пятница</div>
                 <div className="setting-description">09:00 - 21:00</div>
@@ -574,7 +579,10 @@ function TrainerDashboard() {
               <div className="setting-arrow">›</div>
             </div>
 
-            <div className="setting-item">
+            <div className="setting-item" onClick={() => {
+              setShowSettingsSheet(false);
+              setShowWorkingHours(true);
+            }}>
               <div className="setting-info">
                 <div className="setting-label">Суббота - Воскресенье</div>
                 <div className="setting-description">10:00 - 18:00</div>
@@ -622,6 +630,18 @@ function TrainerDashboard() {
             loadTrainerBookings();
             setShowBookingManager(false);
             setSelectedBooking(null);
+          }}
+        />
+      )}
+
+      {/* Working Hours Settings Modal */}
+      {showWorkingHours && (
+        <WorkingHoursSettings
+          trainerId={id}
+          onClose={() => setShowWorkingHours(false)}
+          onSave={() => {
+            setShowWorkingHours(false);
+            // Optionally reload data
           }}
         />
       )}
