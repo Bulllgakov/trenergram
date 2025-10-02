@@ -68,7 +68,7 @@ function ClientDashboard() {
 
   const confirmBooking = () => {
     tg.HapticFeedback?.notificationOccurred('success');
-    tg.showAlert('Вы подтвердили участие в тренировке');
+    alert('Вы подтвердили участие в тренировке');
     closeBookingDetails();
   };
 
@@ -80,13 +80,13 @@ function ClientDashboard() {
           await api.cancelBooking(showBookingDetails.id, id, 'Отменено клиентом');
 
           tg.HapticFeedback?.notificationOccurred('success');
-          tg.showAlert('Запись на тренировку отменена');
+          alert('Запись на тренировку отменена');
 
           closeBookingDetails();
           loadClientData(); // Reload data
         } catch (error) {
           console.error('Failed to cancel booking:', error);
-          tg.showAlert('Не удалось отменить запись');
+          alert('Не удалось отменить запись');
         }
       }
     });
@@ -94,7 +94,7 @@ function ClientDashboard() {
 
   const rescheduleBooking = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    tg.showAlert('Свяжитесь с тренером для переноса тренировки');
+    alert('Свяжитесь с тренером для переноса тренировки');
   };
 
   const contactTrainer = (trainerUsername) => {
@@ -103,7 +103,7 @@ function ClientDashboard() {
     if (trainerUsername) {
       tg.openLink(`https://t.me/${trainerUsername.replace('@', '')}`);
     } else {
-      tg.showAlert('Username тренера не найден');
+      alert('Username тренера не найден');
     }
   };
 
@@ -113,19 +113,17 @@ function ClientDashboard() {
       const trainersList = trainers.map(t =>
         `${t.name}${t.specialization ? ` - ${t.specialization}` : ''}${t.price ? ` (${t.price}₽)` : ''}`
       ).join('\n');
-      tg.showAlert(`Мои тренеры:\n${trainersList}`);
+      // Use native alert as fallback for unsupported Telegram methods
+      alert(`Мои тренеры:\n${trainersList}`);
     } else {
-      tg.showAlert('У вас пока нет тренеров. Нажмите "+" чтобы найти тренера.');
+      alert('У вас пока нет тренеров. Нажмите "+" чтобы найти тренера.');
     }
   };
 
   const showHistoryStats = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    tg.showPopup({
-      title: 'Статистика',
-      message: 'Тренировок в этом месяце: 12\nПотрачено: 36,000₽\nЛюбимый тренер: Иван Петров',
-      buttons: [{ type: 'ok' }]
-    });
+    const pastBookings = bookings.filter(b => b.status === 'completed' || new Date(b.datetime) < new Date());
+    alert(`Статистика:\nПрошедшие тренировки: ${pastBookings.length}\nОтмененные: ${bookings.filter(b => b.status === 'cancelled').length}\nВсего тренеров: ${trainers.length}`);
   };
 
   const newBooking = () => {
