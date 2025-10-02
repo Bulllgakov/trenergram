@@ -42,6 +42,12 @@ async def start_trainer_registration(update: Update, context: ContextTypes.DEFAU
 
 async def start_client_registration(update: Update, context: ContextTypes.DEFAULT_TYPE, trainer_id: str = None):
     """Start client registration from trainer link"""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    user = update.effective_user
+    logger.info(f"Starting client registration for user {user.id} with trainer_id={trainer_id}")
+
     context.user_data['registration_step'] = 'client_contact'
     context.user_data['role'] = 'client'
     context.user_data['trainer_id'] = trainer_id
@@ -303,9 +309,15 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
 
 async def complete_client_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Complete client registration"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     user = update.effective_user
     client_id = str(user.id)
     trainer_id = context.user_data.get('trainer_id')
+
+    logger.info(f"Completing registration for client {client_id} with trainer_id={trainer_id}")
+    logger.info(f"Context data: {context.user_data}")
 
     # Save to database
     try:
@@ -318,7 +330,9 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
             phone=context.user_data.get('phone'),
             trainer_id=trainer_id
         )
+        logger.info(f"Client {client_id} successfully registered")
     except Exception as e:
+        logger.error(f"Error registering client {client_id}: {e}")
         await update.message.reply_text(
             "❌ Произошла ошибка при регистрации. Попробуйте позже.",
             parse_mode='Markdown'

@@ -18,9 +18,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     args = context.args
 
+    logger.info(f"Start command from user {user.id} (@{user.username}) with args: {args}")
+
     # Check if user is already registered
     from app.services.registration import get_user_by_telegram_id
     existing_user = get_user_by_telegram_id(str(user.id))
+
+    if existing_user:
+        logger.info(f"User {user.id} already registered as {existing_user.role}")
+    else:
+        logger.info(f"User {user.id} not found in database, starting registration")
 
     # Check if user came from a specific link
     if args:
@@ -28,6 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if source.startswith("trainer_"):
             # User came from trainer's link
             trainer_id = source.replace("trainer_", "")
+            logger.info(f"User {user.id} came from trainer link: trainer_id={trainer_id}")
 
             # If user exists as a client, show their dashboard
             if existing_user and existing_user.role == "client":
