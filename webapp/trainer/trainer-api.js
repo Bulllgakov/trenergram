@@ -111,12 +111,59 @@ function updateClientsBadge() {
 
 // Update date display
 function updateDateDisplay() {
-    const sectionHeader = document.querySelector('.section-header');
+    const sectionHeader = document.getElementById('sectionHeader');
     if (sectionHeader) {
         const options = { weekday: 'long', day: 'numeric', month: 'long' };
-        const dateStr = currentDate.toLocaleDateString('ru-RU', options).toUpperCase();
+        const dateStr = currentDate.toLocaleDateString('ru-RU', options);
         const clubName = trainerData.club_name || 'Независимый тренер';
-        sectionHeader.textContent = `${dateStr} • ${clubName}`;
+
+        // Capitalize first letter
+        const capitalizedDateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+        sectionHeader.textContent = `${capitalizedDateStr} • ${clubName}`;
+    }
+
+    // Also update club name in settings
+    const clubNameSettings = document.getElementById('clubNameSettings');
+    if (clubNameSettings) {
+        clubNameSettings.textContent = trainerData.club_name || 'Независимый тренер';
+    }
+}
+
+// Generate date tabs
+function generateDateTabs() {
+    const dateTabs = document.getElementById('dateTabs');
+    if (!dateTabs) return;
+
+    dateTabs.innerHTML = '';
+    const today = new Date();
+
+    for (let i = -2; i <= 4; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+
+        const button = document.createElement('button');
+        button.className = 'date-tab';
+
+        // Format date string for function call
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+        // Format display text
+        let displayText;
+        if (i === 0) {
+            displayText = 'Сегодня';
+            button.classList.add('active');
+            currentDate = date; // Set current date to today
+        } else if (i === 1) {
+            displayText = 'Завтра';
+        } else {
+            const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            displayText = `${dayNames[date.getDay()]}, ${date.getDate()}`;
+        }
+
+        button.textContent = displayText;
+        button.onclick = () => selectDate(button, dateStr);
+
+        dateTabs.appendChild(button);
     }
 }
 
@@ -813,16 +860,28 @@ async function loadWorkingHours() {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        // Generate date tabs with real dates
+        generateDateTabs();
+
         // Show schedule immediately with defaults
         updateScheduleDisplay();
+
+        // Update date display
+        updateDateDisplay();
 
         // Then load real data
         await loadWorkingHours();
         await initializeAPI();
     });
 } else {
+    // Generate date tabs with real dates
+    generateDateTabs();
+
     // Show schedule immediately with defaults
     updateScheduleDisplay();
+
+    // Update date display
+    updateDateDisplay();
 
     // Then load real data
     loadWorkingHours().then(() => initializeAPI());

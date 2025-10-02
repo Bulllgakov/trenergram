@@ -783,18 +783,12 @@
         <button class="settings-fab" onclick="showSettings()">⚙️</button>
 
         <!-- Date Tabs -->
-        <div class="date-tabs">
-            <button class="date-tab" onclick="selectDate(this, '2025-08-11')">Пн, 11</button>
-            <button class="date-tab" onclick="selectDate(this, '2025-08-12')">Вт, 12</button>
-            <button class="date-tab active" onclick="selectDate(this, '2025-08-13')">Сегодня</button>
-            <button class="date-tab" onclick="selectDate(this, '2025-08-14')">Завтра</button>
-            <button class="date-tab" onclick="selectDate(this, '2025-08-15')">Пт, 15</button>
-            <button class="date-tab" onclick="selectDate(this, '2025-08-16')">Сб, 16</button>
-            <button class="date-tab" onclick="selectDate(this, '2025-08-17')">Вс, 17</button>
+        <div class="date-tabs" id="dateTabs">
+            <!-- Will be populated dynamically -->
         </div>
 
         <!-- Section Header -->
-        <div class="section-header">Среда, 13 августа • Фитнес ЭНЕРГИЯ</div>
+        <div class="section-header" id="sectionHeader">Загрузка...</div>
 
         <!-- Schedule List -->
         <div class="schedule-section" id="scheduleSection">
@@ -960,7 +954,7 @@
             <div class="settings-list">
                 <div class="setting-item">
                     <div class="setting-info">
-                        <div class="setting-label">Фитнес ЭНЕРГИЯ</div>
+                        <div class="setting-label" id="clubNameSettings">Загрузка...</div>
                         <div class="setting-description">Тариф клуба: Стандарт</div>
                     </div>
                 </div>
