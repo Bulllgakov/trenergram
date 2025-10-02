@@ -873,8 +873,25 @@ function showDefaultSlots() {
     defaultHours.forEach(hour => {
         const timeSlot = document.createElement('div');
         timeSlot.className = 'time-slot empty';
+        const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+
+        timeSlot.dataset.time = timeStr;
+        timeSlot.onclick = () => {
+            console.log('Slot clicked:', timeStr);
+            if (typeof quickBookAPI === 'function') {
+                quickBookAPI(timeStr);
+            } else if (typeof quickBook === 'function') {
+                quickBook(timeStr);
+            } else {
+                // Fallback
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert(`Выбрано время: ${timeStr}\nФункция записи будет доступна после загрузки`);
+                }
+            }
+        };
+
         timeSlot.innerHTML = `
-            <div class="time-slot-time">${hour.toString().padStart(2, '0')}:00</div>
+            <div class="time-slot-time">${timeStr}</div>
             <div class="time-slot-content">
                 <div class="time-slot-name">Свободно</div>
                 <div class="time-slot-info">Нажмите для записи</div>

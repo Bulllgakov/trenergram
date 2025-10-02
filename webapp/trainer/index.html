@@ -1606,8 +1606,17 @@
                     hours.forEach(hour => {
                         const slot = document.createElement('div');
                         slot.className = 'time-slot empty';
+                        const timeStr = hour.toString().padStart(2, '0') + ':00';
+                        slot.dataset.time = timeStr;
+                        slot.onclick = function() {
+                            if (typeof quickBook === 'function') {
+                                quickBook(timeStr);
+                            } else {
+                                showNotification('Запись на ' + timeStr);
+                            }
+                        };
                         slot.innerHTML = `
-                            <div class="time-slot-time">${hour.toString().padStart(2, '0')}:00</div>
+                            <div class="time-slot-time">${timeStr}</div>
                             <div class="time-slot-content">
                                 <div class="time-slot-name">Свободно</div>
                                 <div class="time-slot-info">Нажмите для записи</div>
