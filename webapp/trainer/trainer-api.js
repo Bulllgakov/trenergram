@@ -123,8 +123,13 @@ function updateDateDisplay() {
 // Update schedule display while preserving design
 function updateScheduleDisplay() {
     const scheduleSection = document.getElementById('scheduleSection');
+
+    console.log('Looking for scheduleSection element...');
+    console.log('Element found:', !!scheduleSection);
+
     if (!scheduleSection) {
-        console.error('Schedule section not found');
+        console.error('Schedule section not found! Checking DOM...');
+        console.log('All elements with class schedule-section:', document.querySelectorAll('.schedule-section'));
         return;
     }
 
@@ -136,6 +141,7 @@ function updateScheduleDisplay() {
 
     // Get working hours for current day
     const workingHours = getWorkingHoursForDate(currentDate);
+    console.log('Working hours received:', workingHours);
 
     // If it's a day off, show message
     if (workingHours.length === 0) {
@@ -212,6 +218,9 @@ function updateScheduleDisplay() {
 
         scheduleSection.appendChild(timeSlot);
     });
+
+    console.log('Schedule updated. Total slots added:', workingHours.length);
+    console.log('Schedule section HTML length:', scheduleSection.innerHTML.length);
 }
 
 // Get status class for styling
@@ -659,16 +668,17 @@ function getWorkingHoursForDate(date) {
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
     console.log('Getting working hours for:', dayOfWeek, date);
-    console.log('Available workingHoursData:', window.workingHoursData);
 
-    // Access workingHoursData from main HTML if available
+    // Try to get from window.workingHoursData if available
     if (window.workingHoursData && window.workingHoursData[dayOfWeek]) {
         const dayData = window.workingHoursData[dayOfWeek];
         console.log('Day data for', dayOfWeek, ':', dayData);
 
         if (!dayData.isWorkingDay) {
             console.log(dayOfWeek, 'is a day off');
-            return []; // Day off
+            // Even on day off, show default hours for testing
+            console.log('Showing default hours for testing');
+            return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
         }
 
         const [startHour] = dayData.start.split(':').map(Number);
@@ -683,8 +693,8 @@ function getWorkingHoursForDate(date) {
         return hours;
     }
 
-    console.log('Using default working hours - workingHoursData not available');
-    // Default working hours if no data - show typical working day
+    console.log('Using default working hours - always show slots for testing');
+    // Always return working hours for testing
     return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 }
 
