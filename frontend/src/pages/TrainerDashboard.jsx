@@ -19,6 +19,7 @@ function TrainerDashboard() {
   const [clients, setClients] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     tg.ready();
@@ -165,6 +166,7 @@ function TrainerDashboard() {
     setShowOverlay(false);
     setSelectedClient(null);
     setSelectedTime(null);
+    setSearchQuery('');
   };
 
   const quickBook = (time) => {
@@ -399,13 +401,33 @@ function TrainerDashboard() {
               type="text"
               className="form-input"
               placeholder="Начните вводить имя..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           <div className="form-group">
             <label className="form-label">Или выберите из списка</label>
             <div className="client-list">
-              {clients.slice(0, 3).map(client => (
+              {(() => {
+                const filteredClients = clients.filter(client =>
+                  searchQuery === '' ||
+                  client.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+
+                if (filteredClients.length === 0 && searchQuery !== '') {
+                  return (
+                    <div style={{
+                      padding: '16px',
+                      textAlign: 'center',
+                      color: 'var(--tg-theme-hint-color)'
+                    }}>
+                      Клиенты не найдены
+                    </div>
+                  );
+                }
+
+                return filteredClients.slice(0, 3).map(client => (
                 <div
                   key={client.id}
                   className="client-item"
@@ -417,21 +439,29 @@ function TrainerDashboard() {
                   <div className="client-avatar">{client.initials}</div>
                   <div className="client-name">{client.name}</div>
                 </div>
-              ))}
+              ));
+              })()}
               <div className="client-item" onClick={handleAddNewClient}>
                 <div className="client-avatar">+</div>
                 <div className="client-name add-new">Добавить нового клиента</div>
               </div>
-              {clients.length > 3 && (
-                <div style={{
-                  padding: '8px 16px',
-                  color: 'var(--tg-theme-hint-color)',
-                  fontSize: '13px',
-                  textAlign: 'center'
-                }}>
-                  Показаны последние 3 клиента из {clients.length}
-                </div>
-              )}
+              {(() => {
+                const filteredCount = clients.filter(client =>
+                  searchQuery === '' ||
+                  client.name.toLowerCase().includes(searchQuery.toLowerCase())
+                ).length;
+
+                return filteredCount > 3 && (
+                  <div style={{
+                    padding: '8px 16px',
+                    color: 'var(--tg-theme-hint-color)',
+                    fontSize: '13px',
+                    textAlign: 'center'
+                  }}>
+                    Показаны 3 клиента из {filteredCount} найденных
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
