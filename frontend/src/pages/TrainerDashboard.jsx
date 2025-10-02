@@ -77,24 +77,32 @@ function TrainerDashboard() {
     const times = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
     const schedule = [];
 
+    console.log('Generating schedule for date:', selectedDate);
+    console.log('Bookings:', bookings);
+
     for (const time of times) {
       const hour = parseInt(time.split(':')[0]);
       const booking = bookings.find(b => {
-        const bookingDate = new Date(b.datetime);
-        return bookingDate.getHours() === hour;
+        // Handle both ISO formats with and without Z
+        const bookingDate = new Date(b.datetime.replace('Z', ''));
+        const bookingLocalHour = bookingDate.getHours();
+        console.log(`Checking booking at ${b.datetime}, hour: ${bookingLocalHour} vs ${hour}`);
+        return bookingLocalHour === hour;
       });
 
       if (time === '12:00') {
         schedule.push({ time, isBreak: true });
       } else if (booking) {
+        // Convert status to lowercase for consistent comparison
+        const status = booking.status.toLowerCase();
         schedule.push({
           time,
           client: booking.client_name,
           type: booking.notes || 'Тренировка',
-          status: booking.status === 'PENDING' ? 'waiting-confirmation' :
-                  booking.status === 'CONFIRMED' ? 'confirmed' :
-                  booking.status === 'CANCELLED' ? 'cancelled' : 'free',
-          info: booking.status === 'PENDING' ? 'Ждет подтверждения' : null
+          status: status === 'pending' ? 'waiting-confirmation' :
+                  status === 'confirmed' ? 'confirmed' :
+                  status === 'cancelled' ? 'cancelled' : 'free',
+          info: status === 'pending' ? 'Ждет подтверждения' : null
         });
       } else {
         schedule.push({ time, client: null, status: 'free' });
@@ -221,7 +229,7 @@ function TrainerDashboard() {
 
   const showTrainerStats = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    const todayBookings = bookings.filter(b => b.status === 'CONFIRMED').length;
+    const todayBookings = bookings.filter(b => b.status.toLowerCase() === 'confirmed').length;
     const monthIncome = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
 
     alert(`Статистика:\nТренировок сегодня: ${todayBookings}\nДоход за месяц: ${monthIncome.toLocaleString()}₽\nВсего клиентов: ${clients.length}`);
