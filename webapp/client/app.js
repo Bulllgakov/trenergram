@@ -1,6 +1,13 @@
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
 
+// API Configuration
+const API_BASE_URL = 'https://trenergram.ru/api/v1';
+
+// Get client ID from URL or Telegram user
+const pathParts = window.location.pathname.split('/');
+const clientId = pathParts[pathParts.length - 1] || tg.initDataUnsafe?.user?.id;
+
 // Expand the app
 tg.ready();
 tg.expand();
@@ -12,6 +19,146 @@ document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themePara
 document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#3390ec');
 document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#3390ec');
 document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+
+// Global variables
+let trainers = [];
+let bookings = [];
+
+// Load client data on page load
+window.addEventListener('DOMContentLoaded', () => {
+    if (clientId) {
+        loadClientData();
+    }
+});
+
+// API Functions
+async function loadClientData() {
+    try {
+        // Load client info with trainers
+        const clientResponse = await fetch(`${API_BASE_URL}/users/client/${clientId}`);
+        if (clientResponse.ok) {
+            const clientData = await clientResponse.json();
+            trainers = clientData.trainers || [];
+            displayTrainers();
+        }
+
+        // Load bookings
+        const bookingsResponse = await fetch(`${API_BASE_URL}/bookings/client/${clientId}`);
+        if (bookingsResponse.ok) {
+            bookings = await bookingsResponse.json();
+            displayBookings();
+        }
+    } catch (error) {
+        console.error('Failed to load client data:', error);
+    }
+}
+
+// Display trainers
+function displayTrainers() {
+    const trainersContainer = document.getElementById('trainers-list');
+    if (!trainersContainer) return;
+
+    trainersContainer.innerHTML = '';
+
+    if (trainers.length === 0) {
+        trainersContainer.innerHTML = '<div class="empty-state">У вас пока нет тренеров</div>';
+        return;
+    }
+
+    trainers.forEach(trainer => {
+        const trainerCard = document.createElement('div');
+        trainerCard.className = 'trainer-card';
+        trainerCard.onclick = () => selectTrainer(trainer.telegram_id);
+
+        trainerCard.innerHTML = `
+            <div class="trainer-avatar">${trainer.name ? trainer.name[0] : 'T'}</div>
+            <div class="trainer-info">
+                <div class="trainer-name">${trainer.name || 'Тренер'}</div>
+                <div class="trainer-specialization">${trainer.specialization || ''}</div>
+                ${trainer.price ? `<div class="trainer-price">${trainer.price} ₽</div>` : ''}
+            </div>
+        `;
+
+        trainersContainer.appendChild(trainerCard);
+    });
+}
+
+// Display bookings
+function displayBookings() {
+    const upcomingContainer = document.getElementById('upcoming-bookings');
+    const pastContainer = document.getElementById('past-bookings');
+
+    if (!upcomingContainer || !pastContainer) return;
+
+    const now = new Date();
+    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status !== 'CANCELLED');
+    const pastBookings = bookings.filter(b => new Date(b.datetime) < now || b.status === 'CANCELLED');
+
+    // Display upcoming bookings
+    upcomingContainer.innerHTML = '';
+    if (upcomingBookings.length === 0) {
+        upcomingContainer.innerHTML = '<div class="empty-state">Нет предстоящих тренировок</div>';
+    } else {
+        upcomingBookings.forEach(booking => {
+            const bookingCard = createBookingCard(booking);
+            upcomingContainer.appendChild(bookingCard);
+        });
+    }
+
+    // Display past bookings
+    pastContainer.innerHTML = '';
+    if (pastBookings.length === 0) {
+        pastContainer.innerHTML = '<div class="empty-state">Нет прошедших тренировок</div>';
+    } else {
+        pastBookings.forEach(booking => {
+            const bookingCard = createBookingCard(booking);
+            pastContainer.appendChild(bookingCard);
+        });
+    }
+}
+
+// Create booking card
+function createBookingCard(booking) {
+    const card = document.createElement('div');
+    card.className = 'booking-card';
+    card.onclick = () => showBookingDetails(booking);
+
+    const bookingDate = new Date(booking.datetime);
+    const dateStr = bookingDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+    card.innerHTML = `
+        <div class="booking-header">
+            <div class="booking-trainer">
+                <div class="trainer-avatar">${booking.trainer_name ? booking.trainer_name[0] : 'T'}</div>
+                <div class="trainer-info">
+                    <div class="trainer-name">${booking.trainer_name || 'Тренер'}</div>
+                </div>
+            </div>
+            <div class="booking-status ${booking.status.toLowerCase()}">
+                ${getStatusText(booking.status)}
+            </div>
+        </div>
+        <div class="booking-details">
+            <div class="booking-detail">📅 ${dateStr}</div>
+            <div class="booking-detail">🕐 ${timeStr}</div>
+            ${booking.price ? `<div class="booking-detail">💰 ${booking.price} ₽</div>` : ''}
+        </div>
+    `;
+
+    return card;
+}
+
+// Get status text
+function getStatusText(status) {
+    switch(status.toUpperCase()) {
+        case 'CONFIRMED': return '✅ Подтверждено';
+        case 'PENDING': return '⏳ Ожидание';
+        case 'CANCELLED': return '❌ Отменено';
+        case 'COMPLETED': return '✓ Завершено';
+        default: return status;
+    }
+}
 
 // Tab switching
 function switchTab(tabName) {
@@ -52,96 +199,101 @@ function selectTrainer(trainerId) {
 
 // Book training
 function bookTraining(trainerId) {
-    // TODO: Navigate to booking page
-    tg.showAlert('Открытие формы записи...');
+    const trainer = trainers.find(t => t.telegram_id === trainerId);
+    if (!trainer) return;
+
+    tg.showAlert(`Функция записи к тренеру ${trainer.name} будет доступна в ближайшее время`);
 }
 
 // Contact trainer
 function contactTrainer(trainerId) {
-    // TODO: Open chat with trainer
-    tg.showAlert('Открытие чата с тренером...');
+    const trainer = trainers.find(t => t.telegram_id === trainerId);
+    if (trainer && trainer.telegram_username) {
+        tg.openLink(`https://t.me/${trainer.telegram_username}`);
+    }
 }
 
 // Show trainer schedule
 function showTrainerSchedule(trainerId) {
-    // TODO: Show trainer's available slots
-    tg.showAlert('Загрузка расписания тренера...');
+    const trainer = trainers.find(t => t.telegram_id === trainerId);
+    if (!trainer) return;
+
+    tg.showAlert(`Расписание тренера ${trainer.name} будет доступно в ближайшее время`);
 }
 
-// Find new trainer
-function findTrainer() {
-    tg.showPopup({
-        title: 'Найти тренера',
-        message: 'Как вы хотите найти тренера?',
-        buttons: [
-            {id: 'link', type: 'default', text: 'У меня есть ссылка'},
-            {id: 'qr', type: 'default', text: 'Сканировать QR-код'},
-            {id: 'catalog', type: 'default', text: 'Каталог тренеров'},
-            {type: 'cancel'}
-        ]
-    }, (buttonId) => {
-        if (buttonId === 'link') {
-            tg.showAlert('Попросите ссылку у вашего тренера');
-        } else if (buttonId === 'qr') {
-            tg.showAlert('Откройте камеру Telegram для сканирования QR');
-        } else if (buttonId === 'catalog') {
-            tg.openLink('https://trenergram.ru/trainers');
+// Show booking details
+function showBookingDetails(booking) {
+    const bookingDate = new Date(booking.datetime);
+    const dateStr = bookingDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+    const message = `
+Тренер: ${booking.trainer_name || 'Не указан'}
+Дата: ${dateStr}
+Время: ${timeStr}
+Длительность: ${booking.duration || 60} мин
+${booking.price ? `Стоимость: ${booking.price} ₽` : ''}
+Статус: ${getStatusText(booking.status)}
+${booking.notes ? `\nКомментарий: ${booking.notes}` : ''}
+    `.trim();
+
+    const buttons = [];
+
+    // Add action buttons based on booking status
+    if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
+        if (new Date(booking.datetime) > new Date()) {
+            buttons.push({id: 'cancel', type: 'destructive', text: 'Отменить запись'});
         }
-    });
-}
-
-// Cancel training
-function cancelTraining(bookingId) {
-    tg.showConfirm('Вы уверены, что хотите отменить тренировку?', (confirmed) => {
-        if (confirmed) {
-            // TODO: Cancel booking via API
-            tg.showAlert('Тренировка отменена');
-        }
-    });
-}
-
-// Handle training card clicks
-document.querySelectorAll('.training-card').forEach(card => {
-    card.addEventListener('click', function() {
-        const status = this.querySelector('.training-status').classList.contains('pending') ? 'pending' : 'confirmed';
-
-        tg.showPopup({
-            title: 'Тренировка',
-            message: 'Выберите действие',
-            buttons: [
-                {id: 'details', type: 'default', text: 'Подробнее'},
-                {id: 'cancel', type: 'destructive', text: 'Отменить'},
-                {type: 'cancel', text: 'Закрыть'}
-            ]
-        }, (buttonId) => {
-            if (buttonId === 'cancel') {
-                cancelTraining('booking_id');
-            } else if (buttonId === 'details') {
-                tg.showAlert('Загрузка деталей тренировки...');
-            }
-        });
-    });
-});
-
-// Handle back button
-tg.BackButton.show();
-tg.BackButton.onClick(() => {
-    tg.close();
-});
-
-// Set main button based on current tab
-function updateMainButton() {
-    const activeTab = document.querySelector('.tab-content.active').id;
-
-    if (activeTab === 'upcoming') {
-        tg.MainButton.setText('Записаться на тренировку');
-        tg.MainButton.show();
-        tg.MainButton.onClick(() => {
-            findTrainer();
-        });
-    } else {
-        tg.MainButton.hide();
     }
+
+    if (booking.trainer_telegram_username) {
+        buttons.push({id: 'contact', type: 'default', text: 'Связаться с тренером'});
+    }
+
+    buttons.push({type: 'cancel'});
+
+    tg.showPopup({
+        title: 'Детали записи',
+        message: message,
+        buttons: buttons
+    }, (buttonId) => {
+        if (buttonId === 'cancel') {
+            cancelBooking(booking.id);
+        } else if (buttonId === 'contact' && booking.trainer_telegram_username) {
+            tg.openLink(`https://t.me/${booking.trainer_telegram_username}`);
+        }
+    });
 }
 
-updateMainButton();
+// Cancel booking
+async function cancelBooking(bookingId) {
+    tg.showConfirm('Вы уверены, что хотите отменить запись?', async (confirmed) => {
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${clientId}&reason=Отменено клиентом`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                tg.showAlert('Запись успешно отменена');
+                loadClientData(); // Reload data
+            } else {
+                tg.showAlert('Не удалось отменить запись');
+            }
+        } catch (error) {
+            console.error('Failed to cancel booking:', error);
+            tg.showAlert('Ошибка при отмене записи');
+        }
+    });
+}
+
+// Add new trainer
+function addTrainer() {
+    tg.showAlert('Для добавления тренера используйте ссылку от тренера или QR-код клуба');
+}
+
+// Settings
+function openSettings() {
+    tg.showAlert('Настройки будут доступны в ближайшее время');
+}

@@ -13,154 +13,38 @@
         <div class="header">
             <h1>Мои тренировки</h1>
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('upcoming')">Предстоящие</button>
+                <button class="tab active" onclick="switchTab('trainers')">Тренеры</button>
+                <button class="tab" onclick="switchTab('upcoming')">Предстоящие</button>
                 <button class="tab" onclick="switchTab('history')">История</button>
             </div>
         </div>
 
+        <!-- Trainers Tab -->
+        <div id="trainers" class="tab-content active">
+            <div class="section">
+                <h2 class="section-title">Мои тренеры</h2>
+                <div id="trainers-list" class="trainers-list">
+                    <!-- Trainers will be loaded here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Upcoming Trainings -->
-        <div id="upcoming" class="tab-content active">
-            <div class="date-group">
-                <div class="date-header">Сегодня, 13 августа</div>
-
-                <div class="training-card">
-                    <div class="training-time">15:00</div>
-                    <div class="training-info">
-                        <div class="trainer-name">Иван Петров</div>
-                        <div class="training-type">Силовая тренировка</div>
-                        <div class="training-location">📍 Фитнес ЭНЕРГИЯ</div>
-                    </div>
-                    <div class="training-status pending">Ожидает</div>
-                </div>
-            </div>
-
-            <div class="date-group">
-                <div class="date-header">Завтра, 14 августа</div>
-
-                <div class="training-card">
-                    <div class="training-time">10:00</div>
-                    <div class="training-info">
-                        <div class="trainer-name">Мария Сидорова</div>
-                        <div class="training-type">Йога</div>
-                        <div class="training-location">📍 World Class</div>
-                    </div>
-                    <div class="training-status confirmed">Подтверждено</div>
-                </div>
-
-                <div class="training-card">
-                    <div class="training-time">18:00</div>
-                    <div class="training-info">
-                        <div class="trainer-name">Александр Смирнов</div>
-                        <div class="training-type">Бокс</div>
-                        <div class="training-location">📍 Фитнес ЭНЕРГИЯ</div>
-                    </div>
-                    <div class="training-status confirmed">Подтверждено</div>
-                </div>
-            </div>
-
-            <div class="date-group">
-                <div class="date-header">Пятница, 15 августа</div>
-
-                <div class="training-card">
-                    <div class="training-time">09:00</div>
-                    <div class="training-info">
-                        <div class="trainer-name">Елена Козлова</div>
-                        <div class="training-type">Пилатес</div>
-                        <div class="training-location">📍 Alex Fitness</div>
-                    </div>
-                    <div class="training-status confirmed">Подтверждено</div>
-                </div>
+        <div id="upcoming" class="tab-content">
+            <div id="upcoming-bookings">
+                <!-- Upcoming bookings will be loaded here -->
             </div>
         </div>
 
         <!-- History -->
         <div id="history" class="tab-content">
-            <div class="stats-card">
-                <div class="stats-title">Статистика за месяц</div>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value">12</div>
-                        <div class="stat-label">Тренировок</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">4</div>
-                        <div class="stat-label">Тренера</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">2</div>
-                        <div class="stat-label">Клуба</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="history-list">
-                <div class="history-item">
-                    <div class="history-date">12 августа</div>
-                    <div class="history-info">
-                        <div class="history-trainer">Иван Петров</div>
-                        <div class="history-type">Силовая тренировка</div>
-                    </div>
-                    <div class="history-status completed">✓</div>
-                </div>
-
-                <div class="history-item">
-                    <div class="history-date">10 августа</div>
-                    <div class="history-info">
-                        <div class="history-trainer">Мария Сидорова</div>
-                        <div class="history-type">Йога</div>
-                    </div>
-                    <div class="history-status completed">✓</div>
-                </div>
-
-                <div class="history-item">
-                    <div class="history-date">8 августа</div>
-                    <div class="history-info">
-                        <div class="history-trainer">Александр Смирнов</div>
-                        <div class="history-type">Бокс</div>
-                    </div>
-                    <div class="history-status cancelled">✗</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- My Trainers -->
-        <div class="trainers-section">
-            <h2>Мои тренеры</h2>
-            <div class="trainers-list">
-                <div class="trainer-card" onclick="selectTrainer('1')">
-                    <div class="trainer-avatar">ИП</div>
-                    <div class="trainer-details">
-                        <div class="trainer-name">Иван Петров</div>
-                        <div class="trainer-spec">Силовые тренировки</div>
-                        <div class="trainer-price">2000₽</div>
-                    </div>
-                    <button class="book-btn">Записаться</button>
-                </div>
-
-                <div class="trainer-card" onclick="selectTrainer('2')">
-                    <div class="trainer-avatar">МС</div>
-                    <div class="trainer-details">
-                        <div class="trainer-name">Мария Сидорова</div>
-                        <div class="trainer-spec">Йога</div>
-                        <div class="trainer-price">2500₽</div>
-                    </div>
-                    <button class="book-btn">Записаться</button>
-                </div>
-
-                <div class="trainer-card" onclick="selectTrainer('3')">
-                    <div class="trainer-avatar">АС</div>
-                    <div class="trainer-details">
-                        <div class="trainer-name">Александр Смирнов</div>
-                        <div class="trainer-spec">Бокс</div>
-                        <div class="trainer-price">3000₽</div>
-                    </div>
-                    <button class="book-btn">Записаться</button>
-                </div>
+            <div id="past-bookings">
+                <!-- Past bookings will be loaded here -->
             </div>
         </div>
 
         <!-- FAB -->
-        <button class="fab" onclick="findTrainer()">
+        <button class="fab" onclick="addTrainer()">
             <span>+</span> Найти тренера
         </button>
     </div>
