@@ -139,11 +139,7 @@ const BookingCalendar = ({ trainerId, trainerName, clientId, onClose, onBookingS
 
   const handleBooking = async () => {
     if (!selectedSlot || !clientId) {
-      tg.showPopup({
-        title: 'Ошибка',
-        message: 'Выберите время для записи',
-        buttons: [{ type: 'ok' }]
-      });
+      alert('Ошибка: Выберите время для записи');
       return;
     }
 
@@ -160,11 +156,7 @@ const BookingCalendar = ({ trainerId, trainerName, clientId, onClose, onBookingS
       await api.createBooking(bookingData);
 
       tg.HapticFeedback?.impactOccurred('medium');
-      tg.showPopup({
-        title: 'Успешно!',
-        message: 'Запись успешно создана',
-        buttons: [{ type: 'ok' }]
-      });
+      alert('Успешно! Запись успешно создана');
 
       if (onBookingSuccess) {
         onBookingSuccess();
@@ -172,11 +164,7 @@ const BookingCalendar = ({ trainerId, trainerName, clientId, onClose, onBookingS
       onClose();
     } catch (error) {
       console.error('Booking error:', error);
-      tg.showPopup({
-        title: 'Ошибка',
-        message: 'Не удалось создать запись. Попробуйте еще раз.',
-        buttons: [{ type: 'ok' }]
-      });
+      alert('Ошибка: Не удалось создать запись. Попробуйте еще раз.');
     } finally {
       setBooking(false);
     }
