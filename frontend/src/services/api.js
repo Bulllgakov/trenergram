@@ -130,28 +130,52 @@ class ApiService {
     return clientInfo.trainers || [];
   }
 
-  // Slot endpoints
-  async getTrainerSlots(telegramId) {
-    return this.request(`/slots/trainer/${telegramId}`);
+  // Schedule and Slot endpoints
+  async getTrainerScheduleTemplate(telegramId) {
+    return this.request(`/slots/trainer/${telegramId}/schedule`);
   }
 
-  async createSlot(telegramId, data) {
-    return this.request(`/slots/trainer/${telegramId}`, {
+  async getTrainerSlots(telegramId, fromDate = null, toDate = null) {
+    const params = new URLSearchParams();
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
+    return this.request(`/slots/trainer/${telegramId}/slots${params.toString() ? '?' + params.toString() : ''}`);
+  }
+
+  async addScheduleSlot(telegramId, data) {
+    return this.request(`/slots/trainer/${telegramId}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createTimeSlot(telegramId, data) {
+    return this.request(`/slots/trainer/${telegramId}/slots`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateSlot(slotId, telegramId, data) {
-    return this.request(`/slots/${slotId}?telegram_id=${telegramId}`, {
+    return this.request(`/slots/slots/${slotId}?telegram_id=${telegramId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteSlot(slotId, telegramId) {
-    return this.request(`/slots/${slotId}?telegram_id=${telegramId}`, {
+  async deleteScheduleSlot(scheduleId, telegramId) {
+    return this.request(`/slots/schedule/${scheduleId}?telegram_id=${telegramId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async generateSlotsFromSchedule(telegramId, fromDate, toDate) {
+    return this.request(`/slots/trainer/${telegramId}/generate-slots`, {
+      method: 'POST',
+      body: JSON.stringify({
+        from_date: fromDate,
+        to_date: toDate
+      }),
     });
   }
 
