@@ -132,8 +132,12 @@ function updateDateDisplay() {
 // Generate date tabs
 function generateDateTabs() {
     const dateTabs = document.getElementById('dateTabs');
-    if (!dateTabs) return;
+    if (!dateTabs) {
+        console.error('dateTabs element not found');
+        return;
+    }
 
+    console.log('Generating date tabs');
     dateTabs.innerHTML = '';
     const today = new Date();
 
@@ -143,6 +147,12 @@ function generateDateTabs() {
 
         const button = document.createElement('button');
         button.className = 'date-tab';
+
+        // Check if this day is a working day
+        const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const isWorkingDay = window.workingHoursData && window.workingHoursData[dayOfWeek]
+            ? window.workingHoursData[dayOfWeek].isWorkingDay
+            : true; // Default to true if no data
 
         // Format date string for function call
         const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -160,11 +170,19 @@ function generateDateTabs() {
             displayText = `${dayNames[date.getDay()]}, ${date.getDate()}`;
         }
 
+        // Add indicator if it's a day off
+        if (!isWorkingDay) {
+            displayText += ' 🚫';
+            button.style.opacity = '0.6';
+        }
+
         button.textContent = displayText;
         button.onclick = () => selectDate(button, dateStr);
 
         dateTabs.appendChild(button);
     }
+
+    console.log('Date tabs generated');
 }
 
 // Update schedule display while preserving design
@@ -937,11 +955,16 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('DOM loaded, initializing...');
 
-        // Show slots IMMEDIATELY
-        showDefaultSlots();
+        // Set current date first
+        if (!currentDate) {
+            currentDate = new Date();
+        }
 
         // Generate date tabs with real dates
         generateDateTabs();
+
+        // Show slots IMMEDIATELY
+        showDefaultSlots();
 
         // Update date display
         updateDateDisplay();
@@ -949,19 +972,31 @@ if (document.readyState === 'loading') {
         // Then load real data and update
         await loadWorkingHours();
         await initializeAPI();
+
+        // Regenerate tabs with actual working hours data
+        generateDateTabs();
     });
 } else {
     console.log('DOM already loaded, initializing...');
 
-    // Show slots IMMEDIATELY
-    showDefaultSlots();
+    // Set current date first
+    if (!currentDate) {
+        currentDate = new Date();
+    }
 
     // Generate date tabs with real dates
     generateDateTabs();
+
+    // Show slots IMMEDIATELY
+    showDefaultSlots();
 
     // Update date display
     updateDateDisplay();
 
     // Then load real data
-    loadWorkingHours().then(() => initializeAPI());
+    loadWorkingHours().then(() => {
+        initializeAPI();
+        // Regenerate tabs with actual working hours data
+        generateDateTabs();
+    });
 }
