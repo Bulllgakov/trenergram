@@ -189,11 +189,7 @@ function TrainerDashboard() {
     tg.HapticFeedback?.impactOccurred('light');
     const link = `https://t.me/trenergram_bot?start=trainer_${id}`;
     navigator.clipboard.writeText(link);
-    tg.showPopup({
-      title: 'Ссылка скопирована',
-      message: 'Отправьте эту ссылку новому клиенту для регистрации',
-      buttons: [{ type: 'ok' }]
-    });
+    alert('Ссылка скопирована! Отправьте эту ссылку новому клиенту для регистрации');
   };
 
   const submitBooking = async () => {
@@ -212,21 +208,13 @@ function TrainerDashboard() {
         });
 
         tg.HapticFeedback?.notificationOccurred('success');
-        tg.showPopup({
-          title: 'Запись создана',
-          message: `${selectedClient.name} записан на ${selectedTime}`,
-          buttons: [{ type: 'ok' }]
-        });
+        alert(`Запись создана! ${selectedClient.name} записан на ${selectedTime}`);
 
         closeAllSheets();
         loadTrainerBookings(); // Reload bookings
       } catch (error) {
         console.error('Failed to create booking:', error);
-        tg.showPopup({
-          title: 'Ошибка',
-          message: 'Не удалось создать запись. Попробуйте еще раз.',
-          buttons: [{ type: 'ok' }]
-        });
+        alert('Ошибка! Не удалось создать запись. Попробуйте еще раз.');
       }
     }
   };
@@ -236,11 +224,7 @@ function TrainerDashboard() {
     const todayBookings = bookings.filter(b => b.status === 'CONFIRMED').length;
     const monthIncome = bookings.reduce((sum, b) => sum + (b.price || 0), 0);
 
-    tg.showPopup({
-      title: 'Статистика',
-      message: `Тренировок сегодня: ${todayBookings}\nДоход за месяц: ${monthIncome.toLocaleString()}₽\nВсего клиентов: ${clients.length}`,
-      buttons: [{ type: 'ok' }]
-    });
+    alert(`Статистика:\nТренировок сегодня: ${todayBookings}\nДоход за месяц: ${monthIncome.toLocaleString()}₽\nВсего клиентов: ${clients.length}`);
   };
 
   const showClients = () => {
@@ -252,11 +236,7 @@ function TrainerDashboard() {
     const link = `https://t.me/trenergram_bot?start=trainer_${id}`;
     navigator.clipboard.writeText(link);
     tg.HapticFeedback?.notificationOccurred('success');
-    tg.showPopup({
-      title: 'Ссылка скопирована',
-      message: 'Поделитесь ссылкой с клиентами для регистрации',
-      buttons: [{ type: 'ok' }]
-    });
+    alert('Ссылка скопирована! Поделитесь ссылкой с клиентами для регистрации');
   };
 
   const getStatusIcon = (status) => {
