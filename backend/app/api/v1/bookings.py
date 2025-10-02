@@ -4,12 +4,11 @@ Booking API endpoints
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 
-from app.db.session import get_db, get_async_db
+from app.db.session import get_db
 from app.models import User, UserRole, Booking, BookingStatus, Club
 from app.core.security import get_current_user
 

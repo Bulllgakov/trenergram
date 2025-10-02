@@ -5,13 +5,11 @@ Trainers API endpoints
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
-from app.db.session import get_async_db
-from app.models.user import Trainer
-from app.models.booking import Booking, BookingStatus
-from app.models.club import Club
+from app.db.base import get_db as get_async_db
+from app.models import Trainer, Client, Booking, BookingStatus, Club
 
 router = APIRouter()
 
@@ -19,16 +17,16 @@ router = APIRouter()
 class TrainerPublicInfo(BaseModel):
     id: int
     telegram_id: str
-    telegram_username: str | None
+    telegram_username: Optional[str]
     name: str
-    specialization: str | None
-    price: int | None
-    bio: str | None
-    photo_url: str | None
-    experience: int | None
-    rating: float | None
-    club_id: int | None
-    club_name: str | None
+    specialization: Optional[str]
+    price: Optional[int]
+    bio: Optional[str]
+    photo_url: Optional[str]
+    experience: Optional[int]
+    rating: Optional[float]
+    club_id: Optional[int]
+    club_name: Optional[str]
     total_clients: int
     total_sessions: int
     is_active: bool
@@ -39,16 +37,19 @@ class TrainerPublicInfo(BaseModel):
 
 @router.get("/", response_model=List[TrainerPublicInfo])
 async def get_trainers(
-    club_id: int | None = None,
+    club_id: Optional[int] = None,
     is_active: bool = True,
     db: AsyncSession = Depends(get_async_db)
 ) -> List[TrainerPublicInfo]:
     """Get list of all trainers"""
 
-    query = select(Trainer).where(Trainer.is_active == is_active)
+    query = select(User).where(
+        User.role == UserRole.TRAINER,
+        User.is_active == is_active
+    )
 
     if club_id:
-        query = query.where(Trainer.club_id == club_id)
+        query = query.where(User.club_id == club_id)
 
     result = await db.execute(query)
     trainers = result.scalars().all()
@@ -107,7 +108,10 @@ async def get_trainer(
 ) -> TrainerPublicInfo:
     """Get trainer details by telegram ID"""
 
-    query = select(Trainer).where(Trainer.telegram_id == telegram_id)
+    query = select(User).where(
+        User.telegram_id == telegram_id,
+        User.role == UserRole.TRAINER
+    )
     result = await db.execute(query)
     trainer = result.scalar_one_or_none()
 

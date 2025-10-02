@@ -8,7 +8,7 @@ import '../styles/telegram-webapp.css';
 function TrainerDashboard() {
   const { id } = useParams();
   const { tg } = useTelegram();
-  const [selectedDate, setSelectedDate] = useState('2025-08-13');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
   const [showSlotManager, setShowSlotManager] = useState(false);
@@ -51,14 +51,8 @@ function TrainerDashboard() {
       })));
     } catch (error) {
       console.error('Failed to load trainer data:', error);
-      // Use mock data on error
-      setClients([
-        { id: 1, telegram_id: '987654321', name: 'Мария Сидорова', initials: 'МС' },
-        { id: 2, telegram_id: '111111111', name: 'Александр Смирнов', initials: 'АС' },
-        { id: 3, telegram_id: '222222222', name: 'Иван Петров', initials: 'ИП' },
-        { id: 4, telegram_id: '333333333', name: 'Елена Козлова', initials: 'ЕК' },
-        { id: 5, telegram_id: '444444444', name: 'Дмитрий Новиков', initials: 'ДН' },
-      ]);
+      // Don't use mock data
+      setClients([]);
     } finally {
       setLoading(false);
     }
@@ -112,6 +106,41 @@ function TrainerDashboard() {
   const scheduleData = generateScheduleData();
 
   const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+  // Generate week days dynamically
+  const generateWeekDays = () => {
+    const days = [];
+    const today = new Date();
+
+    for (let i = -3; i <= 3; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dayName = date.toLocaleDateString('ru-RU', { weekday: 'short' });
+      const dayNumber = date.getDate();
+      const isToday = i === 0;
+      const isTomorrow = i === 1;
+
+      days.push({
+        date: date.toISOString().split('T')[0],
+        label: isToday ? 'Сегодня' : isTomorrow ? 'Завтра' : `${dayName.charAt(0).toUpperCase() + dayName.slice(1)}, ${dayNumber}`,
+        isToday,
+        isActive: selectedDate === date.toISOString().split('T')[0]
+      });
+    }
+    return days;
+  };
+
+  const weekDays = generateWeekDays();
+
+  // Format section header dynamically
+  const formatSectionHeader = () => {
+    const date = new Date(selectedDate);
+    const dayName = date.toLocaleDateString('ru-RU', { weekday: 'long' });
+    const month = date.toLocaleDateString('ru-RU', { month: 'long' });
+    const day = date.getDate();
+    const clubName = trainerInfo?.club_name || 'Клуб не указан';
+    return `${dayName.charAt(0).toUpperCase() + dayName.slice(1)}, ${day} ${month} • ${clubName}`;
+  };
 
   const selectDate = (date) => {
     tg.HapticFeedback?.selectionChanged();
@@ -264,17 +293,19 @@ function TrainerDashboard() {
 
       {/* Date Tabs */}
       <div className="date-tabs">
-        <button className="date-tab" onClick={() => selectDate('2025-08-11')}>Пн, 11</button>
-        <button className="date-tab" onClick={() => selectDate('2025-08-12')}>Вт, 12</button>
-        <button className={`date-tab ${selectedDate === '2025-08-13' ? 'active' : ''}`} onClick={() => selectDate('2025-08-13')}>Сегодня</button>
-        <button className="date-tab" onClick={() => selectDate('2025-08-14')}>Завтра</button>
-        <button className="date-tab" onClick={() => selectDate('2025-08-15')}>Пт, 15</button>
-        <button className="date-tab" onClick={() => selectDate('2025-08-16')}>Сб, 16</button>
-        <button className="date-tab" onClick={() => selectDate('2025-08-17')}>Вс, 17</button>
+        {weekDays.map(day => (
+          <button
+            key={day.date}
+            className={`date-tab ${day.isActive ? 'active' : ''}`}
+            onClick={() => selectDate(day.date)}
+          >
+            {day.label}
+          </button>
+        ))}
       </div>
 
       {/* Section Header */}
-      <div className="section-header">Среда, 13 августа • Фитнес ЭНЕРГИЯ</div>
+      <div className="section-header">{formatSectionHeader()}</div>
 
       {/* Schedule List */}
       <div className="schedule-section">

@@ -967,16 +967,23 @@ body {
 .day-slots {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .slot-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
-    background: var(--tg-theme-secondary-bg-color);
-    border-radius: 8px;
+    padding: 10px 16px;
+    border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);
+    transition: all 0.1s ease;
+}
+
+.slot-item:last-child {
+    border-bottom: none;
+}
+
+.slot-item:active {
+    background-color: var(--tg-theme-secondary-bg-color);
 }
 
 .slot-item span {
