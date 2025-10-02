@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { User, MapPin, DollarSign, Star, Calendar } from 'lucide-react';
-import { api } from '../services/api';
+import api from '../services/api';
 import BookingCalendar from './BookingCalendar';
 import './TrainersList.css';
 
-const TrainersList = () => {
+const TrainersList = ({ clientId }) => {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
@@ -17,10 +17,11 @@ const TrainersList = () => {
   const loadTrainers = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/trainers/');
-      setTrainers(response.data);
+      const response = await api.getTrainers();
+      setTrainers(response);
     } catch (error) {
       console.error('Error loading trainers:', error);
+      setTrainers([]);
     } finally {
       setLoading(false);
     }
@@ -98,15 +99,11 @@ const TrainersList = () => {
                   )}
                 </div>
 
-                {trainer.bio && (
-                  <p className="trainer-bio">{trainer.bio}</p>
+                {trainer.description && (
+                  <p className="trainer-bio">{trainer.description}</p>
                 )}
 
                 <div className="trainer-stats">
-                  <div className="stat">
-                    <span className="stat-value">{trainer.experience || 0}</span>
-                    <span className="stat-label">лет опыта</span>
-                  </div>
                   <div className="stat">
                     <span className="stat-value">{trainer.total_clients || 0}</span>
                     <span className="stat-label">клиентов</span>
@@ -134,6 +131,7 @@ const TrainersList = () => {
         <BookingCalendar
           trainerId={selectedTrainer.telegram_id}
           trainerName={selectedTrainer.name}
+          clientId={clientId}
           onClose={() => setShowBookingCalendar(false)}
           onBookingSuccess={handleBookingSuccess}
         />

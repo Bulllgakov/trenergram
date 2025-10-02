@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, X, ChevronLeft, ChevronRight, User } from 'lucide-react';
-import { api } from '../services/api';
+import { useTelegram } from '../hooks/useTelegram';
+import api from '../services/api';
 import './BookingCalendar.css';
 
-const BookingCalendar = ({ trainerId, trainerName, onClose, onBookingSuccess }) => {
+const BookingCalendar = ({ trainerId, trainerName, clientId, onClose, onBookingSuccess }) => {
+  const { tg } = useTelegram();
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -31,21 +33,33 @@ const BookingCalendar = ({ trainerId, trainerName, onClose, onBookingSuccess }) 
 
   const loadTrainerSlots = async () => {
     try {
-      const response = await api.get(`/slots/trainer/${trainerId}`);
-      setTrainerSlots(response.data);
+      const slots = await api.getTrainerSlots(trainerId);
+      setTrainerSlots(slots);
     } catch (error) {
       console.error('Error loading trainer slots:', error);
+      // Generate default slots if API fails
+      const defaultSlots = [];
+      for (let day = 0; day < 7; day++) {
+        defaultSlots.push({
+          day_of_week: day,
+          start_time: '09:00',
+          end_time: '20:00',
+          is_active: true
+        });
+      }
+      setTrainerSlots(defaultSlots);
     }
   };
 
   const loadExistingBookings = async () => {
     try {
-      const response = await api.get(`/bookings/trainer/${trainerId}`);
-      setExistingBookings(response.data.filter(b =>
-        b.status === 'confirmed' || b.status === 'pending'
+      const bookings = await api.getTrainerBookings(trainerId);
+      setExistingBookings(bookings.filter(b =>
+        b.status === 'CONFIRMED' || b.status === 'PENDING'
       ));
     } catch (error) {
       console.error('Error loading bookings:', error);
+      setExistingBookings([]);
     }
   };
 
@@ -124,31 +138,45 @@ const BookingCalendar = ({ trainerId, trainerName, onClose, onBookingSuccess }) 
   };
 
   const handleBooking = async () => {
-    if (!selectedSlot || !window.Telegram?.WebApp?.initDataUnsafe?.user?.id) return;
+    if (!selectedSlot || !clientId) {
+      tg.showPopup({
+        title: 'Ошибка',
+        message: 'Выберите время для записи',
+        buttons: [{ type: 'ok' }]
+      });
+      return;
+    }
 
     setBooking(true);
     try {
-      const clientTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
-
       const bookingData = {
         trainer_telegram_id: trainerId,
-        client_telegram_id: clientTelegramId,
+        client_telegram_id: clientId,
         datetime: selectedSlot.datetime.toISOString(),
         duration: 60,
         notes: notes || undefined
       };
 
-      await api.post('/bookings/', bookingData);
+      await api.createBooking(bookingData);
+
+      tg.HapticFeedback?.impactOccurred('medium');
+      tg.showPopup({
+        title: 'Успешно!',
+        message: 'Запись успешно создана',
+        buttons: [{ type: 'ok' }]
+      });
 
       if (onBookingSuccess) {
         onBookingSuccess();
       }
-
-      alert('Запись успешно создана!');
       onClose();
     } catch (error) {
       console.error('Booking error:', error);
-      alert('Ошибка при создании записи. Попробуйте еще раз.');
+      tg.showPopup({
+        title: 'Ошибка',
+        message: 'Не удалось создать запись. Попробуйте еще раз.',
+        buttons: [{ type: 'ok' }]
+      });
     } finally {
       setBooking(false);
     }

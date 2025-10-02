@@ -360,6 +360,7 @@ body {
 /* Empty slot */
 .time-slot.empty {
     background: var(--tg-theme-bg-color);
+    border-bottom: none;
 }
 
 .time-slot.empty .time-slot-name {

@@ -390,7 +390,7 @@ function ClientDashboard() {
           >
             ← Назад к записям
           </button>
-          <TrainersList />
+          <TrainersList clientId={id} />
         </div>
       ) : (
         <div className="bookings-section">

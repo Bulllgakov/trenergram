@@ -183,6 +183,17 @@ function TrainerDashboard() {
     setSelectedTime(time);
   };
 
+  const handleAddNewClient = () => {
+    tg.HapticFeedback?.impactOccurred('light');
+    const link = `https://t.me/trenergram_bot?start=trainer_${id}`;
+    navigator.clipboard.writeText(link);
+    tg.showPopup({
+      title: 'Ссылка скопирована',
+      message: 'Отправьте эту ссылку новому клиенту для регистрации',
+      buttons: [{ type: 'ok' }]
+    });
+  };
+
   const submitBooking = async () => {
     if (selectedClient && selectedTime) {
       try {
@@ -394,7 +405,7 @@ function TrainerDashboard() {
           <div className="form-group">
             <label className="form-label">Или выберите из списка</label>
             <div className="client-list">
-              {clients.map(client => (
+              {clients.slice(0, 3).map(client => (
                 <div
                   key={client.id}
                   className="client-item"
@@ -407,10 +418,20 @@ function TrainerDashboard() {
                   <div className="client-name">{client.name}</div>
                 </div>
               ))}
-              <div className="client-item">
+              <div className="client-item" onClick={handleAddNewClient}>
                 <div className="client-avatar">+</div>
                 <div className="client-name add-new">Добавить нового клиента</div>
               </div>
+              {clients.length > 3 && (
+                <div style={{
+                  padding: '8px 16px',
+                  color: 'var(--tg-theme-hint-color)',
+                  fontSize: '13px',
+                  textAlign: 'center'
+                }}>
+                  Показаны последние 3 клиента из {clients.length}
+                </div>
+              )}
             </div>
           </div>
 
