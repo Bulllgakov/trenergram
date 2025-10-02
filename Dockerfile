@@ -9,18 +9,15 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь код проекта
-COPY . .
+# Копируем код backend
+COPY backend/ /app/
 
 # Устанавливаем переменные окружения
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app/backend:$PYTHONPATH
-
-# Даем права на выполнение
-RUN chmod +x run.sh start.py 2>/dev/null || true
+ENV PYTHONPATH=/app:$PYTHONPATH
 
 # Expose port
 EXPOSE 8000
 
-# Команда запуска
-CMD ["python", "start.py"]
+# Команда запуска (будет переопределена в docker-compose)
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
