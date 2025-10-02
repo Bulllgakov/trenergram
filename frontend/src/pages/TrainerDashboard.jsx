@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTelegram } from '../hooks/useTelegram';
 import api from '../services/api';
 import SlotManager from '../components/SlotManager';
+import BookingManager from '../components/BookingManager';
 import '../styles/telegram-webapp.css';
 
 function TrainerDashboard() {
@@ -15,6 +16,8 @@ function TrainerDashboard() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showBookingManager, setShowBookingManager] = useState(false);
   const [trainerInfo, setTrainerInfo] = useState(null);
   const [clients, setClients] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -102,7 +105,8 @@ function TrainerDashboard() {
           status: status === 'pending' ? 'waiting-confirmation' :
                   status === 'confirmed' ? 'confirmed' :
                   status === 'cancelled' ? 'cancelled' : 'free',
-          info: status === 'pending' ? 'Ждет подтверждения' : null
+          info: status === 'pending' ? 'Ждет подтверждения' : null,
+          booking: booking  // Add booking object for management
         });
       } else {
         schedule.push({ time, client: null, status: 'free' });
@@ -174,6 +178,8 @@ function TrainerDashboard() {
     setShowOverlay(false);
     setSelectedClient(null);
     setSelectedTime(null);
+    setSelectedBooking(null);
+    setShowBookingManager(false);
     setSearchQuery('');
   };
 
@@ -329,7 +335,14 @@ function TrainerDashboard() {
             <div
               key={index}
               className={classes}
-              onClick={() => isEmpty ? quickBook(slot.time) : null}
+              onClick={() => {
+                if (isEmpty) {
+                  quickBook(slot.time);
+                } else if (slot.booking) {
+                  setSelectedBooking(slot.booking);
+                  setShowBookingManager(true);
+                }
+              }}
             >
               <div className="time-slot-time">{slot.time}</div>
               <div className="time-slot-content">
@@ -594,6 +607,23 @@ function TrainerDashboard() {
             onClose={() => setShowSlotManager(false)}
           />
         </div>
+      )}
+
+      {/* Booking Manager Modal */}
+      {showBookingManager && selectedBooking && (
+        <BookingManager
+          booking={selectedBooking}
+          trainerId={id}
+          onClose={() => {
+            setShowBookingManager(false);
+            setSelectedBooking(null);
+          }}
+          onUpdate={() => {
+            loadTrainerBookings();
+            setShowBookingManager(false);
+            setSelectedBooking(null);
+          }}
+        />
       )}
     </div>
   );

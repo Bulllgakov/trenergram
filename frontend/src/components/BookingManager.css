@@ -1,0 +1,265 @@
+.booking-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.booking-manager {
+  background: var(--tg-theme-bg-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.booking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--tg-theme-secondary-bg-color);
+}
+
+.booking-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--tg-theme-hint-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: var(--tg-theme-secondary-bg-color);
+}
+
+.booking-details {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--tg-theme-text-color);
+  font-size: 15px;
+}
+
+.detail-item svg {
+  color: var(--tg-theme-hint-color);
+  flex-shrink: 0;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.booking-notes {
+  padding: 0 16px 16px;
+}
+
+.booking-notes h3 {
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+  margin: 0 0 8px;
+}
+
+.booking-notes p {
+  margin: 0;
+  color: var(--tg-theme-text-color);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.booking-actions {
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--tg-theme-secondary-bg-color);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.action-btn.confirm {
+  background: #34c759;
+  color: white;
+}
+
+.action-btn.reschedule {
+  background: #ff9500;
+  color: white;
+}
+
+.action-btn.cancel {
+  background: #ff3b30;
+  color: white;
+}
+
+.reschedule-form,
+.cancel-form {
+  padding: 16px;
+  border-top: 1px solid var(--tg-theme-secondary-bg-color);
+}
+
+.reschedule-form h3,
+.cancel-form h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--tg-theme-secondary-bg-color);
+  border-radius: 8px;
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--tg-theme-link-color);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cancel-btn.secondary {
+  background: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+}
+
+.cancel-btn.danger {
+  background: #ff3b30;
+  color: white;
+}
+
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancellation-info {
+  padding: 16px;
+  background: var(--tg-theme-secondary-bg-color);
+  border-top: 1px solid var(--tg-theme-secondary-bg-color);
+}
+
+.cancellation-info h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+}
+
+.cancellation-info p {
+  margin: 0;
+  color: var(--tg-theme-text-color);
+  font-size: 15px;
+  line-height: 1.4;
+}
