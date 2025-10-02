@@ -41,9 +41,12 @@ jobs:
             # Deploy webapp files
             rm -rf /var/www/trenergram/*
             cp -r webapp/* /var/www/trenergram/
+          fi
 
-            # Reload nginx
-            nginx -s reload
+          # Update nginx config if exists
+          if [ -f "nginx-ssl.conf" ]; then
+            cp nginx-ssl.conf /etc/nginx/sites-available/trenergram
+            nginx -t && nginx -s reload
           fi
 
           # Apply database migrations
