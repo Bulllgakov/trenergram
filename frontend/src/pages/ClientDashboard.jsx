@@ -49,15 +49,6 @@ function ClientDashboard() {
   };
 
   // All booking and trainer data is loaded from API via loadClientData()
-      trainerUsername: 'alex_trainer',
-      trainerType: 'Функциональный тренинг',
-      date: 'Вторник, 12 августа',
-      time: '18:00',
-      location: 'Фитнес ЭНЕРГИЯ, зал №1',
-      status: 'cancelled',
-      cancelReason: 'Отменено клиентом'
-    }
-  ];
 
   const selectTab = (tab) => {
     tg.HapticFeedback?.selectionChanged();
