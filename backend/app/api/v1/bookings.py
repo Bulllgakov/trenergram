@@ -2,15 +2,22 @@
 Booking API endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+import asyncio
 
 from app.db.session import get_db
 from app.models import User, UserRole, Booking, BookingStatus, Club
 from app.core.security import get_current_user
+from app.services.notifications import (
+    notify_booking_created,
+    notify_booking_confirmed,
+    notify_booking_cancelled,
+    notify_booking_rescheduled
+)
 
 router = APIRouter()
 
@@ -58,6 +65,7 @@ class BookingResponse(BaseModel):
 @router.post("/", response_model=BookingResponse)
 async def create_booking(
     booking: BookingCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """Create a new booking"""
@@ -103,6 +111,9 @@ async def create_booking(
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)
+
+    # Send notifications in background
+    background_tasks.add_task(notify_booking_created, new_booking, db)
 
     response = BookingResponse.from_orm(new_booking)
     response.trainer_name = trainer.name
@@ -296,6 +307,13 @@ async def update_booking(
 
     db.commit()
     db.refresh(booking)
+
+    # Send reschedule notification if datetime was changed
+    if old_datetime and update_data.datetime:
+        background_tasks.add_task(
+            notify_booking_rescheduled,
+            booking, old_datetime, db, is_trainer
+        )
 
     trainer = db.query(User).filter_by(id=booking.trainer_id).first()
     client = db.query(User).filter_by(id=booking.client_id).first()
