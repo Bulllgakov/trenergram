@@ -580,9 +580,12 @@ const originalSelectDate = window.selectDate;
 window.selectDate = async function(element, date) {
     console.log('selectDate called with:', date);
 
-    // Call original function for UI update
-    if (originalSelectDate) {
-        originalSelectDate(element, date);
+    // Update UI to show active tab
+    document.querySelectorAll('.date-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
     }
 
     // Parse date properly
@@ -591,7 +594,13 @@ window.selectDate = async function(element, date) {
 
     console.log('Parsed date:', currentDate);
 
-    // Reload schedule for new date
+    // Immediately update display with new working hours
+    showDefaultSlots();
+
+    // Update date display
+    updateDateDisplay();
+
+    // Then reload schedule for new date
     await loadSchedule();
     updateUIWithData();
 };
@@ -723,9 +732,7 @@ function getWorkingHoursForDate(date) {
 
         if (!dayData.isWorkingDay) {
             console.log(dayOfWeek, 'is a day off');
-            // Even on day off, show default hours for testing
-            console.log('Showing default hours for testing');
-            return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+            return []; // Return empty array for day off
         }
 
         const [startHour] = dayData.start.split(':').map(Number);
@@ -740,8 +747,13 @@ function getWorkingHoursForDate(date) {
         return hours;
     }
 
-    console.log('Using default working hours - always show slots for testing');
-    // Always return working hours for testing
+    console.log('No working hours data - using default schedule');
+    // Default working hours based on typical schedule
+    // Monday-Friday: 9:00-21:00
+    // Saturday-Sunday: 10:00-18:00
+    if (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') {
+        return [10, 11, 12, 13, 14, 15, 16, 17];
+    }
     return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 }
 
@@ -867,10 +879,24 @@ function showDefaultSlots() {
 
     console.log('Showing default slots immediately');
 
-    const defaultHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+    // Get working hours for current date
+    const workingHours = getWorkingHoursForDate(currentDate);
+
+    // If it's a day off, show message
+    if (workingHours.length === 0) {
+        scheduleSection.innerHTML = `
+            <div style="padding: 40px 20px; text-align: center; color: var(--tg-theme-hint-color);">
+                <div style="font-size: 48px; margin-bottom: 16px;">🏖️</div>
+                <div style="font-size: 17px; font-weight: 500;">Выходной день</div>
+                <div style="font-size: 14px; margin-top: 8px;">В этот день нет приёма</div>
+            </div>
+        `;
+        return;
+    }
+
     scheduleSection.innerHTML = '';
 
-    defaultHours.forEach(hour => {
+    workingHours.forEach(hour => {
         const timeSlot = document.createElement('div');
         timeSlot.className = 'time-slot empty';
         const timeStr = `${hour.toString().padStart(2, '0')}:00`;
@@ -903,7 +929,7 @@ function showDefaultSlots() {
         scheduleSection.appendChild(timeSlot);
     });
 
-    console.log('Default slots added:', defaultHours.length);
+    console.log('Slots added based on working hours:', workingHours.length);
 }
 
 // Initialize when DOM is ready
