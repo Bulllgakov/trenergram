@@ -138,7 +138,23 @@ function ClientDashboard() {
 
   const showMyTrainers = () => {
     tg.HapticFeedback?.impactOccurred('light');
-    // Navigate to trainers page
+    if (trainers && trainers.length > 0) {
+      const trainersList = trainers.map(t =>
+        `${t.name}${t.specialization ? ` - ${t.specialization}` : ''}${t.price ? ` (${t.price}₽)` : ''}`
+      ).join('\n');
+
+      tg.showPopup({
+        title: 'Мои тренеры',
+        message: trainersList,
+        buttons: [{ type: 'ok' }]
+      });
+    } else {
+      tg.showPopup({
+        title: 'Мои тренеры',
+        message: 'У вас пока нет тренеров. Нажмите "+" чтобы найти тренера.',
+        buttons: [{ type: 'ok' }]
+      });
+    }
   };
 
   const showHistoryStats = () => {
@@ -226,7 +242,7 @@ function ClientDashboard() {
       <div className="quick-actions">
         <button className="quick-action" onClick={showMyTrainers}>
           🏆 Мои тренеры
-          <span className="badge info">5</span>
+          {trainers.length > 0 && <span className="badge info">{trainers.length}</span>}
         </button>
         <button className="quick-action" onClick={showHistoryStats}>
           📊 История и статистика
