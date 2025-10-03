@@ -521,6 +521,43 @@
             margin-top: 12px;
         }
 
+        .duration-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .duration-option {
+            background: var(--tg-theme-bg-color);
+            border: 1px solid var(--tg-theme-hint-color);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .duration-option:hover {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+
+        .duration-option.active {
+            background: var(--tg-theme-button-color);
+            border-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .duration-time {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .duration-description {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
         .time-option {
             padding: 14px;
             text-align: center;
@@ -758,7 +795,7 @@
         <div class="header">
             <div>
                 <div class="header-title">Trenergram</div>
-                <div class="header-subtitle" id="headerStats">✅ 5 подтверждено • ⏳ 2 ожидает • ➕ 3 свободно</div>
+                <div class="header-subtitle" id="headerStats">Загрузка статистики...</div>
             </div>
             <div>
                 <a href="#" class="header-action" onclick="showTrainerStats()">📊</a>
@@ -769,7 +806,7 @@
         <div class="quick-actions">
             <button class="quick-action" onclick="showClients()">
                 👥 Мои клиенты
-                <span class="badge">24</span>
+                <span class="badge" id="clientsCount">0</span>
             </button>
             <button class="quick-action" onclick="showLink()">
                 🔗 Моя ссылка
@@ -874,8 +911,20 @@
                 </div>
             </div>
             
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ПРОДОЛЖИТЕЛЬНОСТЬ ЗАНЯТИЯ</div>
+
+            <div class="settings-list">
+                <div class="setting-item" onclick="openDurationSettings()">
+                    <div class="setting-info">
+                        <div class="setting-label">Длительность занятия</div>
+                        <div class="setting-description" id="duration-display">60 минут</div>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+
             <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ПРАВИЛА ПЕРЕНОСА</div>
-            
+
             <div class="settings-list">
                 <div class="setting-item" onclick="openTransferSettings()">
                     <div class="setting-info">
@@ -952,7 +1001,7 @@
                 <div class="setting-item" onclick="openPriceSettings()">
                     <div class="setting-info">
                         <div class="setting-label">Стандартная цена</div>
-                        <div class="setting-value">2000₽</div>
+                        <div class="setting-value" id="trainerPrice">Загрузка...</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -1092,6 +1141,42 @@
         </div>
     </div>
 
+    <!-- Duration Settings Bottom Sheet -->
+    <div class="bottom-sheet" id="durationSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Длительность занятия</div>
+            <div class="sheet-close" onclick="closeSheet('durationSheet')">Готово</div>
+        </div>
+        <div class="sheet-content">
+            <div class="duration-options">
+                <div class="duration-option" onclick="selectDuration(30)">
+                    <div class="duration-time">30 минут</div>
+                    <div class="duration-description">Короткая тренировка</div>
+                </div>
+                <div class="duration-option" onclick="selectDuration(45)">
+                    <div class="duration-time">45 минут</div>
+                    <div class="duration-description">Стандартная тренировка</div>
+                </div>
+                <div class="duration-option active" onclick="selectDuration(60)">
+                    <div class="duration-time">60 минут</div>
+                    <div class="duration-description">Полная тренировка</div>
+                </div>
+                <div class="duration-option" onclick="selectDuration(90)">
+                    <div class="duration-time">90 минут</div>
+                    <div class="duration-description">Расширенная тренировка</div>
+                </div>
+                <div class="duration-option" onclick="selectDuration(120)">
+                    <div class="duration-time">120 минут</div>
+                    <div class="duration-description">Двойная тренировка</div>
+                </div>
+            </div>
+
+            <button class="submit-button" onclick="saveDuration()">
+                Сохранить изменения
+            </button>
+        </div>
+    </div>
+
     <!-- Quick Booking Bottom Sheet -->
     <div class="bottom-sheet" id="bookingSheet">
         <div class="sheet-header">
@@ -1191,13 +1276,13 @@
 
         // Show functions
         function showClients() {
-            showNotification('Открытие списка клиентов');
-            // In real implementation, open clients list
+            openClientsSheet();
         }
 
         function showLink() {
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert('Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_123456\n\nQR-код доступен в боте по команде /qr');
+                const trainerIdForLink = trainerId || '123456';
+                window.Telegram.WebApp.showAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
             }
         }
 
@@ -1358,12 +1443,19 @@
                 }
             }
 
-            // Save to API (will be implemented)
+            // Save to API
             if (window.saveWorkingHoursAPI) {
-                window.saveWorkingHoursAPI(window.workingHoursData);
+                window.saveWorkingHoursAPI(window.workingHoursData).then(success => {
+                    if (success) {
+                        showNotification('✅ Рабочие часы сохранены');
+                    } else {
+                        showNotification('❌ Ошибка сохранения. Попробуйте позже.');
+                    }
+                });
+            } else {
+                showNotification('✅ Рабочие часы сохранены локально');
             }
 
-            showNotification('✅ Рабочие часы сохранены');
             closeSheet('workingHoursSheet');
         }
 
@@ -1582,13 +1674,39 @@
             }
         }
 
-        // Open booking actions for occupied slot  
+        // Open booking actions for occupied slot
         function openBookingActions(slot) {
             const clientName = slot.dataset.client;
             const status = slot.dataset.status;
-            
+
             showNotification(`Управление записью: ${clientName}`);
             // In real implementation, open booking actions sheet
+        }
+
+        // Open clients sheet
+        function openClientsSheet() {
+            const sheet = document.getElementById('clientsSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+
+            // Load and display clients
+            if (typeof loadAndDisplayClients === 'function') {
+                loadAndDisplayClients();
+            }
+
+            // Haptic feedback
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        // Share trainer link
+        function shareTrainerLink() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const trainerIdForLink = trainerId || '123456';
+                window.Telegram.WebApp.showAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
+            }
         }
     </script>
     <!-- API Integration -->

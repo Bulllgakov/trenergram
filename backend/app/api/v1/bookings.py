@@ -102,7 +102,7 @@ async def create_booking(
         client_id=client.id,
         club_id=trainer.club_id,
         datetime=booking.datetime,
-        duration=booking.duration,
+        duration=booking.duration or trainer.session_duration or 60,
         price=booking.price or trainer.price,
         status=BookingStatus.PENDING,
         notes=booking.notes

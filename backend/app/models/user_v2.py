@@ -39,6 +39,7 @@ class User(Base):
     club_id = Column(Integer, ForeignKey("clubs.id"))
     specialization = Column(String(100))  # fitness, yoga, boxing, etc.
     price = Column(Integer)  # Price per training session
+    session_duration = Column(Integer, default=60)  # Training session duration in minutes
     description = Column(Text)
     rating = Column(Integer, default=50)  # 0-50 (displayed as 0-5.0)
 

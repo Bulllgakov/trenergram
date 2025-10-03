@@ -27,6 +27,7 @@ class UserResponse(BaseModel):
     club_id: Optional[int]
     specialization: Optional[str]
     price: Optional[int]
+    session_duration: Optional[int]
     description: Optional[str]
     rating: Optional[int]
     is_active: bool
@@ -43,6 +44,13 @@ class TrainerResponse(UserResponse):
 
 class ClientResponse(UserResponse):
     trainers: List[UserResponse] = []
+
+
+class TrainerSettingsUpdate(BaseModel):
+    session_duration: Optional[int] = None
+    price: Optional[int] = None
+    specialization: Optional[str] = None
+    description: Optional[str] = None
 
 
 @router.get("/me", response_model=UserResponse)
@@ -151,6 +159,7 @@ async def update_profile(
     phone: Optional[str] = None,
     specialization: Optional[str] = None,
     price: Optional[int] = None,
+    session_duration: Optional[int] = None,
     description: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
@@ -167,6 +176,12 @@ async def update_profile(
         user.specialization = specialization
     if price and user.role == UserRole.TRAINER:
         user.price = price
+    if session_duration and user.role == UserRole.TRAINER:
+        # Validate session duration (30-240 minutes)
+        if 30 <= session_duration <= 240:
+            user.session_duration = session_duration
+        else:
+            raise HTTPException(status_code=400, detail="Session duration must be between 30 and 240 minutes")
     if description and user.role == UserRole.TRAINER:
         user.description = description
 
@@ -174,3 +189,40 @@ async def update_profile(
     db.refresh(user)
 
     return {"message": "Profile updated successfully", "user": UserResponse.from_orm(user)}
+
+
+@router.put("/trainer/{telegram_id}/settings", response_model=UserResponse)
+async def update_trainer_settings(
+    telegram_id: str,
+    settings: TrainerSettingsUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update trainer-specific settings"""
+    trainer = db.query(User).filter_by(
+        telegram_id=telegram_id,
+        role=UserRole.TRAINER
+    ).first()
+
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    # Update fields if provided
+    if settings.session_duration is not None:
+        if 30 <= settings.session_duration <= 240:
+            trainer.session_duration = settings.session_duration
+        else:
+            raise HTTPException(status_code=400, detail="Session duration must be between 30 and 240 minutes")
+
+    if settings.price is not None:
+        trainer.price = settings.price
+
+    if settings.specialization is not None:
+        trainer.specialization = settings.specialization
+
+    if settings.description is not None:
+        trainer.description = settings.description
+
+    db.commit()
+    db.refresh(trainer)
+
+    return trainer

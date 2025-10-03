@@ -165,6 +165,9 @@ function createBookingCard(booking, highlight = false) {
 
     const bookingDate = new Date(booking.datetime);
     const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
+    const endTimeStr = endTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const timeRangeStr = `${timeStr} - ${endTimeStr}`;
 
     const statusIcon = getStatusIcon(booking.status);
     const statusClass = getStatusClass(booking.status);
@@ -175,7 +178,7 @@ function createBookingCard(booking, highlight = false) {
     card.innerHTML = `
         ${notificationDot}
         <div class="booking-date">
-            <div class="booking-time">${timeStr}</div>
+            <div class="booking-time">${timeRangeStr}</div>
         </div>
         <div class="booking-info">
             <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
@@ -598,15 +601,18 @@ async function showTrainerScheduleAPI(trainerId) {
             if (dayData.isWorkingDay) {
                 scheduleText += `${i === 0 ? 'Сегодня' : i === 1 ? 'Завтра' : dayName}: ${dayData.start} - ${dayData.end}\n`;
 
-                // Count free slots
+                // Count free slots based on session duration
                 const dayBookings = trainerBookings.filter(b => {
                     const bookingDate = new Date(b.datetime);
                     return bookingDate.toDateString() === date.toDateString() && b.status !== 'CANCELLED';
                 });
 
-                const [startHour] = dayData.start.split(':').map(Number);
-                const [endHour] = dayData.end.split(':').map(Number);
-                const totalSlots = endHour - startHour - 1; // minus lunch
+                // Calculate slots based on session duration (default 60 minutes)
+                const sessionDuration = 60; // Will be loaded from trainer data in future
+                const [startHour, startMin] = dayData.start.split(':').map(Number);
+                const [endHour, endMin] = dayData.end.split(':').map(Number);
+                const workMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin) - 60; // minus lunch
+                const totalSlots = Math.floor(workMinutes / sessionDuration);
                 const freeSlots = totalSlots - dayBookings.length;
 
                 if (freeSlots > 0) {

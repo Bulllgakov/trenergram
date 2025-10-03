@@ -46,8 +46,8 @@ jobs:
             echo "Deploying webapp files to /var/www/trenergram/"
             # Ensure directory exists
             mkdir -p /var/www/trenergram
-            # Copy webapp contents
-            cp -r webapp/* /var/www/trenergram/
+            # Copy webapp directory with contents
+            cp -r webapp /var/www/trenergram/
           fi
 
           # Update nginx config if exists

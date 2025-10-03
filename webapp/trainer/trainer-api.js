@@ -95,6 +95,50 @@ function updateUIWithData() {
 
     // Update date display
     updateDateDisplay();
+
+    // Update duration display
+    updateDurationDisplay();
+
+    // Update trainer settings
+    updateTrainerSettings();
+}
+
+// Update duration display in settings
+function updateDurationDisplay() {
+    const durationDisplay = document.getElementById('duration-display');
+    if (durationDisplay && trainerData && trainerData.session_duration) {
+        durationDisplay.textContent = `${trainerData.session_duration} минут`;
+        selectedDuration = trainerData.session_duration;
+    }
+}
+
+// Generate time slots based on session duration
+function generateTimeSlots(startTime, endTime) {
+    const slots = [];
+    const duration = (trainerData && trainerData.session_duration) || selectedDuration || 60;
+
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+
+    for (let currentMinutes = startMinutes; currentMinutes + duration <= endMinutes; currentMinutes += duration) {
+        const hour = Math.floor(currentMinutes / 60);
+        const minute = currentMinutes % 60;
+
+        slots.push({
+            hour: hour,
+            minute: minute,
+            timeString: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+            endHour: Math.floor((currentMinutes + duration) / 60),
+            endMinute: (currentMinutes + duration) % 60,
+            endTimeString: `${Math.floor((currentMinutes + duration) / 60).toString().padStart(2, '0')}:${((currentMinutes + duration) % 60).toString().padStart(2, '0')}`
+        });
+    }
+
+    console.log(`Generated ${slots.length} slots with ${duration}min duration:`, slots);
+    return slots;
 }
 
 // Update header statistics
@@ -232,8 +276,22 @@ function updateScheduleDisplay() {
         return;
     }
 
-    workingHours.forEach(hour => {
-        const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+    workingHours.forEach(slot => {
+        // Support both old format (numbers) and new format (objects)
+        let timeStr, endTimeStr, hour;
+        if (typeof slot === 'number') {
+            // Old format - just hour
+            hour = slot;
+            timeStr = `${slot.toString().padStart(2, '0')}:00`;
+            endTimeStr = `${(slot + 1).toString().padStart(2, '0')}:00`;
+        } else {
+            // New format - object with time range
+            hour = slot.hour;
+            timeStr = slot.timeString;
+            endTimeStr = slot.endTimeString;
+        }
+
+        const displayTime = `${timeStr} - ${endTimeStr}`;
 
         // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
@@ -249,7 +307,7 @@ function updateScheduleDisplay() {
             // Lunch break
             timeSlot.className = 'time-slot break';
             timeSlot.innerHTML = `
-                <div class="time-slot-time">${timeStr}</div>
+                <div class="time-slot-time">${displayTime}</div>
                 <div class="time-slot-content">
                     <div class="time-slot-name">Обеденный перерыв</div>
                 </div>
@@ -267,7 +325,7 @@ function updateScheduleDisplay() {
             timeSlot.onclick = () => openBookingActionsAPI(booking);
 
             timeSlot.innerHTML = `
-                <div class="time-slot-time">${timeStr}</div>
+                <div class="time-slot-time">${displayTime}</div>
                 <div class="time-slot-content">
                     <div class="time-slot-name">${booking.client_name || 'Клиент'}</div>
                     <div class="time-slot-info">${booking.service_name || 'Тренировка'} ${booking.status === 'PENDING' ? '• Ждет подтверждения' : ''}</div>
@@ -283,7 +341,7 @@ function updateScheduleDisplay() {
             timeSlot.onclick = () => quickBookAPI(timeStr);
 
             timeSlot.innerHTML = `
-                <div class="time-slot-time">${timeStr}</div>
+                <div class="time-slot-time">${displayTime}</div>
                 <div class="time-slot-content">
                     <div class="time-slot-name">Свободно</div>
                     <div class="time-slot-info">Нажмите для записи</div>
@@ -606,6 +664,83 @@ window.showLink = function() {
     }
 };
 
+// Duration settings functions
+let selectedDuration = 60; // Default 60 minutes
+
+window.openDurationSettings = function() {
+    // Load current duration from trainer data
+    if (trainerData && trainerData.session_duration) {
+        selectedDuration = trainerData.session_duration;
+    }
+
+    // Update active duration option
+    updateActiveDurationOption();
+
+    // Show duration sheet
+    const sheet = document.getElementById('durationSheet');
+    if (sheet) {
+        sheet.classList.add('active');
+    }
+};
+
+function updateActiveDurationOption() {
+    // Remove active class from all options
+    document.querySelectorAll('.duration-option').forEach(option => {
+        option.classList.remove('active');
+    });
+
+    // Add active class to selected duration
+    const activeOption = document.querySelector(`.duration-option[onclick="selectDuration(${selectedDuration})"]`);
+    if (activeOption) {
+        activeOption.classList.add('active');
+    }
+}
+
+window.selectDuration = function(duration) {
+    selectedDuration = duration;
+    updateActiveDurationOption();
+};
+
+window.saveDuration = async function() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                session_duration: selectedDuration
+            })
+        });
+
+        if (response.ok) {
+            const updatedTrainer = await response.json();
+            trainerData = updatedTrainer;
+
+            // Update display
+            const durationDisplay = document.getElementById('duration-display');
+            if (durationDisplay) {
+                durationDisplay.textContent = `${selectedDuration} минут`;
+            }
+
+            // Regenerate schedule slots with new duration
+            showDefaultSlots();
+            await loadSchedule();
+            updateUIWithData();
+
+            // Close sheet
+            closeSheet('durationSheet');
+
+            showNotification('✅ Длительность занятий обновлена');
+        } else {
+            showNotification('❌ Не удалось обновить длительность');
+        }
+    } catch (error) {
+        console.error('Failed to save duration:', error);
+        showNotification('❌ Ошибка при сохранении');
+    }
+};
+
 // Override selectDate to reload data
 const originalSelectDate = window.selectDate;
 window.selectDate = async function(element, date) {
@@ -766,26 +901,20 @@ function getWorkingHoursForDate(date) {
             return []; // Return empty array for day off
         }
 
-        const [startHour] = dayData.start.split(':').map(Number);
-        const [endHour] = dayData.end.split(':').map(Number);
-
-        const hours = [];
-        for (let hour = startHour; hour < endHour; hour++) {
-            hours.push(hour);
-        }
-
-        console.log('Working hours for', dayOfWeek, ':', hours);
-        return hours;
+        // Generate time slots based on session duration
+        const slots = generateTimeSlots(dayData.start, dayData.end);
+        console.log('Generated slots for', dayOfWeek, ':', slots);
+        return slots;
     }
 
     console.log('No working hours data - using default schedule');
     // Default working hours based on typical schedule
     // Monday-Friday: 9:00-21:00
     // Saturday-Sunday: 10:00-18:00
-    if (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') {
-        return [10, 11, 12, 13, 14, 15, 16, 17];
-    }
-    return [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+    const defaultStart = (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') ? '10:00' : '09:00';
+    const defaultEnd = (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') ? '18:00' : '21:00';
+
+    return generateTimeSlots(defaultStart, defaultEnd);
 }
 
 // Save working hours to API
@@ -850,7 +979,7 @@ async function loadWorkingHours() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
+        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`);
         if (response.ok) {
             const schedules = await response.json();
 
@@ -938,10 +1067,23 @@ function showDefaultSlots() {
 
     scheduleSection.innerHTML = '';
 
-    workingHours.forEach(hour => {
+    workingHours.forEach(slot => {
         const timeSlot = document.createElement('div');
         timeSlot.className = 'time-slot empty';
-        const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+
+        // Support both old format (numbers) and new format (objects)
+        let timeStr, endTimeStr;
+        if (typeof slot === 'number') {
+            // Old format - just hour
+            timeStr = `${slot.toString().padStart(2, '0')}:00`;
+            endTimeStr = `${(slot + 1).toString().padStart(2, '0')}:00`;
+        } else {
+            // New format - object with time range
+            timeStr = slot.timeString;
+            endTimeStr = slot.endTimeString;
+        }
+
+        const displayTime = `${timeStr} - ${endTimeStr}`;
 
         timeSlot.dataset.time = timeStr;
         timeSlot.onclick = () => {
@@ -953,13 +1095,13 @@ function showDefaultSlots() {
             } else {
                 // Fallback
                 if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.showAlert(`Выбрано время: ${timeStr}\nФункция записи будет доступна после загрузки`);
+                    window.Telegram.WebApp.showAlert(`Выбрано время: ${displayTime}\nФункция записи будет доступна после загрузки`);
                 }
             }
         };
 
         timeSlot.innerHTML = `
-            <div class="time-slot-time">${timeStr}</div>
+            <div class="time-slot-time">${displayTime}</div>
             <div class="time-slot-content">
                 <div class="time-slot-name">Свободно</div>
                 <div class="time-slot-info">Нажмите для записи</div>
@@ -1020,3 +1162,236 @@ if (document.readyState === 'loading') {
         // loadWorkingHours already regenerates tabs
     });
 }
+
+// Update trainer settings with real data
+function updateTrainerSettings() {
+    // Update price
+    const priceElement = document.getElementById('trainerPrice');
+    if (priceElement && trainerData.price) {
+        priceElement.textContent = `${trainerData.price}₽`;
+    }
+
+    // Update club name
+    const clubElement = document.getElementById('clubNameSettings');
+    if (clubElement) {
+        clubElement.textContent = trainerData.club_name || 'Независимый тренер';
+    }
+}
+
+// Load and display clients
+function loadAndDisplayClients() {
+    const clientsListElement = document.getElementById('clientsList');
+    const totalClientsElement = document.getElementById('totalClientsCount');
+    const activeClientsElement = document.getElementById('activeClientsCount');
+
+    if (!clientsListElement) return;
+
+    // Update stats
+    if (totalClientsElement) {
+        totalClientsElement.textContent = clients.length;
+    }
+    if (activeClientsElement) {
+        // For now, all clients are considered active
+        activeClientsElement.textContent = clients.length;
+    }
+
+    // Clear existing list
+    clientsListElement.innerHTML = '';
+
+    if (clients.length === 0) {
+        clientsListElement.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--tg-theme-hint-color);">
+                <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                <div style="font-size: 17px; font-weight: 500;">Пока нет клиентов</div>
+                <div style="font-size: 14px; margin-top: 8px;">Поделитесь ссылкой для привлечения клиентов</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Display clients
+    clients.forEach(client => {
+        const clientElement = document.createElement('div');
+        clientElement.className = 'client-item';
+
+        const initials = (client.name || 'C').split(' ').map(n => n[0]).join('').toUpperCase();
+
+        clientElement.innerHTML = `
+            <div class="client-avatar">${initials}</div>
+            <div class="client-name">${client.name || 'Клиент'}</div>
+        `;
+
+        // Add click handler to show client details
+        clientElement.onclick = () => {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert(`Клиент: ${client.name}\nТелефон: ${client.phone || 'Не указан'}\nEmail: ${client.email || 'Не указан'}`);
+            }
+        };
+
+        clientsListElement.appendChild(clientElement);
+    });
+}
+
+// Load clients for booking sheet
+function loadClientsList() {
+    const clientListElement = document.getElementById('clientList');
+    if (!clientListElement) return;
+
+    clientListElement.innerHTML = '';
+
+    if (clients.length === 0) {
+        clientListElement.innerHTML = `
+            <div class="client-item" onclick="newClient()">
+                <div class="client-avatar">+</div>
+                <div class="client-name add-new">Добавить нового клиента</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Add existing clients
+    clients.forEach(client => {
+        const clientElement = document.createElement('div');
+        clientElement.className = 'client-item';
+
+        const initials = (client.name || 'C').split(' ').map(n => n[0]).join('').toUpperCase();
+
+        clientElement.innerHTML = `
+            <div class="client-avatar">${initials}</div>
+            <div class="client-name">${client.name || 'Клиент'}</div>
+        `;
+
+        clientElement.onclick = () => {
+            if (window.selectClient) {
+                window.selectClient(client.name);
+            }
+        };
+
+        clientListElement.appendChild(clientElement);
+    });
+
+    // Add "new client" option
+    const newClientElement = document.createElement('div');
+    newClientElement.className = 'client-item';
+    newClientElement.innerHTML = `
+        <div class="client-avatar">+</div>
+        <div class="client-name add-new">Добавить нового клиента</div>
+    `;
+    newClientElement.onclick = () => {
+        if (window.newClient) {
+            window.newClient();
+        }
+    };
+    clientListElement.appendChild(newClientElement);
+}
+
+// Override booking sheet opening to load clients
+const originalOpenBookingSheet = window.openBookingSheet;
+window.openBookingSheet = function() {
+    loadClientsList();
+    if (originalOpenBookingSheet) {
+        originalOpenBookingSheet();
+    }
+};
+
+// Update clients badge
+function updateClientsBadge() {
+    const clientsCountElement = document.getElementById('clientsCount');
+    if (clientsCountElement) {
+        clientsCountElement.textContent = clients.length;
+    }
+}
+
+// Save working hours to API
+async function saveWorkingHoursAPI(workingHoursData) {
+    if (!trainerId) {
+        console.log('No trainer ID, cannot save working hours');
+        return false;
+    }
+
+    try {
+        // Convert working hours to API format
+        const schedules = [];
+
+        Object.keys(workingHoursData).forEach(day => {
+            const dayData = workingHoursData[day];
+            if (dayData.isWorkingDay) {
+                schedules.push({
+                    day_of_week: day.toUpperCase(),
+                    start_time: dayData.start,
+                    end_time: dayData.end,
+                    is_break: false,
+                    is_active: true
+                });
+
+                // Add lunch break if enabled
+                if (dayData.hasBreak) {
+                    schedules.push({
+                        day_of_week: day.toUpperCase(),
+                        start_time: '12:00',
+                        end_time: '13:00',
+                        is_break: true,
+                        is_active: true
+                    });
+                }
+            }
+        });
+
+        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                schedules: schedules
+            })
+        });
+
+        if (response.ok) {
+            console.log('Working hours saved successfully');
+            return true;
+        } else {
+            console.error('Failed to save working hours:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error saving working hours:', error);
+        return false;
+    }
+}
+
+// Save trainer settings (price, duration, etc.)
+async function saveTrainerSettings(settings) {
+    if (!trainerId) {
+        console.log('No trainer ID, cannot save settings');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        });
+
+        if (response.ok) {
+            console.log('Trainer settings saved successfully');
+            // Reload trainer data to get updated values
+            await loadTrainerData();
+            updateUIWithData();
+            return true;
+        } else {
+            console.error('Failed to save trainer settings:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error saving trainer settings:', error);
+        return false;
+    }
+}
+
+// Make functions available globally for HTML
+window.saveWorkingHoursAPI = saveWorkingHoursAPI;
+window.saveTrainerSettings = saveTrainerSettings;

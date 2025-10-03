@@ -355,3 +355,54 @@ def generate_slots_from_schedule(
     db.commit()
 
     return {"message": f"Generated {slots_created} slots", "slots_created": slots_created}
+
+
+@router.put("/trainer/{telegram_id}/schedule")
+def update_trainer_schedule(
+    telegram_id: str,
+    schedule_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Update trainer's entire weekly schedule"""
+
+    # Get trainer
+    trainer = db.query(User).filter_by(
+        telegram_id=telegram_id,
+        role=UserRole.TRAINER
+    ).first()
+
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    # Delete existing schedule
+    db.query(Schedule).filter_by(trainer_id=trainer.id).delete()
+
+    # Add new schedules
+    schedules_created = 0
+    for schedule_item in schedule_data.get("schedules", []):
+        try:
+            start_time = time.fromisoformat(schedule_item["start_time"])
+            end_time = time.fromisoformat(schedule_item["end_time"])
+
+            schedule = Schedule(
+                trainer_id=trainer.id,
+                day_of_week=schedule_item["day_of_week"],
+                start_time=start_time,
+                end_time=end_time,
+                is_break=schedule_item.get("is_break", False),
+                is_active=schedule_item.get("is_active", True),
+                is_recurring=True
+            )
+
+            db.add(schedule)
+            schedules_created += 1
+        except Exception as e:
+            print(f"Error creating schedule item: {e}")
+            continue
+
+    db.commit()
+
+    return {
+        "message": f"Schedule updated with {schedules_created} items",
+        "schedules_created": schedules_created
+    }

@@ -32,12 +32,12 @@
 - SSH: root@81.200.157.102 (НЕ ИСПОЛЬЗОВАТЬ для деплоя!)
 - Проект: /opt/trenergram (Git репозиторий)
 - **ВАЖНО: Структура директорий на сервере:**
-  - `/var/www/trenergram/` - Mini Apps (веб-директория для nginx)
-  - `/var/www/trenergram/trainer/` - Mini App тренера
-  - `/var/www/trenergram/client/` - Mini App клиента
+  - `/var/www/trenergram/webapp/` - Mini Apps (веб-директория для nginx)
+  - `/var/www/trenergram/webapp/trainer/` - Mini App тренера
+  - `/var/www/trenergram/webapp/client/` - Mini App клиента
   - `/opt/trenergram/backend/` - Backend API (Docker)
   - `/opt/trenergram/webapp/` - Исходные файлы из Git
-- **НЕ СОЗДАВАЙ /var/www/trenergram/app/ - это неверный путь!**
+- **ВАЖНО: Везде должна быть папка webapp - и локально, и на сервере!**
 - SSL работает (HTTPS)
 
 ## Деплой
