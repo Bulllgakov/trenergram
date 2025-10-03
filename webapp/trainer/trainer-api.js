@@ -967,6 +967,14 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
                         is_break: true
                     });
                 }
+            } else {
+                // For day off, send inactive schedule to remove existing slots
+                schedules.push({
+                    day_of_week: day,
+                    start_time: dayData.start || '09:00',
+                    end_time: dayData.end || '18:00',
+                    is_active: false
+                });
             }
         });
 
@@ -1354,6 +1362,15 @@ async function saveWorkingHoursAPI(workingHoursData) {
                         is_active: true
                     });
                 }
+            } else {
+                // For day off, send inactive schedule to remove existing slots
+                schedules.push({
+                    day_of_week: day.toUpperCase(),
+                    start_time: dayData.start || '09:00',
+                    end_time: dayData.end || '18:00',
+                    is_break: false,
+                    is_active: false
+                });
             }
         });
 
