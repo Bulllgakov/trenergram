@@ -1,6 +1,6 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-17:00
+// Cache buster: 2025-10-03-19:20
 
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
 
@@ -307,7 +307,7 @@ function updateScheduleDisplay() {
             endTimeStr = slot.endTimeString;
         }
 
-        const displayTime = `${timeStr} - ${endTimeStr}`;
+        const displayTime = `${timeStr}<br>${endTimeStr}`;
 
         // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
@@ -1145,7 +1145,7 @@ function showDefaultSlots() {
             endTimeStr = slot.endTimeString;
         }
 
-        const displayTime = `${timeStr} - ${endTimeStr}`;
+        const displayTime = `${timeStr}<br>${endTimeStr}`;
 
         timeSlot.dataset.time = timeStr;
         timeSlot.onclick = () => {
