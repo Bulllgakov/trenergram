@@ -30,13 +30,14 @@
 - IP: 81.200.157.102
 - Домен: trenergram.ru
 - SSH: root@81.200.157.102 (НЕ ИСПОЛЬЗОВАТЬ для деплоя!)
-- Проект: /opt/trenergram
+- Проект: /opt/trenergram (Git репозиторий)
 - **ВАЖНО: Структура директорий на сервере:**
-  - `/opt/trenergram/webapp/` - Mini Apps (НЕ /var/www/trenergram/!)
-  - `/opt/trenergram/webapp/trainer/` - Mini App тренера
-  - `/opt/trenergram/webapp/client/` - Mini App клиента
-  - `/opt/trenergram/backend/` - Backend API
-- **НИКОГДА НЕ ИСПОЛЬЗУЙ /var/www/trenergram/ - ЭТО НЕВЕРНЫЙ ПУТЬ!**
+  - `/var/www/trenergram/` - Mini Apps (веб-директория для nginx)
+  - `/var/www/trenergram/trainer/` - Mini App тренера
+  - `/var/www/trenergram/client/` - Mini App клиента
+  - `/opt/trenergram/backend/` - Backend API (Docker)
+  - `/opt/trenergram/webapp/` - Исходные файлы из Git
+- **НЕ СОЗДАВАЙ /var/www/trenergram/app/ - это неверный путь!**
 - SSL работает (HTTPS)
 
 ## Деплой
