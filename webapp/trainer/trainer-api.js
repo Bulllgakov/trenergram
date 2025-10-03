@@ -980,6 +980,10 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
 
         if (response.ok) {
             console.log('Working hours saved successfully');
+            // Update local working hours data
+            window.workingHoursData = workingHoursData;
+            // Regenerate date tabs to reflect changes
+            generateDateTabs();
             // Reload schedule to reflect changes
             await loadSchedule();
             updateUIWithData();
@@ -1365,6 +1369,13 @@ async function saveWorkingHoursAPI(workingHoursData) {
 
         if (response.ok) {
             console.log('Working hours saved successfully');
+            // Update local working hours data
+            window.workingHoursData = workingHoursData;
+            // Regenerate date tabs to reflect changes
+            generateDateTabs();
+            // Reload schedule to reflect changes
+            await loadSchedule();
+            updateUIWithData();
             return true;
         } else {
             console.error('Failed to save working hours:', response.status);
