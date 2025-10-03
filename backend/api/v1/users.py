@@ -113,7 +113,7 @@ async def get_trainer_clients(
     # Get all trainer-client relationships
     relationships = db.query(TrainerClient).filter_by(
         trainer_id=trainer.id,
-        is_active=True
+        status="active"
     ).all()
 
     # Get client users

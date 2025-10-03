@@ -17,11 +17,12 @@
 - **trenergram.ru/admin/** - Супер-админка (в разработке)
 
 ## Mini App
-- **Локальная разработка:** папка `webapp/` в корне проекта
+- **Структура одинаковая локально и на сервере:**
   - `webapp/trainer/` - Mini App тренера (HTML/JS)
   - `webapp/client/` - Mini App клиента (HTML/JS)
-- **На сервере:** `/opt/trenergram/webapp/`
-- Разные интерфейсы в зависимости от роли
+- **Полные пути:**
+  - Локально: `/Users/bulat/trenergram/webapp/trainer/`, `/Users/bulat/trenergram/webapp/client/`
+  - На сервере: `/var/www/trenergram/webapp/trainer/`, `/var/www/trenergram/webapp/client/`
 - URL: `trenergram.ru/trainer/:id` и `trenergram.ru/client/:id`
 - Доступ только через Telegram бота
 
@@ -31,11 +32,10 @@
 - SSH: root@81.200.157.102 (НЕ ИСПОЛЬЗОВАТЬ для деплоя!)
 - Проект: /opt/trenergram (Git репозиторий)
 - **ВАЖНО: Структура директорий на сервере:**
-  - `/var/www/trenergram/webapp/` - Mini Apps (веб-директория для nginx)
-  - `/var/www/trenergram/webapp/trainer/` - Mini App тренера
-  - `/var/www/trenergram/webapp/client/` - Mini App клиента
+  - `/var/www/trenergram/webapp/trainer/` - Mini App тренера (nginx)
+  - `/var/www/trenergram/webapp/client/` - Mini App клиента (nginx)
   - `/opt/trenergram/backend/` - Backend API (Docker)
-  - `/opt/trenergram/webapp/` - Исходные файлы из Git
+- **ВАЖНО: Структура папок локально и на сервере одинаковая!**
 - **ВАЖНО: Везде должна быть папка webapp - и локально, и на сервере!**
 - SSL работает (HTTPS)
 
