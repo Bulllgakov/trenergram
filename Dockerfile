@@ -20,4 +20,4 @@ ENV PYTHONPATH=/app:$PYTHONPATH
 EXPOSE 8000
 
 # Команда запуска (будет переопределена в docker-compose)
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -7,9 +7,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.db.base_sync import Base
-from app.db.session import engine
-from app.models import User, UserRole, TrainerClient, Club, Booking, Schedule, TimeSlot
+from db.base_sync import Base
+from db.session import engine
+from models import User, UserRole, TrainerClient, Club, Booking, Schedule, TimeSlot
 
 def init_db():
     """Initialize database with tables"""

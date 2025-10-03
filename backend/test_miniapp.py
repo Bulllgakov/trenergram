@@ -12,9 +12,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal, engine
-from app.models import User, UserRole, Booking, BookingStatus, TrainerClient, Club
-from app.db.base_sync import Base
+from db.session import SessionLocal, engine
+from models import User, UserRole, Booking, BookingStatus, TrainerClient, Club
+from db.base_sync import Base
 
 def init_db():
     """Initialize database with tables"""

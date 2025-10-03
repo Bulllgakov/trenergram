@@ -4,7 +4,7 @@ Clean up all test bookings from database
 """
 import asyncio
 from sqlalchemy import text
-from app.db.base import async_session
+from db.base import async_session
 
 
 async def cleanup_bookings():

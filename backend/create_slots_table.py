@@ -4,7 +4,7 @@ Create trainer_slots table
 """
 import asyncio
 from sqlalchemy import text
-from app.db.base import async_session
+from db.base import async_session
 
 
 async def create_slots_table():

@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.db.session import SessionLocal
-from app.models import User, UserRole, TrainerClient
+from db.session import SessionLocal
+from models import User, UserRole, TrainerClient
 from datetime import datetime, timedelta
 
 def check_recent_activity():

@@ -4,7 +4,7 @@ Check database table structure
 """
 import asyncio
 from sqlalchemy import text, inspect
-from app.db.base import async_session, engine
+from db.base import async_session, engine
 
 
 async def check_structure():

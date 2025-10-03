@@ -5,8 +5,8 @@ Create test bookings for testing the Mini App
 import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy import text
-from app.db.base import async_session
-from app.db.base import engine
+from db.base import async_session
+from db.base import engine
 
 
 async def create_test_bookings():

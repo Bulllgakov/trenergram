@@ -4,7 +4,7 @@ Apply database migrations
 """
 import asyncio
 from sqlalchemy import text
-from app.db.base import async_session
+from db.base import async_session
 import os
 
 
