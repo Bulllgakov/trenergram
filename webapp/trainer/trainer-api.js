@@ -854,6 +854,9 @@ window.confirmBooking = async function() {
 // Update client list in booking sheet when it opens
 const originalOpenBookingSheet = window.openBookingSheet;
 window.openBookingSheet = function() {
+    // Load clients list first
+    loadClientsList();
+
     // Call original function
     if (originalOpenBookingSheet) {
         originalOpenBookingSheet();
@@ -1300,14 +1303,7 @@ function loadClientsList() {
     clientListElement.appendChild(newClientElement);
 }
 
-// Override booking sheet opening to load clients
-const originalOpenBookingSheet = window.openBookingSheet;
-window.openBookingSheet = function() {
-    loadClientsList();
-    if (originalOpenBookingSheet) {
-        originalOpenBookingSheet();
-    }
-};
+// Additional client list loading (removed duplicate originalOpenBookingSheet declaration)
 
 // Update clients badge
 function updateClientsBadge() {
