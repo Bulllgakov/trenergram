@@ -57,7 +57,7 @@ class NotificationService:
                 [
                     InlineKeyboardButton(
                         text="📱 Открыть Mini App",
-                        web_app={"url": f"https://trenergram.ru/app/trainer/{trainer.telegram_id}"}
+                        web_app={"url": f"https://trenergram.ru/trainer/{trainer.telegram_id}"}
                     )
                 ]
             ])
@@ -100,7 +100,7 @@ class NotificationService:
                 [
                     InlineKeyboardButton(
                         text="📱 Мои записи",
-                        web_app={"url": f"https://trenergram.ru/app/client/{client.telegram_id}"}
+                        web_app={"url": f"https://trenergram.ru/client/{client.telegram_id}"}
                     )
                 ]
             ])
@@ -180,7 +180,7 @@ class NotificationService:
                     [
                         InlineKeyboardButton(
                             text="📱 Записаться снова",
-                            web_app={"url": f"https://trenergram.ru/app/client/{client.telegram_id}"}
+                            web_app={"url": f"https://trenergram.ru/client/{client.telegram_id}"}
                         )
                     ]
                 ])

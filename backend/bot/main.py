@@ -54,11 +54,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 keyboard = [
                     [InlineKeyboardButton(
                         "📅 Мои тренировки",
-                        web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}")
+                        web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}")
                     )],
                     [InlineKeyboardButton(
                         "⚙️ Настройки",
-                        web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}/settings")
+                        web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}/settings")
                     )]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
@@ -87,12 +87,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = [
                 [InlineKeyboardButton(
                     "📱 Открыть кабинет тренера",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user.id}")
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user.id}")
                 )],
                 [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
                 [InlineKeyboardButton(
                     "⚙️ Настройки",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/trainer/{user.id}/settings")
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user.id}/settings")
                 )]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -109,11 +109,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = [
                 [InlineKeyboardButton(
                     "📅 Мои тренировки",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}")
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}")
                 )],
                 [InlineKeyboardButton(
                     "⚙️ Настройки",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/app/client/{user.id}/settings")
+                    web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}/settings")
                 )]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)

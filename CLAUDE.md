@@ -10,9 +10,8 @@
 
 ## Структура URL (ВАЖНО!)
 - **trenergram.ru/** - Веб-витрина (в разработке)
-- **trenergram.ru/app/** - Mini App (только через Telegram)
-  - `/app/trainer/:id` - для тренеров
-  - `/app/client/:id` - для клиентов
+- **trenergram.ru/trainer/:id** - Mini App тренера (только через Telegram)
+- **trenergram.ru/client/:id** - Mini App клиента (только через Telegram)
 - **trenergram.ru/api/** - Backend API
 - **trenergram.ru/club-admin/** - Панель клуба (в разработке)
 - **trenergram.ru/admin/** - Супер-админка (в разработке)
@@ -23,7 +22,7 @@
   - `webapp/client/` - Mini App клиента (HTML/JS)
 - **На сервере:** `/opt/trenergram/webapp/`
 - Разные интерфейсы в зависимости от роли
-- URL: `trenergram.ru/app/trainer/:id` и `trenergram.ru/app/client/:id`
+- URL: `trenergram.ru/trainer/:id` и `trenergram.ru/client/:id`
 - Доступ только через Telegram бота
 
 ## Сервер
@@ -63,7 +62,7 @@
 curl http://trenergram.ru/health
 
 # Проверка Mini App
-curl http://trenergram.ru/app/
+curl http://trenergram.ru/trainer/
 
 # Статус GitHub Actions
 gh run list --limit 1
@@ -72,7 +71,7 @@ gh run list --limit 1
 ## Что работает
 ✅ Backend API
 ✅ Telegram Bot
-✅ Mini App на /app/
+✅ Mini App на /trainer/ и /client/
 ✅ PostgreSQL и Redis
 ✅ CI/CD через GitHub Actions
 
