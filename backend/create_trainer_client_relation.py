@@ -9,7 +9,7 @@ import os
 sys.path.append('.')
 
 from db.base import async_session
-from models.user import User, UserRole, TrainerClient
+from models.user_v2 import User, UserRole, TrainerClient
 from sqlalchemy import select
 from datetime import datetime
 
