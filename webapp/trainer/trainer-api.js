@@ -1,6 +1,6 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-19:20
+// Cache buster: 2025-10-03-19:45
 
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
 
@@ -129,7 +129,7 @@ function updateDurationDisplay() {
 }
 
 // Generate time slots based on session duration
-function generateTimeSlots(startTime, endTime) {
+function generateTimeSlots(startTime, endTime, hasBreak = false) {
     const slots = [];
     const duration = (trainerData && trainerData.session_duration) || selectedDuration || 60;
 
@@ -139,9 +139,27 @@ function generateTimeSlots(startTime, endTime) {
     const startMinutes = startHour * 60 + startMinute;
     const endMinutes = endHour * 60 + endMinute;
 
+    // Lunch break times (12:00-13:00)
+    const lunchStartMinutes = 12 * 60; // 12:00
+    const lunchEndMinutes = 13 * 60;   // 13:00
+
     for (let currentMinutes = startMinutes; currentMinutes + duration <= endMinutes; currentMinutes += duration) {
         const hour = Math.floor(currentMinutes / 60);
         const minute = currentMinutes % 60;
+        const slotEndMinutes = currentMinutes + duration;
+
+        // Skip slots that overlap with lunch break
+        if (hasBreak && (
+            (currentMinutes >= lunchStartMinutes && currentMinutes < lunchEndMinutes) ||
+            (slotEndMinutes > lunchStartMinutes && slotEndMinutes <= lunchEndMinutes) ||
+            (currentMinutes < lunchStartMinutes && slotEndMinutes > lunchEndMinutes)
+        )) {
+            // If slot overlaps with lunch break, skip to after lunch
+            if (currentMinutes < lunchEndMinutes) {
+                currentMinutes = lunchEndMinutes - duration; // Will be incremented by duration in loop
+                continue;
+            }
+        }
 
         slots.push({
             hour: hour,
@@ -942,7 +960,7 @@ function getWorkingHoursForDate(date) {
         }
 
         // Generate time slots based on session duration
-        const slots = generateTimeSlots(dayData.start, dayData.end);
+        const slots = generateTimeSlots(dayData.start, dayData.end, dayData.hasBreak);
         console.log('Generated slots for', dayOfWeek, ':', slots);
         return slots;
     }
@@ -959,7 +977,7 @@ function getWorkingHoursForDate(date) {
 
 // Save working hours to API
 window.saveWorkingHoursAPI = async function(workingHoursData) {
-    if (!trainerId) return;
+    if (!trainerId) return false;
 
     try {
         // Convert to API format
@@ -974,15 +992,7 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
                     is_active: true
                 });
 
-                // Add break if needed
-                if (dayData.hasBreak) {
-                    schedules.push({
-                        day_of_week: day,
-                        start_time: '12:00',
-                        end_time: '13:00',
-                        is_active: true
-                    });
-                }
+                // Note: Lunch break is handled on frontend only, not saved to backend
             } else {
                 // For day off, send inactive schedule to remove existing slots
                 schedules.push({
@@ -1015,11 +1025,14 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
                     updateScheduleDisplay();
                 }
             }
+            return true;
         } else {
             console.error('Failed to save working hours');
+            return false;
         }
     } catch (error) {
         console.error('Error saving working hours:', error);
+        return false;
     }
 };
 
@@ -1378,15 +1391,8 @@ async function saveWorkingHoursAPI(workingHoursData) {
                     is_active: true
                 });
 
-                // Add lunch break if enabled
-                if (dayData.hasBreak) {
-                    schedules.push({
-                        day_of_week: day.toUpperCase(),
-                        start_time: '12:00',
-                        end_time: '13:00',
-                        is_active: true
-                    });
-                }
+                // Note: Lunch break is handled on frontend only, not saved to backend
+                // to avoid creating actual working hours for break time
             } else {
                 // For day off, send inactive schedule to remove existing slots
                 schedules.push({
