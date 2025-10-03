@@ -319,7 +319,12 @@ function updateScheduleDisplay() {
         // Create time slot element
         const timeSlot = document.createElement('div');
 
-        if (hour === 12) {
+        // Check if this time slot should show lunch break
+        const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const dayData = window.workingHoursData && window.workingHoursData[dayOfWeek];
+        const shouldShowLunchBreak = dayData && dayData.hasBreak && hour === 12;
+
+        if (shouldShowLunchBreak) {
             // Lunch break
             timeSlot.className = 'time-slot break';
             timeSlot.innerHTML = `
@@ -859,13 +864,25 @@ window.confirmBooking = async function() {
 // Update client list in booking sheet when it opens
 const originalOpenBookingSheet = window.openBookingSheet;
 window.openBookingSheet = function() {
+    console.log('Custom openBookingSheet called');
+
     // Load clients list first
     loadClientsList();
 
     // Call original function
     if (originalOpenBookingSheet) {
+        console.log('Calling original openBookingSheet');
         originalOpenBookingSheet();
+    } else {
+        console.log('No original openBookingSheet found');
     }
+
+    // Update time options with real data
+    console.log('About to call updateBookingTimeOptions');
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+        updateBookingTimeOptions();
+    }, 100);
 
     // Update client list with real data
     const clientList = document.getElementById('clientList');
@@ -963,8 +980,7 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
                         day_of_week: day,
                         start_time: '12:00',
                         end_time: '13:00',
-                        is_active: true,
-                        is_break: true
+                        is_active: true
                     });
                 }
             } else {
@@ -1035,15 +1051,15 @@ async function loadWorkingHours() {
 
             schedules.forEach(schedule => {
                 const day = schedule.day_of_week.toLowerCase();
-                if (!schedule.is_break && schedule.is_active) {
+                if (schedule.is_active) {
                     // Active working schedule
                     workingHoursData[day] = {
                         isWorkingDay: true,
                         start: schedule.start_time,
                         end: schedule.end_time,
-                        hasBreak: false // Will be set if break schedule found
+                        hasBreak: false
                     };
-                } else if (!schedule.is_break && !schedule.is_active) {
+                } else {
                     // Inactive schedule - day off
                     workingHoursData[day] = {
                         isWorkingDay: false,
@@ -1051,8 +1067,6 @@ async function loadWorkingHours() {
                         end: schedule.end_time,
                         hasBreak: false
                     };
-                } else if (schedule.is_break && schedule.is_active && workingHoursData[day]) {
-                    workingHoursData[day].hasBreak = true;
                 }
             });
 
@@ -1361,7 +1375,6 @@ async function saveWorkingHoursAPI(workingHoursData) {
                     day_of_week: day.toUpperCase(),
                     start_time: dayData.start,
                     end_time: dayData.end,
-                    is_break: false,
                     is_active: true
                 });
 
@@ -1371,7 +1384,6 @@ async function saveWorkingHoursAPI(workingHoursData) {
                         day_of_week: day.toUpperCase(),
                         start_time: '12:00',
                         end_time: '13:00',
-                        is_break: true,
                         is_active: true
                     });
                 }
@@ -1381,7 +1393,6 @@ async function saveWorkingHoursAPI(workingHoursData) {
                     day_of_week: day.toUpperCase(),
                     start_time: dayData.start || '09:00',
                     end_time: dayData.end || '18:00',
-                    is_break: false,
                     is_active: false
                 });
             }
@@ -1453,6 +1464,89 @@ async function saveTrainerSettings(settings) {
     }
 }
 
+// Update time options in booking form
+function updateBookingTimeOptions() {
+    console.log('updateBookingTimeOptions called');
+    // Get the correct time grid (second one in bookingSheet)
+    const timeGrids = document.querySelectorAll('#bookingSheet .time-grid');
+    const timeGrid = timeGrids[1]; // Second time-grid is for time selection
+    console.log('timeGrids found:', timeGrids.length, 'using index 1:', !!timeGrid);
+    if (!timeGrid) return;
+
+    // Get working hours for current date
+    const workingHours = getWorkingHoursForDate(currentDate);
+    console.log('Working hours for booking form:', workingHours);
+
+    // Clear existing options
+    timeGrid.innerHTML = '';
+    console.log('Cleared existing time options');
+
+    if (workingHours.length === 0) {
+        timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color);">Нет доступного времени</div>';
+        return;
+    }
+
+    // Generate time options from available slots
+    workingHours.forEach(slot => {
+        let timeStr;
+        if (typeof slot === 'number') {
+            timeStr = `${slot.toString().padStart(2, '0')}:00`;
+        } else {
+            timeStr = slot.timeString;
+        }
+
+        // Check if this time slot is already booked
+        const isBooked = bookings.some(booking => {
+            const bookingDate = new Date(booking.datetime);
+            return bookingDate.getHours() === (typeof slot === 'number' ? slot : slot.hour) &&
+                   bookingDate.toDateString() === currentDate.toDateString();
+        });
+
+        // Check if this time slot should show lunch break
+        const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const dayData = window.workingHoursData && window.workingHoursData[dayOfWeek];
+        const isLunchBreak = dayData && dayData.hasBreak && (typeof slot === 'number' ? slot : slot.hour) === 12;
+
+        const timeOption = document.createElement('div');
+        timeOption.className = `time-option ${isBooked || isLunchBreak ? 'disabled' : ''}`;
+        timeOption.textContent = timeStr;
+
+        console.log(`Time slot ${timeStr}: booked=${isBooked}, lunchBreak=${isLunchBreak}, disabled=${isBooked || isLunchBreak}`);
+
+        if (!isBooked && !isLunchBreak) {
+            timeOption.onclick = () => {
+                // Remove selection from all options
+                document.querySelectorAll('.time-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                // Select this option
+                timeOption.classList.add('selected');
+                window.selectedTime = timeStr;
+
+                // Haptic feedback
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                }
+            };
+        }
+
+        timeGrid.appendChild(timeOption);
+    });
+
+    // Auto-select the pre-selected time if available
+    if (window.selectedTimeForBooking) {
+        const targetOption = Array.from(timeGrid.children).find(option =>
+            option.textContent === window.selectedTimeForBooking && !option.classList.contains('disabled')
+        );
+        if (targetOption) {
+            targetOption.classList.add('selected');
+            window.selectedTime = window.selectedTimeForBooking;
+        }
+        window.selectedTimeForBooking = null; // Clear after use
+    }
+}
+
 // Make functions available globally for HTML
 window.saveWorkingHoursAPI = saveWorkingHoursAPI;
 window.saveTrainerSettings = saveTrainerSettings;
+window.updateBookingTimeOptions = updateBookingTimeOptions;

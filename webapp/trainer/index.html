@@ -1530,14 +1530,31 @@
         function quickBook(time) {
             selectedTime = time;
             openBookingSheet();
-            
-            // Pre-select the time
-            document.querySelectorAll('.time-option').forEach(option => {
-                option.classList.remove('selected');
-                if (option.textContent === time && !option.classList.contains('disabled')) {
-                    option.classList.add('selected');
+
+            // Update time options with real data after opening sheet
+            setTimeout(() => {
+                if (window.updateBookingTimeOptions) {
+                    window.updateBookingTimeOptions();
+                    // Pre-select the clicked time after options are updated
+                    setTimeout(() => {
+                        document.querySelectorAll('.time-option').forEach(option => {
+                            option.classList.remove('selected');
+                            if (option.textContent === time && !option.classList.contains('disabled')) {
+                                option.classList.add('selected');
+                                window.selectedTime = time;
+                            }
+                        });
+                    }, 50);
+                } else {
+                    // Fallback to original logic
+                    document.querySelectorAll('.time-option').forEach(option => {
+                        option.classList.remove('selected');
+                        if (option.textContent === time && !option.classList.contains('disabled')) {
+                            option.classList.add('selected');
+                        }
+                    });
                 }
-            });
+            }, 150);
         }
 
         // Close specific sheet

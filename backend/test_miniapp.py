@@ -155,8 +155,8 @@ def create_test_data():
         print("\n📱 Test credentials for Mini App:")
         print(f"Trainer Telegram ID: {trainer.telegram_id}")
         print(f"Client Telegram ID: {client.telegram_id}")
-        print(f"\nTrainer URL: https://trenergram.ru/app/trainer/{trainer.telegram_id}")
-        print(f"Client URL: https://trenergram.ru/app/client/{client.telegram_id}")
+        print(f"\nTrainer URL: https://trenergram.ru/trainer/{trainer.telegram_id}")
+        print(f"Client URL: https://trenergram.ru/client/{client.telegram_id}")
 
     except Exception as e:
         print(f"❌ Error creating test data: {e}")

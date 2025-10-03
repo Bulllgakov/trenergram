@@ -9,7 +9,7 @@
     "output_directory": "."
   },
   "run": {
-    "command": "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT",
+    "command": "uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
     "runtime": "python-3.10"
   },
   "env_variables": {
@@ -22,7 +22,7 @@
       "name": "web",
       "type": "web",
       "plan": "starter",
-      "run_command": "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT",
+      "run_command": "uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
       "health_check_path": "/health",
       "port": 8000
     },
@@ -30,7 +30,7 @@
       "name": "bot",
       "type": "worker",
       "plan": "starter",
-      "run_command": "python backend/app/bot/main.py"
+      "run_command": "python backend/bot/main.py"
     }
   ],
   "addons": [

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Trenergram platform",
   "scripts": {
-    "start": "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT",
-    "bot": "python backend/app/bot/main.py",
+    "start": "python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
+    "bot": "python backend/bot/main.py",
     "build": "pip install -r requirements.txt",
     "init-db": "python backend/init_db.py"
   },

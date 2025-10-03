@@ -5,7 +5,7 @@
 ### Продакшн (trenergram.ru)
 - **`trenergram.ru/`** - Веб-витрина (публичный сайт для поиска тренеров) *[в разработке]*
 - **`trenergram.ru/app/`** - Telegram Mini App (доступ только через бота)
-  - `/app/trainer/:id` - Интерфейс тренера
+  - `/trainer/:id` - Интерфейс тренера
   - `/app/client/:id` - Интерфейс клиента
 - **`trenergram.ru/api/`** - Backend API
 - **`trenergram.ru/health`** - Health check endpoint
