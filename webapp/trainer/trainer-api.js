@@ -1022,27 +1022,36 @@ async function loadWorkingHours() {
         if (response.ok) {
             const schedules = await response.json();
 
-            // Convert to UI format
+            // Convert to UI format - start with working days by default
             const workingHoursData = {
-                monday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
-                tuesday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
-                wednesday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
-                thursday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
-                friday: { isWorkingDay: false, start: '09:00', end: '21:00', hasBreak: false },
+                monday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
+                tuesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
+                wednesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
+                thursday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
+                friday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
                 saturday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false },
                 sunday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false }
             };
 
             schedules.forEach(schedule => {
                 const day = schedule.day_of_week.toLowerCase();
-                if (!schedule.is_break) {
+                if (!schedule.is_break && schedule.is_active) {
+                    // Active working schedule
                     workingHoursData[day] = {
                         isWorkingDay: true,
                         start: schedule.start_time,
                         end: schedule.end_time,
                         hasBreak: false // Will be set if break schedule found
                     };
-                } else if (schedule.is_break && workingHoursData[day]) {
+                } else if (!schedule.is_break && !schedule.is_active) {
+                    // Inactive schedule - day off
+                    workingHoursData[day] = {
+                        isWorkingDay: false,
+                        start: schedule.start_time,
+                        end: schedule.end_time,
+                        hasBreak: false
+                    };
+                } else if (schedule.is_break && schedule.is_active && workingHoursData[day]) {
                     workingHoursData[day].hasBreak = true;
                 }
             });
