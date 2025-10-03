@@ -840,7 +840,13 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
 
 // Load working hours from API
 async function loadWorkingHours() {
-    if (!trainerId) return;
+    // If no trainerId or API fails, still use default from HTML
+    if (!trainerId) {
+        console.log('No trainer ID, using default working hours from HTML');
+        // Regenerate tabs with existing window.workingHoursData
+        generateDateTabs();
+        return window.workingHoursData;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
@@ -872,10 +878,8 @@ async function loadWorkingHours() {
                 }
             });
 
-            // Update global variable if exists
-            if (window.workingHoursData) {
-                window.workingHoursData = workingHoursData;
-            }
+            // Update global variable
+            window.workingHoursData = workingHoursData;
 
             // Update UI display
             Object.keys(workingHoursData).forEach(day => {
@@ -890,13 +894,20 @@ async function loadWorkingHours() {
                 }
             });
 
+            // Regenerate date tabs with loaded working hours
+            generateDateTabs();
+
             return workingHoursData;
         }
     } catch (error) {
-        console.error('Failed to load working hours:', error);
+        console.error('Failed to load working hours from API, using defaults:', error);
     }
 
-    return null;
+    // If API fails, ensure we regenerate tabs with default HTML data
+    console.log('Using default working hours from HTML');
+    generateDateTabs();
+
+    return window.workingHoursData;
 }
 
 // Simple function to immediately show slots
@@ -982,11 +993,8 @@ if (document.readyState === 'loading') {
         updateDateDisplay();
 
         // Then load real data and update
-        await loadWorkingHours();
+        await loadWorkingHours(); // This now regenerates tabs internally
         await initializeAPI();
-
-        // Regenerate tabs with actual working hours data
-        generateDateTabs();
     });
 } else {
     console.log('DOM already loaded, initializing...');
@@ -1008,7 +1016,6 @@ if (document.readyState === 'loading') {
     // Then load real data
     loadWorkingHours().then(() => {
         initializeAPI();
-        // Regenerate tabs with actual working hours data
-        generateDateTabs();
+        // loadWorkingHours already regenerates tabs
     });
 }
