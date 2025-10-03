@@ -235,10 +235,11 @@ function updateScheduleDisplay() {
     workingHours.forEach(hour => {
         const timeStr = `${hour.toString().padStart(2, '0')}:00`;
 
-        // Check if there's a booking at this time
+        // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
             const bookingDate = new Date(b.datetime);
-            return bookingDate.getHours() === hour;
+            return bookingDate.getHours() === hour &&
+                   bookingDate.toDateString() === currentDate.toDateString();
         });
 
         // Create time slot element
