@@ -18,9 +18,12 @@
 - **trenergram.ru/admin/** - Супер-админка (в разработке)
 
 ## Mini App
-- Один Mini App для тренеров и клиентов
+- **Локальная разработка:** папка `webapp/` в корне проекта
+  - `webapp/trainer/` - Mini App тренера (HTML/JS)
+  - `webapp/client/` - Mini App клиента (HTML/JS)
+- **На сервере:** `/opt/trenergram/webapp/`
 - Разные интерфейсы в зависимости от роли
-- Base path: `/app/` (настроено в vite.config.js)
+- URL: `trenergram.ru/app/trainer/:id` и `trenergram.ru/app/client/:id`
 - Доступ только через Telegram бота
 
 ## Сервер
@@ -28,7 +31,12 @@
 - Домен: trenergram.ru
 - SSH: root@81.200.157.102 (НЕ ИСПОЛЬЗОВАТЬ для деплоя!)
 - Проект: /opt/trenergram
-- Frontend: /var/www/trenergram/
+- **ВАЖНО: Структура директорий на сервере:**
+  - `/opt/trenergram/webapp/` - Mini Apps (НЕ /var/www/trenergram/!)
+  - `/opt/trenergram/webapp/trainer/` - Mini App тренера
+  - `/opt/trenergram/webapp/client/` - Mini App клиента
+  - `/opt/trenergram/backend/` - Backend API
+- **НИКОГДА НЕ ИСПОЛЬЗУЙ /var/www/trenergram/ - ЭТО НЕВЕРНЫЙ ПУТЬ!**
 - SSL работает (HTTPS)
 
 ## Деплой
