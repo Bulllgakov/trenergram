@@ -189,7 +189,7 @@ function generateDateTabs() {
         }
 
         button.textContent = displayText;
-        button.onclick = () => selectDate(button, dateStr);
+        button.onclick = () => window.selectDate(button, dateStr);
 
         dateTabs.appendChild(button);
     }
