@@ -39,14 +39,26 @@ async function initializeAPI() {
 // Load trainer data
 async function loadTrainerData() {
     try {
+        // Load trainer basic info
         const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}`);
         if (response.ok) {
             trainerData = await response.json();
-            clients = trainerData.clients || [];
             console.log('Trainer data loaded:', trainerData);
+        }
+
+        // Load trainer's clients from separate endpoint
+        const clientsResponse = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/clients`);
+        if (clientsResponse.ok) {
+            clients = await clientsResponse.json();
+            console.log('Clients loaded:', clients);
+        } else {
+            // Fallback to empty array if endpoint doesn't exist
+            clients = trainerData.clients || [];
+            console.log('Using clients from trainer data:', clients);
         }
     } catch (error) {
         console.error('Failed to load trainer data:', error);
+        clients = [];
     }
 }
 
