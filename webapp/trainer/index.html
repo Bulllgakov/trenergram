@@ -1270,7 +1270,7 @@
         let selectedClient = null;
         let selectedTime = null;
         let selectedHoursValue = 24;
-        let currentDate = '2025-08-13';
+        // currentDate is declared in trainer-api.js
         let currentBookingSlot = null;
         let currentReminderType = null;
 
@@ -1502,7 +1502,9 @@
                 tab.classList.remove('active');
             });
             element.classList.add('active');
-            currentDate = date;
+            if (typeof currentDate !== 'undefined') {
+                currentDate = new Date(date);
+            }
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
