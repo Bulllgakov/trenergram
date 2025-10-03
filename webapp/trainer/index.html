@@ -784,11 +784,13 @@
 
         <!-- Date Tabs -->
         <div class="date-tabs" id="dateTabs">
-            <!-- Will be populated dynamically -->
+            <!-- Default tabs, will be replaced dynamically -->
+            <button class="date-tab active" onclick="selectDate(this, 'today')">Сегодня</button>
+            <button class="date-tab" onclick="selectDate(this, 'tomorrow')">Завтра</button>
         </div>
 
         <!-- Section Header -->
-        <div class="section-header" id="sectionHeader">Загрузка...</div>
+        <div class="section-header" id="sectionHeader">Сегодня • Независимый тренер</div>
 
         <!-- Schedule List -->
         <div class="schedule-section" id="scheduleSection">
@@ -1592,6 +1594,54 @@
     <!-- API Integration -->
     <script src="trainer-api.js"></script>
     <script>
+        // Generate date tabs immediately if not already done
+        setTimeout(() => {
+            const dateTabs = document.getElementById('dateTabs');
+            if (dateTabs && dateTabs.children.length <= 2) {
+                console.log('Forcing date tabs generation...');
+                const today = new Date();
+                dateTabs.innerHTML = '';
+
+                for (let i = -2; i <= 4; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+
+                    const button = document.createElement('button');
+                    button.className = 'date-tab';
+                    if (i === 0) button.classList.add('active');
+
+                    const dateStr = date.getFullYear() + '-' +
+                                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                                   String(date.getDate()).padStart(2, '0');
+
+                    let text;
+                    if (i === 0) text = 'Сегодня';
+                    else if (i === 1) text = 'Завтра';
+                    else {
+                        const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+                        text = days[date.getDay()] + ', ' + date.getDate();
+                    }
+
+                    button.textContent = text;
+                    button.onclick = function() {
+                        if (typeof selectDate === 'function') {
+                            selectDate(this, dateStr);
+                        }
+                    };
+
+                    dateTabs.appendChild(button);
+                }
+
+                // Update section header
+                const header = document.getElementById('sectionHeader');
+                if (header) {
+                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                    const dateStr = today.toLocaleDateString('ru-RU', options);
+                    header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1) + ' • Независимый тренер';
+                }
+            }
+        }, 500);
+
         // Ensure slots are shown even if trainer-api.js fails
         setTimeout(() => {
             const scheduleSection = document.getElementById('scheduleSection');
