@@ -1632,13 +1632,8 @@
                     dateTabs.appendChild(button);
                 }
 
-                // Update section header
-                const header = document.getElementById('sectionHeader');
-                if (header) {
-                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
-                    const dateStr = today.toLocaleDateString('ru-RU', options);
-                    header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1) + ' • Независимый тренер';
-                }
+                // Section header will be updated by trainer-api.js with correct date
+                // Don't update it here as it will always show today
             }
         }, 500);
 
