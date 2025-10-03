@@ -1,8 +1,21 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-19:45
+// Cache buster: 2025-10-03-20:30
 
+// Force HTTPS for all API calls - VERY EXPLICIT
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
+console.log('API_BASE_URL FORCED to HTTPS:', API_BASE_URL);
+
+// Override any potential global fetch to force HTTPS
+const originalFetch = window.fetch;
+window.fetch = function(url, options) {
+    if (typeof url === 'string' && url.includes('trenergram.ru') && url.startsWith('http://')) {
+        console.warn('INTERCEPTED HTTP URL, converting to HTTPS:', url);
+        url = url.replace('http://', 'https://');
+        console.log('Converted URL:', url);
+    }
+    return originalFetch.call(this, url, options);
+};
 
 // Get trainer ID from URL or Telegram user
 const pathParts = window.location.pathname.split('/');
