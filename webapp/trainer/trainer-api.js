@@ -610,7 +610,11 @@ window.showClients = function() {
     }
 
     // Open the sheet
-    openSheet('clientsSheet');
+    if (typeof openClientsSheet === 'function') {
+        openClientsSheet();
+    } else {
+        console.error('openClientsSheet function not found');
+    }
 };
 
 // Show client details
