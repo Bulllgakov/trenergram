@@ -1357,6 +1357,7 @@
             if (!day) return;
 
             currentDay = day;
+            window.currentEditingDay = day; // Make available to external JS
             const dayData = window.workingHoursData[day];
 
             // Update title

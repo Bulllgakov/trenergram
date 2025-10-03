@@ -992,8 +992,13 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
             window.workingHoursData = workingHoursData;
             // Regenerate date tabs to reflect changes
             generateDateTabs();
-            // Update schedule display for current date
-            updateScheduleDisplay();
+            // Update schedule display only if current date matches the edited day
+            if (currentDate && window.currentEditingDay) {
+                const currentDayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                if (currentDayOfWeek === window.currentEditingDay) {
+                    updateScheduleDisplay();
+                }
+            }
         } else {
             console.error('Failed to save working hours');
         }
@@ -1389,8 +1394,13 @@ async function saveWorkingHoursAPI(workingHoursData) {
             window.workingHoursData = workingHoursData;
             // Regenerate date tabs to reflect changes
             generateDateTabs();
-            // Update schedule display for current date
-            updateScheduleDisplay();
+            // Update schedule display only if current date matches the edited day
+            if (currentDate && window.currentEditingDay) {
+                const currentDayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                if (currentDayOfWeek === window.currentEditingDay) {
+                    updateScheduleDisplay();
+                }
+            }
             return true;
         } else {
             console.error('Failed to save working hours:', response.status);
