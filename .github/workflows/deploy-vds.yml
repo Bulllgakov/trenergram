@@ -36,11 +36,16 @@ jobs:
           docker-compose build --no-cache backend bot
           docker-compose up -d
 
-          # Deploy webapp files
+          # Remove old incorrect directory if exists
+          if [ -d "/var/www/trenergram" ]; then
+            rm -rf /var/www/trenergram
+          fi
+
+          # Deploy webapp files to correct location
           if [ -d "webapp" ]; then
-            # Deploy webapp files
-            rm -rf /var/www/trenergram/*
-            cp -r webapp/* /var/www/trenergram/
+            echo "Deploying webapp files..."
+            # Webapp files are already in /opt/trenergram/webapp after git pull
+            # No need to copy, they are in the right place
           fi
 
           # Update nginx config if exists
