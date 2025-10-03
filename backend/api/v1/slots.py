@@ -50,7 +50,7 @@ def get_trainer_schedule(
             "end_time": s.end_time.strftime("%H:%M"),
             "is_recurring": s.is_recurring,
             "is_active": s.is_active,
-            "is_break": getattr(s, 'is_break', False)
+            "is_break": False
         }
         for s in schedule
     ]
@@ -385,12 +385,15 @@ def update_trainer_schedule(
             start_time = time.fromisoformat(schedule_item["start_time"])
             end_time = time.fromisoformat(schedule_item["end_time"])
 
+            # Convert day_of_week string to enum
+            day_of_week_str = schedule_item["day_of_week"].lower()
+            day_of_week_enum = DayOfWeek(day_of_week_str)
+
             schedule = Schedule(
                 trainer_id=trainer.id,
-                day_of_week=schedule_item["day_of_week"],
+                day_of_week=day_of_week_enum,
                 start_time=start_time,
                 end_time=end_time,
-                is_break=schedule_item.get("is_break", False),
                 is_active=schedule_item.get("is_active", True),
                 is_recurring=True
             )
