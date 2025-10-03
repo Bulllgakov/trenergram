@@ -1,5 +1,6 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
+// Cache buster: 2025-10-03-17:00
 
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
 
