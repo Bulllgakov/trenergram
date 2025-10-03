@@ -37,10 +37,9 @@ def get_trainer_schedule(
     if not trainer:
         raise HTTPException(status_code=404, detail="Trainer not found")
 
-    # Get schedule
+    # Get schedule (including inactive ones)
     schedule = db.query(Schedule).filter_by(
-        trainer_id=trainer.id,
-        is_active=True
+        trainer_id=trainer.id
     ).order_by(Schedule.day_of_week, Schedule.start_time).all()
 
     return [
@@ -49,7 +48,9 @@ def get_trainer_schedule(
             "day_of_week": s.day_of_week,
             "start_time": s.start_time.strftime("%H:%M"),
             "end_time": s.end_time.strftime("%H:%M"),
-            "is_recurring": s.is_recurring
+            "is_recurring": s.is_recurring,
+            "is_active": s.is_active,
+            "is_break": getattr(s, 'is_break', False)
         }
         for s in schedule
     ]
