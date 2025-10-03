@@ -41,6 +41,12 @@ jobs:
             rm -rf /var/www/trenergram/app
           fi
 
+          # Clean up old backend structure (remove leftover app folder)
+          if [ -d "backend/app" ]; then
+            echo "Removing old backend/app structure"
+            rm -rf backend/app
+          fi
+
           # Deploy webapp files to correct location
           if [ -d "webapp" ]; then
             echo "Deploying webapp files to /var/www/trenergram/"
