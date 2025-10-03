@@ -970,7 +970,7 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
             }
         });
 
-        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`, {
+        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
