@@ -992,9 +992,8 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
             window.workingHoursData = workingHoursData;
             // Regenerate date tabs to reflect changes
             generateDateTabs();
-            // Reload schedule to reflect changes
-            await loadSchedule();
-            updateUIWithData();
+            // Update schedule display for current date
+            updateScheduleDisplay();
         } else {
             console.error('Failed to save working hours');
         }
@@ -1390,9 +1389,8 @@ async function saveWorkingHoursAPI(workingHoursData) {
             window.workingHoursData = workingHoursData;
             // Regenerate date tabs to reflect changes
             generateDateTabs();
-            // Reload schedule to reflect changes
-            await loadSchedule();
-            updateUIWithData();
+            // Update schedule display for current date
+            updateScheduleDisplay();
             return true;
         } else {
             console.error('Failed to save working hours:', response.status);
