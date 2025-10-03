@@ -5,7 +5,11 @@ const API_BASE_URL = 'https://trenergram.ru/api/v1';
 
 // Get trainer ID from URL or Telegram user
 const pathParts = window.location.pathname.split('/');
+console.log('URL path parts:', pathParts);
+console.log('Last path part (potential trainerId):', pathParts[pathParts.length - 1]);
+console.log('Telegram WebApp user:', window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
 const trainerId = pathParts[pathParts.length - 1] || (window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+console.log('Final trainerId:', trainerId);
 
 // Global data storage
 let trainerData = {};
@@ -47,11 +51,22 @@ async function loadTrainerData() {
         }
 
         // Load trainer's clients from separate endpoint
-        const clientsResponse = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/clients`);
+        console.log('Loading clients for trainer:', trainerId);
+        const clientsURL = `${API_BASE_URL}/users/trainer/${trainerId}/clients`;
+        console.log('Clients API URL:', clientsURL);
+
+        const clientsResponse = await fetch(clientsURL);
+        console.log('Clients response status:', clientsResponse.status);
+
         if (clientsResponse.ok) {
             clients = await clientsResponse.json();
-            console.log('Clients loaded:', clients);
+            console.log('Clients loaded successfully:', clients.length, 'clients');
+            console.log('Clients data:', clients);
         } else {
+            console.error('Failed to load clients:', clientsResponse.status, clientsResponse.statusText);
+            const errorText = await clientsResponse.text();
+            console.error('Error details:', errorText);
+
             // Fallback to empty array if endpoint doesn't exist
             clients = trainerData.clients || [];
             console.log('Using clients from trainer data:', clients);
