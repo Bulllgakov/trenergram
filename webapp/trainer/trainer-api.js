@@ -6,12 +6,12 @@
 console.log('Page loaded over:', window.location.protocol);
 
 // Force HTTPS for all API calls - VERY EXPLICIT
-const API_BASE_URL = 'https://trenergram.ru/api';
+const API_BASE_URL = 'https://trenergram.ru/api/v1';
 console.log('API_BASE_URL FORCED to HTTPS:', API_BASE_URL);
 
 // Ensure no other script can override our API_BASE_URL
 Object.defineProperty(window, 'API_BASE_URL', {
-    value: 'https://trenergram.ru/api',
+    value: 'https://trenergram.ru/api/v1',
     writable: false,
     configurable: false
 });
@@ -908,7 +908,7 @@ window.confirmBooking = async function() {
                 };
 
                 // Use hardcoded HTTPS URL to prevent Mixed Content errors
-                const response = await fetch('https://trenergram.ru/api/bookings', {
+                const response = await fetch('https://trenergram.ru/api/v1/bookings/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
