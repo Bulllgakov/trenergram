@@ -41,7 +41,7 @@
 
 ## Деплой
 - **ТОЛЬКО через GitHub Actions!**
-- Workflow: .github/workflows/deploy-vds.yml
+- Workflow: .github/workflows/deploy-vds.yml (ЕДИНСТВЕННЫЙ рабочий workflow)
 - При push в main автоматически:
   1. Очищает конфликты на сервере
   2. Обновляет код через git pull

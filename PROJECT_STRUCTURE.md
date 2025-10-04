@@ -45,8 +45,7 @@ trenergram/
 │
 ├── .github/
 │   └── workflows/         # CI/CD pipelines
-│       ├── deploy-vds.yml # Main deployment
-│       └── test.yml       # Tests
+│       └── deploy-vds.yml # ЕДИНСТВЕННЫЙ рабочий деплой
 │
 ├── docker-compose.yml     # Local development setup
 ├── requirements.txt       # Python dependencies
