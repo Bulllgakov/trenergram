@@ -17,48 +17,38 @@ Object.defineProperty(window, 'API_BASE_URL', {
 });
 console.log('PROTECTED API_BASE_URL:', window.API_BASE_URL);
 
-// AGGRESSIVE fetch override - intercept ALL fetch calls
+// Fetch interceptor to prevent Mixed Content errors
 const originalFetch = window.fetch;
 window.fetch = function(url, options) {
-    console.error('FETCH INTERCEPTED:', typeof url, url);
-
     // Handle Request objects
     if (url instanceof Request) {
         const requestUrl = url.url;
-        console.error('Request object URL:', requestUrl);
         if (requestUrl.includes('trenergram.ru') && requestUrl.startsWith('http://')) {
-            console.error('BLOCKING HTTP REQUEST OBJECT:', requestUrl);
+            console.log('Converting HTTP Request to HTTPS:', requestUrl);
             const newUrl = requestUrl.replace('http://', 'https://');
-            console.error('Creating new Request with HTTPS:', newUrl);
             url = new Request(newUrl, url);
         }
     } else if (typeof url === 'string') {
         if (url.includes('trenergram.ru')) {
             if (url.startsWith('http://')) {
-                console.error('BLOCKING HTTP STRING URL, converting to HTTPS:', url);
+                console.log('Converting HTTP URL to HTTPS:', url);
                 url = url.replace('http://', 'https://');
-                console.error('Converted URL:', url);
             } else if (!url.startsWith('https://') && !url.startsWith('http')) {
-                console.error('RELATIVE URL detected, converting to HTTPS:', url);
                 if (url.startsWith('/')) {
                     url = 'https://trenergram.ru' + url;
                 } else {
                     url = 'https://trenergram.ru/' + url;
                 }
-                console.error('Converted relative URL:', url);
             }
         }
 
         // FORCE ANY bookings URL to HTTPS
-        if (url.includes('/bookings')) {
-            if (url.startsWith('http://')) {
-                console.error('FORCING BOOKINGS URL TO HTTPS:', url);
-                url = url.replace('http://', 'https://');
-            }
+        if (url.includes('/bookings') && url.startsWith('http://')) {
+            console.log('Converting bookings HTTP URL to HTTPS:', url);
+            url = url.replace('http://', 'https://');
         }
     }
 
-    console.error('FINAL FETCH URL:', url);
     return originalFetch.call(this, url, options);
 };
 
