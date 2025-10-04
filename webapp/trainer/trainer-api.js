@@ -1,19 +1,40 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-20:30
+// Cache buster: 2025-10-03-20:45
 
 // Force HTTPS for all API calls - VERY EXPLICIT
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
 console.log('API_BASE_URL FORCED to HTTPS:', API_BASE_URL);
 
+// Ensure no other script can override our API_BASE_URL
+Object.defineProperty(window, 'API_BASE_URL', {
+    value: 'https://trenergram.ru/api/v1',
+    writable: false,
+    configurable: false
+});
+console.log('PROTECTED API_BASE_URL:', window.API_BASE_URL);
+
 // Override any potential global fetch to force HTTPS
 const originalFetch = window.fetch;
 window.fetch = function(url, options) {
-    if (typeof url === 'string' && url.includes('trenergram.ru') && url.startsWith('http://')) {
-        console.warn('INTERCEPTED HTTP URL, converting to HTTPS:', url);
-        url = url.replace('http://', 'https://');
-        console.log('Converted URL:', url);
+    console.log('FETCH INTERCEPTED:', url);
+    if (typeof url === 'string' && url.includes('trenergram.ru')) {
+        if (url.startsWith('http://')) {
+            console.warn('INTERCEPTED HTTP URL, converting to HTTPS:', url);
+            url = url.replace('http://', 'https://');
+            console.log('Converted URL:', url);
+        } else if (!url.startsWith('https://')) {
+            console.warn('RELATIVE URL detected, converting to HTTPS:', url);
+            // Handle relative URLs
+            if (url.startsWith('/')) {
+                url = 'https://trenergram.ru' + url;
+            } else {
+                url = 'https://trenergram.ru/' + url;
+            }
+            console.log('Converted relative URL:', url);
+        }
     }
+    console.log('FINAL URL:', url);
     return originalFetch.call(this, url, options);
 };
 
