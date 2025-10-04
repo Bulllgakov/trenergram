@@ -1,17 +1,17 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-21:30
+// Cache buster: 2025-10-03-21:45
 
 // Debug info for production troubleshooting
 console.log('Page loaded over:', window.location.protocol);
 
 // Force HTTPS for all API calls - VERY EXPLICIT
-const API_BASE_URL = 'https://trenergram.ru/api/v1';
+const API_BASE_URL = 'https://trenergram.ru/api';
 console.log('API_BASE_URL FORCED to HTTPS:', API_BASE_URL);
 
 // Ensure no other script can override our API_BASE_URL
 Object.defineProperty(window, 'API_BASE_URL', {
-    value: 'https://trenergram.ru/api/v1',
+    value: 'https://trenergram.ru/api',
     writable: false,
     configurable: false
 });
@@ -549,11 +549,21 @@ async function quickBookAPI(time) {
     }
 }
 
-// Ensure showNotification exists
+// Ensure showNotification exists with compatibility fallback
 if (!window.showNotification) {
     window.showNotification = function(message) {
         if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.showAlert(message);
+            // Try modern method first, fallback to basic if not supported
+            try {
+                if (window.Telegram.WebApp.showAlert) {
+                    window.Telegram.WebApp.showAlert(message);
+                } else {
+                    // Fallback for very old WebApp versions
+                    console.log('Telegram notification:', message);
+                }
+            } catch (e) {
+                console.log('Telegram notification (fallback):', message);
+            }
         } else {
             console.log('Notification:', message);
             alert(message);
@@ -898,7 +908,7 @@ window.confirmBooking = async function() {
                 };
 
                 // Use hardcoded HTTPS URL to prevent Mixed Content errors
-                const response = await fetch('https://trenergram.ru/api/v1/bookings', {
+                const response = await fetch('https://trenergram.ru/api/bookings', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

@@ -2,7 +2,7 @@
 const tg = window.Telegram.WebApp;
 
 // API Configuration
-const API_BASE_URL = 'https://trenergram.ru/api/v1';
+const API_BASE_URL = 'https://trenergram.ru/api';
 
 // Get trainer ID from URL or Telegram user
 const pathParts = window.location.pathname.split('/');
@@ -387,7 +387,7 @@ async function createBooking(clientId, time) {
             status: 'CONFIRMED'
         };
 
-        const response = await fetch('https://trenergram.ru/api/v1/bookings', {
+        const response = await fetch('https://trenergram.ru/api/bookings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
