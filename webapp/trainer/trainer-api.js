@@ -1,6 +1,10 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-20:45
+// Cache buster: 2025-10-03-21:00
+
+// URGENT DEBUG: Print current location and protocol
+console.error('CURRENT PAGE PROTOCOL:', window.location.protocol);
+console.error('CURRENT PAGE HREF:', window.location.href);
 
 // Force HTTPS for all API calls - VERY EXPLICIT
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
