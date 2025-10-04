@@ -136,23 +136,26 @@ async function loadTrainerData() {
     }
 }
 
-// Load schedule
+// Load schedule for specific date
 async function loadSchedule() {
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
+        // Format current date for API (YYYY-MM-DD)
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        // Use from_date and to_date to get only bookings for this specific day
+        const url = `${API_BASE_URL}/bookings/trainer/${trainerId}?from_date=${dateStr}&to_date=${dateStr}`;
+
+        const response = await fetch(url);
         if (response.ok) {
-            const allBookings = await response.json();
-
-            // Filter bookings for current date
-            bookings = allBookings.filter(b => {
-                const bookingDate = new Date(b.datetime);
-                return bookingDate.toDateString() === currentDate.toDateString();
-            });
-
-            console.log('Bookings loaded for today:', bookings);
+            bookings = await response.json();
+            console.log(`Bookings loaded for ${dateStr}:`, bookings);
+        } else {
+            console.error('Failed to load schedule:', response.status, response.statusText);
+            bookings = [];
         }
     } catch (error) {
         console.error('Failed to load schedule:', error);
+        bookings = [];
     }
 }
 
