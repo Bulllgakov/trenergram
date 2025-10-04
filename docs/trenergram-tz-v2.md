@@ -408,7 +408,7 @@ interface UserResponse {
 
 ## 6. Веб-витрина (trenergram.ru) {#веб-витрина}
 
-> **Примечание:** Mini App размещен на trenergram.ru/app/ и доступен только через Telegram бота
+> **Примечание:** Mini App размещен на trenergram.ru/trainer/ и trenergram.ru/client/ и доступен только через Telegram бота
 
 ### 6.1 Основные страницы
 
@@ -889,7 +889,7 @@ INSERT INTO club_admins (club_id, email, name, role) VALUES
   - Возможность остановки и перезапуска без влияния на Mini App
 
 #### Mini App
-- **Деплой на сервер**: Размещается на trenergram.ru/app/
+- **Деплой на сервер**: Размещается на trenergram.ru/trainer/ и /client/
 - **Автоматическое обновление**: При каждом изменении выполняется деплой
 - **Доступ**: Открывается через кнопки в Telegram боте
 - **API**: Подключается к backend API на том же сервере
@@ -939,7 +939,7 @@ INSERT INTO club_admins (club_id, email, name, role) VALUES
 - [x] Управление расписанием
 - [x] Настройки напоминаний
 - [ ] Статистика тренера
-- [x] Развернут на trenergram.ru/app/
+- [x] Развернут на trenergram.ru/trainer/ и /client/
 
 ### Этап 4: Веб-витрина (1 неделя)
 - [ ] Главная страница с акцентом на бесплатность

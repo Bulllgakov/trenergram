@@ -132,7 +132,8 @@ DEBUG=False
 ```
 
 ## URLs проекта
-- **Production App**: https://trenergram.ru/app/
+- **Trainer Mini App**: https://trenergram.ru/trainer/:id
+- **Client Mini App**: https://trenergram.ru/client/:id
 - **API**: https://trenergram.ru/api/v1/
 - **Telegram Bot**: @trenergram_bot
 
