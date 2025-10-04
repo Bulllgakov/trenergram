@@ -25,10 +25,11 @@ jobs:
 
     - name: Run basic tests
       run: |
-        # Test imports
-        export PYTHONPATH=$GITHUB_WORKSPACE/backend:$PYTHONPATH
-        python -c "from app.main import app; print('✅ FastAPI app works')"
-        python -c "from app.core.config import settings; print('✅ Config works')"
+        # Test imports from backend directory
+        cd backend
+        export PYTHONPATH=$PWD:$PYTHONPATH
+        python3 -c "from main import app; print('✅ FastAPI app works')"
+        python3 -c "from core.config import settings; print('✅ Config works')"
 
     - name: Trigger TimeWeb deployment
       if: success()
