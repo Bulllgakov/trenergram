@@ -1,10 +1,9 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-21:15
+// Cache buster: 2025-10-03-21:30
 
-// URGENT DEBUG: Print current location and protocol
-console.error('CURRENT PAGE PROTOCOL:', window.location.protocol);
-console.error('CURRENT PAGE HREF:', window.location.href);
+// Debug info for production troubleshooting
+console.log('Page loaded over:', window.location.protocol);
 
 // Force HTTPS for all API calls - VERY EXPLICIT
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
@@ -18,27 +17,48 @@ Object.defineProperty(window, 'API_BASE_URL', {
 });
 console.log('PROTECTED API_BASE_URL:', window.API_BASE_URL);
 
-// Override any potential global fetch to force HTTPS
+// AGGRESSIVE fetch override - intercept ALL fetch calls
 const originalFetch = window.fetch;
 window.fetch = function(url, options) {
-    console.log('FETCH INTERCEPTED:', url);
-    if (typeof url === 'string' && url.includes('trenergram.ru')) {
-        if (url.startsWith('http://')) {
-            console.warn('INTERCEPTED HTTP URL, converting to HTTPS:', url);
-            url = url.replace('http://', 'https://');
-            console.log('Converted URL:', url);
-        } else if (!url.startsWith('https://')) {
-            console.warn('RELATIVE URL detected, converting to HTTPS:', url);
-            // Handle relative URLs
-            if (url.startsWith('/')) {
-                url = 'https://trenergram.ru' + url;
-            } else {
-                url = 'https://trenergram.ru/' + url;
+    console.error('FETCH INTERCEPTED:', typeof url, url);
+
+    // Handle Request objects
+    if (url instanceof Request) {
+        const requestUrl = url.url;
+        console.error('Request object URL:', requestUrl);
+        if (requestUrl.includes('trenergram.ru') && requestUrl.startsWith('http://')) {
+            console.error('BLOCKING HTTP REQUEST OBJECT:', requestUrl);
+            const newUrl = requestUrl.replace('http://', 'https://');
+            console.error('Creating new Request with HTTPS:', newUrl);
+            url = new Request(newUrl, url);
+        }
+    } else if (typeof url === 'string') {
+        if (url.includes('trenergram.ru')) {
+            if (url.startsWith('http://')) {
+                console.error('BLOCKING HTTP STRING URL, converting to HTTPS:', url);
+                url = url.replace('http://', 'https://');
+                console.error('Converted URL:', url);
+            } else if (!url.startsWith('https://') && !url.startsWith('http')) {
+                console.error('RELATIVE URL detected, converting to HTTPS:', url);
+                if (url.startsWith('/')) {
+                    url = 'https://trenergram.ru' + url;
+                } else {
+                    url = 'https://trenergram.ru/' + url;
+                }
+                console.error('Converted relative URL:', url);
             }
-            console.log('Converted relative URL:', url);
+        }
+
+        // FORCE ANY bookings URL to HTTPS
+        if (url.includes('/bookings')) {
+            if (url.startsWith('http://')) {
+                console.error('FORCING BOOKINGS URL TO HTTPS:', url);
+                url = url.replace('http://', 'https://');
+            }
         }
     }
-    console.log('FINAL URL:', url);
+
+    console.error('FINAL FETCH URL:', url);
     return originalFetch.call(this, url, options);
 };
 
@@ -877,15 +897,8 @@ window.confirmBooking = async function() {
                     status: 'CONFIRMED'
                 };
 
-                // URGENT DEBUG: Check API_BASE_URL value right before fetch
-                console.error('API_BASE_URL before fetch:', API_BASE_URL);
-                console.error('Full URL being fetched:', `${API_BASE_URL}/bookings`);
-
-                // Force HTTPS URL construction
-                const safeUrl = `https://trenergram.ru/api/v1/bookings`;
-                console.error('Using safe URL:', safeUrl);
-
-                const response = await fetch(safeUrl, {
+                // Use hardcoded HTTPS URL to prevent Mixed Content errors
+                const response = await fetch('https://trenergram.ru/api/v1/bookings', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
