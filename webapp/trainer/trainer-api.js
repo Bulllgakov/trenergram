@@ -945,8 +945,23 @@ window.confirmBooking = async function() {
         }
     } else {
         if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-            window.Telegram.WebApp.showAlert('Выберите клиента и время');
+            try {
+                if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.notificationOccurred) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                }
+            } catch (e) {
+                console.log('HapticFeedback not supported:', e.message);
+            }
+
+            try {
+                if (window.Telegram.WebApp.showAlert) {
+                    window.Telegram.WebApp.showAlert('Выберите клиента и время');
+                } else {
+                    alert('Выберите клиента и время');
+                }
+            } catch (e) {
+                alert('Выберите клиента и время');
+            }
         }
     }
 };

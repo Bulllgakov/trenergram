@@ -1404,7 +1404,13 @@
 
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                try {
+                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
+                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    }
+                } catch (e) {
+                    console.log('HapticFeedback not supported:', e.message);
+                }
             }
         }
 
@@ -1479,7 +1485,13 @@
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                try {
+                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
+                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    }
+                } catch (e) {
+                    console.log('HapticFeedback not supported:', e.message);
+                }
             }
         }
 
@@ -1598,7 +1610,13 @@
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                try {
+                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
+                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    }
+                } catch (e) {
+                    console.log('HapticFeedback not supported:', e.message);
+                }
             }
         }
 
@@ -1614,7 +1632,13 @@
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                try {
+                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
+                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    }
+                } catch (e) {
+                    console.log('HapticFeedback not supported:', e.message);
+                }
             }
         }
 
