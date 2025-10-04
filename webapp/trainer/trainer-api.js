@@ -382,7 +382,8 @@ function updateScheduleDisplay() {
         // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
             const bookingDate = new Date(b.datetime);
-            return bookingDate.getHours() === hour &&
+            const bookingTimeStr = bookingDate.toTimeString().slice(0, 5); // HH:MM format
+            return bookingTimeStr === timeStr &&
                    bookingDate.toDateString() === currentDate.toDateString();
         });
 
@@ -865,13 +866,21 @@ window.selectDate = async function(element, date) {
 
     console.log('Parsed date:', currentDate);
 
-    // Immediately update display with new working hours
-    showDefaultSlots();
-
     // Update date display
     updateDateDisplay();
 
-    // Then reload schedule for new date
+    // Show loading indicator
+    const scheduleSection = document.getElementById('scheduleSection');
+    if (scheduleSection) {
+        scheduleSection.innerHTML = `
+            <div style="padding: 40px 20px; text-align: center; color: var(--tg-theme-hint-color);">
+                <div style="font-size: 32px; margin-bottom: 16px;">⏳</div>
+                <div style="font-size: 15px;">Загрузка расписания...</div>
+            </div>
+        `;
+    }
+
+    // Load schedule for new date and update display
     await loadSchedule();
     updateUIWithData();
 };
