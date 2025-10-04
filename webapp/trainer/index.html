@@ -1659,15 +1659,40 @@
 
         function newClient() {
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert('Для добавления нового клиента используйте команду /add_client в боте');
+                try {
+                    if (window.Telegram.WebApp.showAlert) {
+                        window.Telegram.WebApp.showAlert('Для добавления нового клиента используйте команду /add_client в боте');
+                    } else {
+                        alert('Для добавления нового клиента используйте команду /add_client в боте');
+                    }
+                } catch (e) {
+                    alert('Для добавления нового клиента используйте команду /add_client в боте');
+                }
             }
         }
 
         // Show notification
         function showNotification(message) {
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                window.Telegram.WebApp.showAlert(message);
+                // Check if methods are supported before using them
+                try {
+                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.notificationOccurred) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    }
+                } catch (e) {
+                    console.log('HapticFeedback not supported:', e.message);
+                }
+
+                try {
+                    if (window.Telegram.WebApp.showAlert) {
+                        window.Telegram.WebApp.showAlert(message);
+                    } else {
+                        alert(message);
+                    }
+                } catch (e) {
+                    console.log('showAlert not supported, using fallback:', e.message);
+                    alert(message);
+                }
             } else {
                 // Fallback for browser
                 const notification = document.createElement('div');
