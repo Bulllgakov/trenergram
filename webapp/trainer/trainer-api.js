@@ -139,16 +139,17 @@ async function loadTrainerData() {
 // Load schedule for specific date
 async function loadSchedule() {
     try {
-        // Format current date for API (YYYY-MM-DD)
-        const dateStr = currentDate.toISOString().split('T')[0];
+        // Format current date for API (YYYY-MM-DDTHH:MM:SS)
+        const fromDateStr = currentDate.toISOString().split('T')[0] + 'T00:00:00';
+        const toDateStr = currentDate.toISOString().split('T')[0] + 'T23:59:59';
 
         // Use from_date and to_date to get only bookings for this specific day
-        const url = `${API_BASE_URL}/bookings/trainer/${trainerId}?from_date=${dateStr}&to_date=${dateStr}`;
+        const url = `${API_BASE_URL}/bookings/trainer/${trainerId}?from_date=${fromDateStr}&to_date=${toDateStr}`;
 
         const response = await fetch(url);
         if (response.ok) {
             bookings = await response.json();
-            console.log(`Bookings loaded for ${dateStr}:`, bookings);
+            console.log(`Bookings loaded for ${fromDateStr} to ${toDateStr}:`, bookings);
         } else {
             console.error('Failed to load schedule:', response.status, response.statusText);
             bookings = [];
