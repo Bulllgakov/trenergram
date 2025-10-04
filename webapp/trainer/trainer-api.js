@@ -904,8 +904,8 @@ window.confirmBooking = async function() {
                 bookingDate.setHours(parseInt(hour), parseInt(minute || 0), 0, 0);
 
                 const bookingData = {
-                    trainer_telegram_id: parseInt(trainerId),
-                    client_telegram_id: parseInt(client.telegram_id),
+                    trainer_telegram_id: trainerId.toString(),
+                    client_telegram_id: client.telegram_id.toString(),
                     datetime: bookingDate.toISOString(),
                     duration: 60,
                     status: 'CONFIRMED'
