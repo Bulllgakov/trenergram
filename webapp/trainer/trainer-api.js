@@ -1,6 +1,6 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-21:00
+// Cache buster: 2025-10-03-21:15
 
 // URGENT DEBUG: Print current location and protocol
 console.error('CURRENT PAGE PROTOCOL:', window.location.protocol);
@@ -877,7 +877,15 @@ window.confirmBooking = async function() {
                     status: 'CONFIRMED'
                 };
 
-                const response = await fetch(`${API_BASE_URL}/bookings`, {
+                // URGENT DEBUG: Check API_BASE_URL value right before fetch
+                console.error('API_BASE_URL before fetch:', API_BASE_URL);
+                console.error('Full URL being fetched:', `${API_BASE_URL}/bookings`);
+
+                // Force HTTPS URL construction
+                const safeUrl = `https://trenergram.ru/api/v1/bookings`;
+                console.error('Using safe URL:', safeUrl);
+
+                const response = await fetch(safeUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
