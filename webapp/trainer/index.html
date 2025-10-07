@@ -1530,11 +1530,18 @@
             const overlay = document.getElementById('overlay');
             sheet.classList.add('active');
             overlay.classList.add('active');
-            
+
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
             }
+
+            // Update time options with real data
+            setTimeout(() => {
+                if (window.updateBookingTimeOptions) {
+                    window.updateBookingTimeOptions();
+                }
+            }, 150);
         }
 
         // Quick book for specific time
