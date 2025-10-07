@@ -1531,6 +1531,11 @@
             sheet.classList.add('active');
             overlay.classList.add('active');
 
+            // Ensure currentDate is set
+            if (!window.currentDate) {
+                window.currentDate = new Date();
+            }
+
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');

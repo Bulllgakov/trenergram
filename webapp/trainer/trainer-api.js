@@ -969,13 +969,13 @@ window.confirmBooking = async function() {
 
 // Update client list in booking sheet when it opens
 const originalOpenBookingSheet = window.openBookingSheet;
-window.openBookingSheet = function() {
+window.openBookingSheet = async function() {
     console.log('Custom openBookingSheet called');
 
     // Load clients list first
     loadClientsList();
 
-    // Call original function
+    // Call original function to open the sheet UI
     if (originalOpenBookingSheet) {
         console.log('Calling original openBookingSheet');
         originalOpenBookingSheet();
@@ -983,12 +983,23 @@ window.openBookingSheet = function() {
         console.log('No original openBookingSheet found');
     }
 
-    // Update time options with real data
-    console.log('About to call updateBookingTimeOptions');
-    // Add a small delay to ensure DOM is ready
-    setTimeout(() => {
-        updateBookingTimeOptions();
-    }, 100);
+    // Load actual booking data from database
+    console.log('Loading booking data...');
+    const dataLoaded = await loadBookingData();
+
+    if (dataLoaded) {
+        console.log('Booking data loaded successfully, updating time options');
+        // Update time options with fresh data
+        setTimeout(() => {
+            updateBookingTimeOptions();
+        }, 100);
+    } else {
+        console.error('Failed to load booking data');
+        // Still try to update with existing data
+        setTimeout(() => {
+            updateBookingTimeOptions();
+        }, 100);
+    }
 
     // Update client list with real data
     const clientList = document.getElementById('clientList');
@@ -1561,6 +1572,7 @@ async function saveTrainerSettings(settings) {
 // Update time options in booking form
 function updateBookingTimeOptions() {
     console.log('updateBookingTimeOptions called');
+
     // Get the time grid for booking time selection
     const timeGrid = document.querySelector('#bookingSheet .time-grid');
     console.log('timeGrid found:', !!timeGrid);
@@ -1568,6 +1580,10 @@ function updateBookingTimeOptions() {
         console.error('Time grid not found in booking sheet');
         return;
     }
+
+    // Ensure currentDate is available
+    const currentDate = window.currentDate || new Date();
+    console.log('Using currentDate:', currentDate);
 
     // Check if working hours data is available
     if (!window.workingHoursData) {
@@ -1579,6 +1595,10 @@ function updateBookingTimeOptions() {
     // Get working hours for current date
     const workingHours = getWorkingHoursForDate(currentDate);
     console.log('Working hours for booking form:', workingHours);
+
+    // Get current bookings (should be loaded by loadBookingData)
+    const currentBookings = window.bookings || [];
+    console.log('Current bookings:', currentBookings);
 
     // Clear existing options
     timeGrid.innerHTML = '';
@@ -1592,18 +1612,24 @@ function updateBookingTimeOptions() {
     // Generate time options from available slots
     workingHours.forEach(slot => {
         let timeStr;
+        let hour;
         if (typeof slot === 'number') {
             timeStr = `${slot.toString().padStart(2, '0')}:00`;
+            hour = slot;
         } else {
             timeStr = slot.timeString;
+            hour = slot.hour;
         }
 
         // Check if this time slot is already booked
-        const isBooked = bookings.some(booking => {
+        const isBooked = currentBookings.some(booking => {
             const bookingDate = new Date(booking.datetime);
-            return bookingDate.getHours() === (typeof slot === 'number' ? slot : slot.hour) &&
-                   bookingDate.toDateString() === currentDate.toDateString();
+            return bookingDate.getHours() === hour &&
+                   bookingDate.toDateString() === currentDate.toDateString() &&
+                   booking.status !== 'CANCELLED';
         });
+
+        console.log(`Time slot ${timeStr}: hour=${hour}, isBooked=${isBooked}`);
 
         // Check if this time slot should show lunch break
         const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
@@ -1649,7 +1675,49 @@ function updateBookingTimeOptions() {
     }
 }
 
+// Load booking data for quick booking sheet
+async function loadBookingData() {
+    console.log('loadBookingData called');
+
+    try {
+        // Ensure currentDate is set
+        if (!window.currentDate) {
+            window.currentDate = new Date();
+            console.log('Set currentDate to today:', window.currentDate);
+        }
+
+        // Load trainer bookings for the current date to check availability
+        if (!trainerId) {
+            console.error('No trainer ID available');
+            return false;
+        }
+
+        const response = await fetch(`https://trenergram.ru/api/v1/bookings/trainer/${trainerId}`);
+        if (!response.ok) {
+            console.error('Failed to load bookings:', response.status);
+            return false;
+        }
+
+        const allBookings = await response.json();
+        console.log('Loaded bookings:', allBookings);
+
+        // Update global bookings variable with current data
+        window.bookings = allBookings || [];
+
+        // Also update the bookings used by main schedule if needed
+        if (typeof updateMainSchedule === 'function') {
+            updateMainSchedule();
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error loading booking data:', error);
+        return false;
+    }
+}
+
 // Make functions available globally for HTML
 window.saveWorkingHoursAPI = saveWorkingHoursAPI;
 window.saveTrainerSettings = saveTrainerSettings;
 window.updateBookingTimeOptions = updateBookingTimeOptions;
+window.loadBookingData = loadBookingData;
