@@ -907,7 +907,8 @@ window.confirmBooking = async function() {
                     client_telegram_id: client.telegram_id.toString(),
                     datetime: bookingDate.toISOString(),
                     duration: 60,
-                    status: 'CONFIRMED'
+                    status: 'CONFIRMED',
+                    created_by: 'trainer'
                 };
 
                 // Use hardcoded HTTPS URL to prevent Mixed Content errors
@@ -1564,7 +1565,17 @@ function updateBookingTimeOptions() {
     const timeGrids = document.querySelectorAll('#bookingSheet .time-grid');
     const timeGrid = timeGrids[1]; // Second time-grid is for time selection
     console.log('timeGrids found:', timeGrids.length, 'using index 1:', !!timeGrid);
-    if (!timeGrid) return;
+    if (!timeGrid) {
+        console.error('Time grid not found in booking sheet');
+        return;
+    }
+
+    // Check if working hours data is available
+    if (!window.workingHoursData) {
+        console.log('Working hours data not available yet, showing loading...');
+        timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color); padding: 20px;">Загрузка расписания...</div>';
+        return;
+    }
 
     // Get working hours for current date
     const workingHours = getWorkingHoursForDate(currentDate);
@@ -1575,7 +1586,7 @@ function updateBookingTimeOptions() {
     console.log('Cleared existing time options');
 
     if (workingHours.length === 0) {
-        timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color);">Нет доступного времени</div>';
+        timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color); padding: 20px;">Нет доступного времени на выбранную дату</div>';
         return;
     }
 
