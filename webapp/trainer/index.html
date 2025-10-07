@@ -1201,9 +1201,7 @@
             <div class="form-group">
                 <label class="form-label">Выберите время</label>
                 <div class="time-grid">
-                    <div style="text-align: center; color: var(--tg-theme-hint-color); padding: 20px;">
-                        Загрузка доступного времени...
-                    </div>
+                    <!-- Time slots will be populated dynamically when booking sheet opens -->
                 </div>
             </div>
 
@@ -1790,7 +1788,7 @@
         }
     </script>
     <!-- API Integration -->
-    <script src="trainer-api.js?v=20251004-1815"></script>
+    <script src="trainer-api.js?v=20251007-1505"></script>
     <script>
         // Generate date tabs immediately if not already done
         setTimeout(() => {
@@ -1873,6 +1871,27 @@
                 }
             }
         }, 1000);
+
+        // Ensure all bottom-sheets are hidden on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, ensuring bottom-sheets are hidden');
+
+            // Hide all bottom sheets
+            const bottomSheets = document.querySelectorAll('.bottom-sheet');
+            bottomSheets.forEach(sheet => {
+                sheet.classList.remove('active');
+                console.log('Hiding bottom sheet:', sheet.id);
+            });
+
+            // Hide overlay
+            const overlay = document.getElementById('overlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+                console.log('Hiding overlay');
+            }
+
+            console.log('All bottom-sheets hidden successfully');
+        });
     </script>
 </body>
 </html>

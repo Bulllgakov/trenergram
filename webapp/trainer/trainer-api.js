@@ -1581,14 +1581,17 @@ function updateBookingTimeOptions() {
         return;
     }
 
+    // Show loading indicator immediately
+    console.log('Showing loading indicator');
+    timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color); padding: 20px;">Загрузка доступного времени...</div>';
+
     // Ensure currentDate is available
     const currentDate = window.currentDate || new Date();
     console.log('Using currentDate:', currentDate);
 
     // Check if working hours data is available
     if (!window.workingHoursData) {
-        console.log('Working hours data not available yet, showing loading...');
-        timeGrid.innerHTML = '<div style="text-align: center; color: var(--tg-theme-hint-color); padding: 20px;">Загрузка расписания...</div>';
+        console.log('Working hours data not available yet, keeping loading message');
         return;
     }
 
