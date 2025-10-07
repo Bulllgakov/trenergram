@@ -1561,10 +1561,9 @@ async function saveTrainerSettings(settings) {
 // Update time options in booking form
 function updateBookingTimeOptions() {
     console.log('updateBookingTimeOptions called');
-    // Get the correct time grid (second one in bookingSheet)
-    const timeGrids = document.querySelectorAll('#bookingSheet .time-grid');
-    const timeGrid = timeGrids[1]; // Second time-grid is for time selection
-    console.log('timeGrids found:', timeGrids.length, 'using index 1:', !!timeGrid);
+    // Get the time grid for booking time selection
+    const timeGrid = document.querySelector('#bookingSheet .time-grid');
+    console.log('timeGrid found:', !!timeGrid);
     if (!timeGrid) {
         console.error('Time grid not found in booking sheet');
         return;

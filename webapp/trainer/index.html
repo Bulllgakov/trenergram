@@ -522,6 +522,13 @@
             margin-top: 12px;
         }
 
+        .reminder-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
         .duration-options {
             display: flex;
             flex-direction: column;
@@ -1031,7 +1038,7 @@
         <div class="sheet-content">
             <div class="form-group">
                 <label class="form-label">За сколько часов до тренировки</label>
-                <div class="time-grid">
+                <div class="reminder-grid">
                     <div class="time-option" onclick="selectHours(this, 12)">12ч</div>
                     <div class="time-option selected" onclick="selectHours(this, 24)">24ч</div>
                     <div class="time-option" onclick="selectHours(this, 36)">36ч</div>
