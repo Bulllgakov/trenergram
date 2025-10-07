@@ -1,9 +1,61 @@
 // API Integration for Trainer Mini App
 // Preserves the original Telegram-style design
-// Cache buster: 2025-10-03-21:45
+// Cache buster: 2025-10-07-1600
 
 // Debug info for production troubleshooting
 console.log('Page loaded over:', window.location.protocol);
+console.log('Telegram WebApp version:', window.Telegram?.WebApp?.version);
+console.log('HapticFeedback available:', !!window.Telegram?.WebApp?.HapticFeedback);
+console.log('showAlert available:', !!window.Telegram?.WebApp?.showAlert);
+console.log('showPopup available:', !!window.Telegram?.WebApp?.showPopup);
+
+// Safe wrappers for Telegram WebApp API calls (globally accessible)
+window.safeHapticFeedback = function(type, level) {
+    try {
+        const haptic = window.Telegram?.WebApp?.HapticFeedback;
+        if (haptic && typeof haptic[type] === 'function') {
+            haptic[type](level);
+        }
+    } catch (e) {
+        console.log(`HapticFeedback.${type} not available:`, e.message);
+    }
+};
+
+window.safeShowAlert = function(message, callback) {
+    try {
+        if (window.Telegram?.WebApp?.showAlert) {
+            window.Telegram.WebApp.showAlert(message, callback);
+        } else {
+            alert(message);
+            if (callback) callback();
+        }
+    } catch (e) {
+        console.log('showAlert not available, using fallback');
+        alert(message);
+        if (callback) callback();
+    }
+};
+
+window.safeShowPopup = function(params, callback) {
+    try {
+        if (window.Telegram?.WebApp?.showPopup) {
+            window.Telegram.WebApp.showPopup(params, callback);
+        } else {
+            // Fallback to alert
+            alert(params.message || params.title);
+            if (callback) callback();
+        }
+    } catch (e) {
+        console.log('showPopup not available, using fallback');
+        alert(params.message || params.title);
+        if (callback) callback();
+    }
+};
+
+// Shortcuts for internal use
+const safeHapticFeedback = window.safeHapticFeedback;
+const safeShowAlert = window.safeShowAlert;
+const safeShowPopup = window.safeShowPopup;
 
 // Force HTTPS for all API calls - VERY EXPLICIT
 const API_BASE_URL = 'https://trenergram.ru/api/v1';
@@ -498,7 +550,7 @@ function openBookingActionsAPI(booking) {
             ];
         }
 
-        tg.showPopup({
+        safeShowPopup({
             title: clientName,
             message: `${booking.service_name || 'Тренировка'}\nСтатус: ${getStatusText(status)}`,
             buttons: buttons
@@ -508,7 +560,11 @@ function openBookingActionsAPI(booking) {
             } else if (buttonId === 'cancel') {
                 await cancelBookingAPI(booking.id);
             } else if (buttonId === 'contact' && booking.client_telegram_username) {
-                tg.openLink(`https://t.me/${booking.client_telegram_username}`);
+                if (tg.openLink) {
+                    tg.openLink(`https://t.me/${booking.client_telegram_username}`);
+                } else {
+                    window.open(`https://t.me/${booking.client_telegram_username}`, '_blank');
+                }
             }
         });
     } else {
@@ -547,22 +603,7 @@ async function quickBookAPI(time) {
 // Ensure showNotification exists with compatibility fallback
 if (!window.showNotification) {
     window.showNotification = function(message) {
-        if (window.Telegram && window.Telegram.WebApp) {
-            // Try modern method first, fallback to basic if not supported
-            try {
-                if (window.Telegram.WebApp.showAlert) {
-                    window.Telegram.WebApp.showAlert(message);
-                } else {
-                    // Fallback for very old WebApp versions
-                    console.log('Telegram notification:', message);
-                }
-            } catch (e) {
-                console.log('Telegram notification (fallback):', message);
-            }
-        } else {
-            console.log('Notification:', message);
-            alert(message);
-        }
+        safeShowAlert(message);
     };
 }
 
@@ -727,30 +768,32 @@ function showClientDetails(client) {
         message += `\n💬 Telegram: @${client.telegram_username}`;
     }
 
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.showPopup({
-            title: 'Информация о клиенте',
-            message: message,
-            buttons: [
-                client.telegram_username ? {id: 'contact', type: 'default', text: 'Написать клиенту'} : null,
-                {id: 'book', type: 'default', text: 'Записать на тренировку'},
-                {type: 'close'}
-            ].filter(Boolean)
-        }, (buttonId) => {
-            if (buttonId === 'contact' && client.telegram_username) {
+    safeShowPopup({
+        title: 'Информация о клиенте',
+        message: message,
+        buttons: [
+            client.telegram_username ? {id: 'contact', type: 'default', text: 'Написать клиенту'} : null,
+            {id: 'book', type: 'default', text: 'Записать на тренировку'},
+            {type: 'close'}
+        ].filter(Boolean)
+    }, (buttonId) => {
+        if (buttonId === 'contact' && client.telegram_username) {
+            if (window.Telegram?.WebApp?.openLink) {
                 window.Telegram.WebApp.openLink(`https://t.me/${client.telegram_username}`);
-            } else if (buttonId === 'book') {
-                closeSheet('clientsSheet');
-                // Pre-select client in booking form
-                setTimeout(() => {
-                    quickBook();
-                    setTimeout(() => {
-                        selectClient(client.name);
-                    }, 300);
-                }, 300);
+            } else {
+                window.open(`https://t.me/${client.telegram_username}`, '_blank');
             }
-        });
-    }
+        } else if (buttonId === 'book') {
+            closeSheet('clientsSheet');
+            // Pre-select client in booking form
+            setTimeout(() => {
+                quickBook();
+                setTimeout(() => {
+                    selectClient(client.name);
+                }, 300);
+            }, 300);
+        }
+    });
 }
 
 // Share trainer link
@@ -764,10 +807,7 @@ window.shareTrainerLink = function() {
 const originalShowLink = window.showLink;
 window.showLink = function() {
     const link = `https://t.me/trenergram_bot?start=trainer_${trainerId}`;
-
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.showAlert(`Ваша ссылка для клиентов:\n${link}\n\nQR-код доступен в боте по команде /qr`);
-    }
+    safeShowAlert(`Ваша ссылка для клиентов:\n${link}\n\nQR-код доступен в боте по команде /qr`);
 };
 
 // Duration settings functions
@@ -889,8 +929,20 @@ window.selectDate = async function(element, date) {
 const originalConfirmBooking = window.confirmBooking;
 window.confirmBooking = async function() {
     const clientSearch = document.getElementById('clientSearch');
-    const selectedClient = clientSearch ? clientSearch.value : null;
-    const selectedTime = window.selectedTimeForBooking;
+    // Check client from multiple sources
+    const selectedClient = window.selectedClient || (clientSearch ? clientSearch.value : null);
+    // Check both possible time variables
+    const selectedTime = window.selectedTimeForBooking || window.selectedTime;
+
+    console.log('confirmBooking called:', {
+        selectedClient,
+        selectedTime,
+        clientSearchValue: clientSearch?.value,
+        windowSelectedClient: window.selectedClient,
+        windowSelectedTime: window.selectedTime,
+        windowSelectedTimeForBooking: window.selectedTimeForBooking,
+        clientsArray: clients?.length
+    });
 
     if (selectedClient && selectedTime) {
         // Find client by name
@@ -902,12 +954,14 @@ window.confirmBooking = async function() {
                 const bookingDate = new Date(currentDate);
                 bookingDate.setHours(parseInt(hour), parseInt(minute || 0), 0, 0);
 
+                // According to TZ 10.6: all bookings created by trainer start as PENDING
+                // No notifications sent immediately. First reminder = first notification to client.
                 const bookingData = {
                     trainer_telegram_id: trainerId.toString(),
                     client_telegram_id: client.telegram_id.toString(),
                     datetime: bookingDate.toISOString(),
                     duration: 60,
-                    status: 'CONFIRMED',
+                    status: 'PENDING',
                     created_by: 'trainer'
                 };
 
@@ -945,25 +999,9 @@ window.confirmBooking = async function() {
             }
         }
     } else {
-        if (window.Telegram && window.Telegram.WebApp) {
-            try {
-                if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.notificationOccurred) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                }
-            } catch (e) {
-                console.log('HapticFeedback not supported:', e.message);
-            }
-
-            try {
-                if (window.Telegram.WebApp.showAlert) {
-                    window.Telegram.WebApp.showAlert('Выберите клиента и время');
-                } else {
-                    alert('Выберите клиента и время');
-                }
-            } catch (e) {
-                alert('Выберите клиента и время');
-            }
-        }
+        // No client or time selected
+        safeHapticFeedback('notificationOccurred', 'error');
+        safeShowAlert('Выберите клиента и время');
     }
 };
 
@@ -1268,9 +1306,7 @@ function showDefaultSlots() {
                 quickBook(timeStr);
             } else {
                 // Fallback
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.showAlert(`Выбрано время: ${displayTime}\nФункция записи будет доступна после загрузки`);
-                }
+                safeShowAlert(`Выбрано время: ${displayTime}\nФункция записи будет доступна после загрузки`);
             }
         };
 
@@ -1397,9 +1433,7 @@ function loadAndDisplayClients() {
 
         // Add click handler to show client details
         clientElement.onclick = () => {
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert(`Клиент: ${client.name}\nТелефон: ${client.phone || 'Не указан'}\nEmail: ${client.email || 'Не указан'}`);
-            }
+            safeShowAlert(`Клиент: ${client.name}\nТелефон: ${client.phone || 'Не указан'}\nEmail: ${client.email || 'Не указан'}`);
         };
 
         clientsListElement.appendChild(clientElement);
@@ -1656,9 +1690,7 @@ function updateBookingTimeOptions() {
                 window.selectedTime = timeStr;
 
                 // Haptic feedback
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.HapticFeedback.selectionChanged();
-                }
+                safeHapticFeedback('selectionChanged');
             };
         }
 

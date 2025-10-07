@@ -384,7 +384,8 @@ async function createBooking(clientId, time) {
             client_telegram_id: parseInt(clientId),
             datetime: bookingDate.toISOString(),
             duration: 60,
-            status: 'CONFIRMED'
+            status: 'CONFIRMED',
+            created_by: 'trainer'
         };
 
         const response = await fetch('https://trenergram.ru/api/v1/bookings/', {

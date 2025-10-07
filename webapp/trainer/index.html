@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Trenergram - Расписание тренера</title>
-    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -1277,9 +1277,9 @@
         }
 
         function showLink() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const trainerIdForLink = trainerId || '123456';
-                window.Telegram.WebApp.showAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
+            const trainerIdForLink = trainerId || '123456';
+            if (window.safeShowAlert) {
+                window.safeShowAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
             }
         }
 
@@ -1295,8 +1295,8 @@
             overlay.classList.add('active');
             
             // Haptic feedback
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            if (window.safeHapticFeedback) {
+                window.safeHapticFeedback('impactOccurred', 'light');
             }
         }
 
@@ -1319,7 +1319,7 @@
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
             }
         }
 
@@ -1388,7 +1388,7 @@
 
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
             }
         }
 
@@ -1404,8 +1404,8 @@
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
                 try {
-                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
-                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    if (window.safeHapticFeedback) {
+                        window.safeHapticFeedback('selectionChanged');
                     }
                 } catch (e) {
                     console.log('HapticFeedback not supported:', e.message);
@@ -1485,8 +1485,8 @@
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
                 try {
-                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
-                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                    if (window.safeHapticFeedback) {
+                        window.safeHapticFeedback('selectionChanged');
                     }
                 } catch (e) {
                     console.log('HapticFeedback not supported:', e.message);
@@ -1518,7 +1518,7 @@
             
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
             }
         }
 
@@ -1536,7 +1536,7 @@
 
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'medium');
             }
 
             // Update time options with real data
@@ -1617,39 +1617,33 @@
         // Select client
         function selectClient(name) {
             selectedClient = name;
+            window.selectedClient = name; // Make it globally accessible
             document.getElementById('clientSearch').value = name;
-            
+
+            console.log('Client selected:', name);
+
             // Haptic feedback
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
-                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-                    }
-                } catch (e) {
-                    console.log('HapticFeedback not supported:', e.message);
-                }
+            if (window.safeHapticFeedback) {
+                window.safeHapticFeedback('selectionChanged');
             }
         }
 
         // Select time
         function selectTime(element) {
             if (element.classList.contains('disabled')) return;
-            
+
             document.querySelectorAll('.time-option').forEach(option => {
                 option.classList.remove('selected');
             });
             element.classList.add('selected');
             selectedTime = element.textContent;
-            
+            window.selectedTime = element.textContent; // Make it globally accessible
+
+            console.log('Time selected:', element.textContent);
+
             // Haptic feedback
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.selectionChanged) {
-                        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-                    }
-                } catch (e) {
-                    console.log('HapticFeedback not supported:', e.message);
-                }
+            if (window.safeHapticFeedback) {
+                window.safeHapticFeedback('selectionChanged');
             }
         }
 
@@ -1669,7 +1663,7 @@
                         time: selectedTime
                     }));
                     
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    if (window.safeHapticFeedback) window.safeHapticFeedback('notificationOccurred', 'success');
                 }
                 
                 closeSheet('bookingSheet');
@@ -1686,48 +1680,26 @@
                 });
             } else {
                 if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
-                    window.Telegram.WebApp.showAlert('Выберите клиента и время');
+                    if (window.safeHapticFeedback) window.safeHapticFeedback('notificationOccurred', 'error');
+                    if (window.safeShowAlert) window.safeShowAlert('Выберите клиента и время');
                 }
             }
         }
 
         function newClient() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    if (window.Telegram.WebApp.showAlert) {
-                        window.Telegram.WebApp.showAlert('Для добавления нового клиента используйте команду /add_client в боте');
-                    } else {
-                        alert('Для добавления нового клиента используйте команду /add_client в боте');
-                    }
-                } catch (e) {
-                    alert('Для добавления нового клиента используйте команду /add_client в боте');
-                }
+            if (window.safeShowAlert) {
+                window.safeShowAlert('Для добавления нового клиента используйте команду /add_client в боте');
             }
         }
 
         // Show notification
         function showNotification(message) {
-            if (window.Telegram && window.Telegram.WebApp) {
-                // Check if methods are supported before using them
-                try {
-                    if (window.Telegram.WebApp.HapticFeedback && window.Telegram.WebApp.HapticFeedback.notificationOccurred) {
-                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                    }
-                } catch (e) {
-                    console.log('HapticFeedback not supported:', e.message);
-                }
+            if (window.safeHapticFeedback) {
+                window.safeHapticFeedback('notificationOccurred', 'success');
+            }
 
-                try {
-                    if (window.Telegram.WebApp.showAlert) {
-                        window.Telegram.WebApp.showAlert(message);
-                    } else {
-                        alert(message);
-                    }
-                } catch (e) {
-                    console.log('showAlert not supported, using fallback:', e.message);
-                    alert(message);
-                }
+            if (window.safeShowAlert) {
+                window.safeShowAlert(message);
             } else {
                 // Fallback for browser
                 const notification = document.createElement('div');
@@ -1775,20 +1747,20 @@
 
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
             }
         }
 
         // Share trainer link
         function shareTrainerLink() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const trainerIdForLink = trainerId || '123456';
-                window.Telegram.WebApp.showAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
+            const trainerIdForLink = trainerId || '123456';
+            if (window.safeShowAlert) {
+                window.safeShowAlert(`Ваша ссылка для клиентов:\nt.me/TrenergramBot?start=trainer_${trainerIdForLink}\n\nQR-код доступен в боте по команде /qr`);
             }
         }
     </script>
     <!-- API Integration -->
-    <script src="trainer-api.js?v=20251007-1505"></script>
+    <script src="trainer-api.js?v=20251007-1700"></script>
     <script>
         // Generate date tabs immediately if not already done
         setTimeout(() => {
