@@ -36,7 +36,8 @@ jobs:
           find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
           # Clean up Docker to free disk space (CRITICAL: no space left on device)
-          docker system prune -af --volumes || true
+          # NOTE: Using -af without --volumes to preserve database volumes
+          docker system prune -af || true
 
           # Rebuild and restart Docker containers
           docker-compose down
