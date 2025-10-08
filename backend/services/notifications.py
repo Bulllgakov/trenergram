@@ -24,55 +24,11 @@ class NotificationService:
         client: User,
         db: Session
     ):
-        """Send notification to trainer about new booking"""
-        try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
-
-            text = (
-                "🆕 <b>Новая запись на тренировку!</b>\n\n"
-                f"👤 Клиент: {client.name}\n"
-                f"📅 Дата: {booking_date}\n"
-                f"⏰ Время: {booking_time}\n"
-                f"💰 Стоимость: {booking.price} ₽\n"
-            )
-
-            if booking.notes:
-                text += f"💬 Комментарий: {booking.notes}\n"
-
-            text += "\n<i>Подтвердите или отмените запись в вашем Mini App</i>"
-
-            # Create inline keyboard with actions
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="✅ Подтвердить",
-                        callback_data=f"confirm_booking:{booking.id}"
-                    ),
-                    InlineKeyboardButton(
-                        text="❌ Отменить",
-                        callback_data=f"cancel_booking:{booking.id}"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text="📱 Открыть Mini App",
-                        web_app={"url": f"https://trenergram.ru/trainer/{trainer.telegram_id}"}
-                    )
-                ]
-            ])
-
-            await self.bot.send_message(
-                chat_id=trainer.telegram_id,
-                text=text,
-                parse_mode="HTML",
-                reply_markup=keyboard
-            )
-
-            return True
-        except Exception as e:
-            print(f"Error sending notification to trainer: {e}")
-            return False
+        """DEPRECATED - This function should NOT be called when trainer creates booking (TZ 10.6)"""
+        print(f"❌❌❌ ERROR: send_booking_created_to_trainer() was called for booking {booking.id}")
+        print(f"❌❌❌ This violates TZ 10.6 - NO notifications when trainer creates booking!")
+        print(f"❌❌❌ Trainer: {trainer.telegram_id}, Client: {client.telegram_id}")
+        raise Exception("send_booking_created_to_trainer should NOT be called per TZ 10.6")
 
     async def send_booking_created_to_client(
         self,
@@ -81,41 +37,11 @@ class NotificationService:
         client: User,
         db: Session
     ):
-        """Send confirmation to client about booking creation"""
-        try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
-
-            text = (
-                "✅ <b>Запись создана!</b>\n\n"
-                f"👨‍🏫 Тренер: {trainer.name}\n"
-                f"📅 Дата: {booking_date}\n"
-                f"⏰ Время: {booking_time}\n"
-                f"💰 Стоимость: {booking.price} ₽\n"
-                f"📍 Статус: Ожидает подтверждения тренера\n\n"
-                "<i>Вы получите уведомление, когда тренер подтвердит запись</i>"
-            )
-
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="📱 Мои записи",
-                        web_app={"url": f"https://trenergram.ru/client/{client.telegram_id}"}
-                    )
-                ]
-            ])
-
-            await self.bot.send_message(
-                chat_id=client.telegram_id,
-                text=text,
-                parse_mode="HTML",
-                reply_markup=keyboard
-            )
-
-            return True
-        except Exception as e:
-            print(f"Error sending notification to client: {e}")
-            return False
+        """DEPRECATED - This function should NOT be called when trainer creates booking (TZ 10.6)"""
+        print(f"❌❌❌ ERROR: send_booking_created_to_client() was called for booking {booking.id}")
+        print(f"❌❌❌ This violates TZ 10.6 - NO notifications when trainer creates booking!")
+        print(f"❌❌❌ Trainer: {trainer.telegram_id}, Client: {client.telegram_id}")
+        raise Exception("send_booking_created_to_client should NOT be called per TZ 10.6")
 
     async def send_booking_confirmed(
         self,
