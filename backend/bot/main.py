@@ -78,6 +78,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             trainer_id = source.replace("trainer_", "")
             logger.info(f"User {user.id} came from trainer link: trainer_id={trainer_id}")
 
+            # If user is a trainer, prevent registration as client
+            if existing_user and existing_user.role == "trainer":
+                await update.message.reply_text(
+                    "⚠️ *Вы уже зарегистрированы как тренер*\n\n"
+                    "Невозможно быть тренером и клиентом одновременно на одном аккаунте Telegram.",
+                    parse_mode='Markdown'
+                )
+                return
+
             # If user exists as a client, link to trainer
             if existing_user and existing_user.role == "client":
                 # Try to link with trainer
@@ -245,6 +254,8 @@ def main():
     application.add_handler(CallbackQueryHandler(registration.handle_role_selection, pattern="^role_"))
     application.add_handler(CallbackQueryHandler(registration.handle_club_selection, pattern="^club_"))
     application.add_handler(CallbackQueryHandler(registration.handle_copy_link, pattern="^copy_link$"))
+    application.add_handler(CallbackQueryHandler(registration.handle_confirm_switch_to_trainer, pattern="^confirm_switch_to_trainer$"))
+    application.add_handler(CallbackQueryHandler(registration.handle_cancel_switch_role, pattern="^cancel_switch_role$"))
 
     # Booking callback handlers
     application.add_handler(CallbackQueryHandler(booking_callbacks.handle_confirm_booking, pattern="^confirm_booking:"))

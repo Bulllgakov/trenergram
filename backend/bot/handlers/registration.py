@@ -10,6 +10,38 @@ async def handle_role_selection(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
 
     if query.data == "role_trainer":
+        # Check if user is already a client
+        user = update.effective_user
+        from db.session import SessionLocal
+        from models import User as UserModel, UserRole
+
+        db = SessionLocal()
+        try:
+            existing_user = db.query(UserModel).filter_by(telegram_id=str(user.id)).first()
+
+            if existing_user and existing_user.role == UserRole.CLIENT:
+                # Show warning and ask for confirmation
+                keyboard = [
+                    [InlineKeyboardButton("✅ Да, стать тренером", callback_data="confirm_switch_to_trainer")],
+                    [InlineKeyboardButton("❌ Отмена", callback_data="cancel_switch_role")]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+
+                await query.edit_message_text(
+                    "⚠️ *Смена роли*\n\n"
+                    "Вы зарегистрированы как клиент.\n\n"
+                    "При смене роли на тренера будут удалены:\n"
+                    "• Все ваши записи на тренировки\n"
+                    "• История тренировок\n"
+                    "• Связи с тренерами\n\n"
+                    "Продолжить?",
+                    reply_markup=reply_markup,
+                    parse_mode='Markdown'
+                )
+                return
+        finally:
+            db.close()
+
         await start_trainer_registration(update, context)
     elif query.data == "role_client":
         await start_client_registration_standalone(update, context)
@@ -420,3 +452,81 @@ async def check_profile_completion(update: Update, context: ContextTypes.DEFAULT
             f"Вы можете сделать это в настройках календаря тренировок.",
             parse_mode='Markdown'
         )
+
+
+async def handle_confirm_switch_to_trainer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle confirmation of switching from client to trainer"""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    query = update.callback_query
+    await query.answer()
+
+    user = update.effective_user
+    from db.session import SessionLocal
+    from models import User as UserModel, UserRole, Booking, TrainerClient
+
+    db = SessionLocal()
+    try:
+        existing_user = db.query(UserModel).filter_by(telegram_id=str(user.id)).first()
+
+        if not existing_user or existing_user.role != UserRole.CLIENT:
+            await query.edit_message_text(
+                "⚠️ Ошибка: пользователь не найден или уже не является клиентом.",
+                parse_mode='Markdown'
+            )
+            return
+
+        # Delete all client bookings
+        db.query(Booking).filter_by(client_id=existing_user.id).delete()
+
+        # Delete all trainer-client relationships where user is client
+        db.query(TrainerClient).filter_by(client_id=existing_user.id).delete()
+
+        db.commit()
+        logger.info(f"Deleted client data for user {user.id} before switching to trainer")
+
+    except Exception as e:
+        logger.error(f"Error deleting client data: {e}")
+        db.rollback()
+        await query.edit_message_text(
+            "❌ Произошла ошибка при смене роли. Попробуйте позже.",
+            parse_mode='Markdown'
+        )
+        return
+    finally:
+        db.close()
+
+    # Continue with trainer registration
+    await query.edit_message_text(
+        "💪 *Регистрация тренера*\n\n"
+        "Для регистрации нам нужны ваши контактные данные.",
+        parse_mode='Markdown'
+    )
+
+    contact_button = KeyboardButton("📱 Поделиться контактом", request_contact=True)
+    reply_markup = ReplyKeyboardMarkup(
+        [[contact_button]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    await query.message.reply_text(
+        "Нажмите кнопку ниже, чтобы поделиться контактом:",
+        reply_markup=reply_markup
+    )
+
+    context.user_data['registration_step'] = 'trainer_contact'
+    context.user_data['role'] = 'trainer'
+
+
+async def handle_cancel_switch_role(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle cancellation of role switch"""
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "✅ Смена роли отменена.\n\n"
+        "Используйте /start для возврата в главное меню.",
+        parse_mode='Markdown'
+    )
