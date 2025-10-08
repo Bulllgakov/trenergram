@@ -13,7 +13,6 @@ from db.session import get_db
 from models import User, UserRole, Booking, BookingStatus, Club
 from core.security import get_current_user
 from services.notifications import (
-    notify_booking_created,
     notify_booking_confirmed,
     notify_booking_cancelled,
     notify_booking_rescheduled,
