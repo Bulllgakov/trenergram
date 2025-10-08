@@ -127,7 +127,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Reply Keyboard (постоянное меню внизу)
             main_keyboard = [
-                [KeyboardButton("📱 Открыть кабинет")],
+                [KeyboardButton("📅 Открыть календарь")],
                 [KeyboardButton("📎 Моя ссылка")]
             ]
             reply_keyboard = ReplyKeyboardMarkup(main_keyboard, resize_keyboard=True)
@@ -135,7 +135,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Inline клавиатура с WebApp кнопками
             keyboard = [
                 [InlineKeyboardButton(
-                    "📱 Открыть кабинет тренера",
+                    "📅 Открыть календарь тренировок",
                     web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user.id}")
                 )],
                 [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")]
@@ -265,7 +265,7 @@ def main():
     application.add_handler(CommandHandler("my", client.my_bookings_command))
 
     # Message handlers for keyboard buttons
-    application.add_handler(MessageHandler(filters.Regex("^📱 Открыть кабинет$"), webapp.cabinet_command))
+    application.add_handler(MessageHandler(filters.Regex("^📅 Открыть календарь$"), webapp.cabinet_command))
     application.add_handler(MessageHandler(filters.Regex("^📎 Моя ссылка$"), webapp.my_link_command))
 
     # Message handlers for registration flow

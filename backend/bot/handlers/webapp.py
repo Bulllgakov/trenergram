@@ -1,9 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
-from sqlalchemy import select, or_
+import asyncio
 
-from db.base import async_session
-from models.user import Trainer, Client
+from db.session import SessionLocal
+from models import User, UserRole
 
 
 async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -13,48 +13,41 @@ async def cabinet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{user_id}"
 
     # Check user role from database
-    async with async_session() as db:
-        # Check if user is a trainer
-        result = await db.execute(
-            select(Trainer).where(Trainer.telegram_id == telegram_id)
+    def get_user():
+        db = SessionLocal()
+        try:
+            return db.query(User).filter_by(telegram_id=telegram_id).first()
+        finally:
+            db.close()
+
+    user = await asyncio.to_thread(get_user)
+
+    if not user:
+        await update.message.reply_text(
+            "⚠️ Вы еще не зарегистрированы в системе.\n"
+            "Используйте /start для начала работы.",
+            parse_mode='Markdown'
         )
-        trainer = result.scalar_one_or_none()
+        return
 
-        if not trainer:
-            # Check if user is a client
-            result = await db.execute(
-                select(Client).where(Client.telegram_id == telegram_id)
-            )
-            client = result.scalar_one_or_none()
+    if user.role == UserRole.CLIENT:
+        # Redirect to client cabinet
+        await client_cabinet_command(update, context)
+        return
 
-            if client:
-                # Redirect to client cabinet
-                await client_cabinet_command(update, context)
-                return
-            else:
-                await update.message.reply_text(
-                    "⚠️ Вы еще не зарегистрированы в системе.\n"
-                    "Используйте /start для начала работы.",
-                    parse_mode='Markdown'
-                )
-                return
-
+    # For trainers
     keyboard = [
         [InlineKeyboardButton(
-            "📱 Открыть кабинет тренера",
+            "📅 Открыть календарь тренировок",
             web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}")
         )],
-        [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
-        [InlineKeyboardButton(
-            "⚙️ Настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}/settings")
-        )]
+        [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "🎯 *Кабинет тренера*\n\n"
-        "Управляйте своим профилем, расписанием и клиентами.\n\n"
+        "🎯 *Календарь тренировок*\n\n"
+        "Управляйте своим расписанием и клиентами.\n\n"
         f"📎 Ваша ссылка:\n`{trainer_link}`",
         reply_markup=reply_markup,
         parse_mode='Markdown'

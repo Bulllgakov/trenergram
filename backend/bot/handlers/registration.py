@@ -294,7 +294,7 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
 
     # Создаем Reply Keyboard (постоянное меню внизу)
     main_keyboard = [
-        [KeyboardButton("📱 Открыть кабинет")],
+        [KeyboardButton("📅 Открыть календарь")],
         [KeyboardButton("📎 Моя ссылка")]
     ]
     reply_keyboard = ReplyKeyboardMarkup(main_keyboard, resize_keyboard=True)
@@ -303,7 +303,7 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
     from telegram import WebAppInfo
     keyboard = [
         [InlineKeyboardButton(
-            "📱 Открыть кабинет тренера",
+            "📅 Открыть календарь тренировок",
             web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}")
         )],
         [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")]
@@ -327,6 +327,9 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
         "Используйте кнопки ниже для быстрого доступа:",
         reply_markup=inline_markup
     )
+
+    # Check profile completion and ask for missing fields
+    await check_profile_completion(update, context, trainer)
 
 
 async def complete_client_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -394,3 +397,29 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
         reply_markup=reply_markup,
         parse_mode='Markdown'
     )
+
+
+async def check_profile_completion(update: Update, context: ContextTypes.DEFAULT_TYPE, trainer):
+    """Check if trainer profile is complete and ask for missing fields"""
+    missing_fields = []
+
+    # Check important fields
+    if not trainer.description or trainer.description.strip() == "":
+        missing_fields.append("описание профиля")
+
+    if not trainer.email:
+        missing_fields.append("email")
+
+    # Check work hours in settings
+    if not trainer.settings or "work_hours" not in trainer.settings:
+        missing_fields.append("расписание работы")
+
+    if missing_fields:
+        fields_text = ", ".join(missing_fields)
+        await update.message.reply_text(
+            f"📝 *Заполните профиль*\n\n"
+            f"Для лучшего взаимодействия с клиентами рекомендуем заполнить:\n"
+            f"• {fields_text}\n\n"
+            f"Вы можете сделать это в настройках календаря тренировок.",
+            parse_mode='Markdown'
+        )
