@@ -65,6 +65,16 @@ def create_app() -> FastAPI:
             health_status["database"] = f"error: {str(e)[:100]}"
             health_status["status"] = "degraded"
 
+        # CHECK: Does notifications.py have the exception code?
+        import os
+        notifications_file = "/app/services/notifications.py"
+        if os.path.exists(notifications_file):
+            with open(notifications_file, 'r') as f:
+                content = f.read()
+                health_status["notifications_has_exception_code"] = "raise Exception" in content and "TZ 10.6" in content
+        else:
+            health_status["notifications_file_missing"] = True
+
         return health_status
 
     return app
