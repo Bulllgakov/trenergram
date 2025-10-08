@@ -623,9 +623,6 @@ async function quickBookAPI(time) {
 
     if (clients.length === 0) {
         showNotification('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
-        if (window.showLink) {
-            window.showLink();
-        }
         return;
     }
 
