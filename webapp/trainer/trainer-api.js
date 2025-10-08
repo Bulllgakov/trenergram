@@ -874,11 +874,20 @@ window.shareTrainerLink = function() {
     }
 };
 
-// Override showLink to use real trainer ID
+// Override showLink to use real trainer ID - but make it empty
+// because it's called when clicking empty slot with no clients
 const originalShowLink = window.showLink;
 window.showLink = function() {
     // Do nothing - link alert removed per user request
     // User will see only the notification about no clients
+};
+
+// Separate function for "My Link" button in interface
+window.showLinkButton = function() {
+    const link = `https://t.me/trenergram_bot?start=trainer_${trainerId}`;
+    if (window.safeShowAlert) {
+        safeShowAlert(`📎 Ваша ссылка для клиентов:\n\n${link}\n\nСкопируйте и отправьте клиентам для регистрации.`);
+    }
 };
 
 // Duration settings functions
