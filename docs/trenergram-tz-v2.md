@@ -935,6 +935,100 @@ reminder_2h_sent = False   # Отправлено ли второе напоми
 
 ---
 
+#### Поддержка часовых поясов (Timezones) (Статус: ✅ РЕАЛИЗОВАНО)
+
+**Концепция:**
+- **Тренер:** имеет свой часовой пояс (timezone) в профиле
+- **Клиент:** НЕ имеет своего часового пояса
+- **Принцип:** Клиент всегда видит время в часовом поясе тренера
+
+**Технологический стек:**
+- **Python zoneinfo** - работа с IANA timezones (Europe/Moscow, Asia/Yekaterinburg, etc.)
+- **IANA Timezone Database** - стандартная база часовых поясов
+
+**Реализация в Backend:**
+
+1. **Модель Trainer** (`backend/models/user.py`):
+```python
+timezone = Column(String(50), default="Europe/Moscow")  # IANA timezone
+```
+
+2. **API Responses** включают timezone:
+```python
+# UserResponse и BookingResponse
+trainer_timezone: Optional[str] = "Europe/Moscow"
+```
+
+3. **Напоминания** учитывают timezone тренера:
+```python
+# backend/tasks/reminders.py
+trainer_tz = trainer.timezone or "Europe/Moscow"
+tz = ZoneInfo(trainer_tz)
+current_time_in_trainer_tz = datetime.now(tz).time()
+
+# Сравнение с reminder_1_time происходит в часовом поясе тренера
+```
+
+**Логика работы:**
+
+1. **При создании тренировки:**
+   - API получает datetime в UTC (с суффиксом Z)
+   - Сохраняется в БД как UTC
+   - Пример: `2025-10-09T09:00:00Z`
+
+2. **При отображении клиенту:**
+   - API возвращает `datetime` в UTC и `trainer_timezone`
+   - Браузер клиента конвертирует в локальное время
+   - **ВАЖНО:** Клиент должен видеть время в timezone тренера, не своем!
+   - Frontend использует `Intl.DateTimeFormat` с `timeZone: trainer_timezone`
+
+3. **При отправке напоминаний:**
+   - Celery работает на сервере (UTC)
+   - Проверяет текущее время **в timezone тренера**
+   - `reminder_1_time = "20:00"` означает 20:00 по времени тренера
+
+**Пример сценария:**
+
+Тренер в Екатеринбурге (UTC+5):
+- Создает тренировку на 14:00 местного времени
+- API сохраняет: `2025-10-09T09:00:00Z` (14:00 - 5 часов)
+- Настройка напоминания: `reminder_1_time = "20:00"`
+- Клиент в Москве (UTC+3) видит: **14:00** (время тренера, не 12:00!)
+- Напоминание отправляется: в 20:00 по Екатеринбургу (15:00 UTC)
+
+**Файлы реализации:**
+- `backend/models/user.py` - поле timezone в модели
+- `backend/api/v1/users.py` - timezone в UserResponse
+- `backend/api/v1/bookings.py` - trainer_timezone в BookingResponse
+- `backend/tasks/reminders.py` - учет timezone при напоминаниях
+- `backend/migrations/add_trainer_timezone.sql` - миграция БД
+
+**База данных:**
+```sql
+ALTER TABLE trainers ADD COLUMN timezone VARCHAR(50) DEFAULT 'Europe/Moscow';
+```
+
+**Поддерживаемые timezone:**
+- `Europe/Moscow` (UTC+3) - Москва, по умолчанию
+- `Asia/Yekaterinburg` (UTC+5) - Екатеринбург
+- `Asia/Novosibirsk` (UTC+7) - Новосибирск
+- `Asia/Vladivostok` (UTC+10) - Владивосток
+- И другие IANA timezones
+
+**Рабочие часы:**
+- Хранятся как часы дня без привязки к timezone (9, 10, 11...)
+- Интерпретируются в локальном времени пользователя
+- НЕ требуют специальной обработки timezone
+
+**Ограничения:**
+- Frontend часть (отображение в timezone тренера) - в разработке
+- Текущая версия использует локальное время браузера
+- Для корректной работы клиент должен быть в том же регионе что и тренер
+
+**Дата внедрения:** 08.10.2025
+
+---
+
 ## 11. Требования к реализации {#требования}
 
 ### 11.1 Производительность
