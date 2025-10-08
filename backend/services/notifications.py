@@ -419,6 +419,7 @@ async def notify_booking_created_by_trainer(booking: Booking, db: Session):
     First reminder will serve as first notification to client.
     """
     # According to new TZ 10.6: no notifications when trainer creates booking
+    print(f"🚫🚫🚫 VERSION 2025-10-08-v3 🚫🚫🚫")
     print(f"🚫 notify_booking_created_by_trainer() called for booking {booking.id}")
     print(f"🚫 NO notifications will be sent (correct per TZ 10.6)")
     pass

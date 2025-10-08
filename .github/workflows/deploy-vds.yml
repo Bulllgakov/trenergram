@@ -31,6 +31,10 @@ jobs:
           # Pull latest changes
           git pull origin main
 
+          # Remove all Python cache files to ensure fresh code
+          find . -type f -name '*.pyc' -delete
+          find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+
           # Rebuild and restart Docker containers
           docker-compose down
           docker-compose build --no-cache backend bot
