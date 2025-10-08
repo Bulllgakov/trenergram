@@ -49,8 +49,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"Start command from user {user.id} (@{user.username}) with args: {args}")
 
     # Check if user is already registered
-    from services.registration import get_user_by_telegram_id
-    existing_user = get_user_by_telegram_id(str(user.id))
+    import asyncio
+    from db.session import SessionLocal
+    from models import User as UserModel
+
+    def get_user():
+        db = SessionLocal()
+        try:
+            return db.query(UserModel).filter_by(telegram_id=str(user.id)).first()
+        finally:
+            db.close()
+
+    existing_user = await asyncio.to_thread(get_user)
 
     if existing_user:
         logger.info(f"User {user.id} already registered as {existing_user.role}")
