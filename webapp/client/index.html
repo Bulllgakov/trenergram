@@ -812,97 +812,10 @@
 
         <!-- Upcoming Bookings -->
         <div id="upcomingTab">
-            <!-- Today -->
-            <div class="section-header">СЕГОДНЯ, 13 АВГУСТА</div>
-            
-            <div class="bookings-section">
-                <div class="booking-card highlight" onclick="openBookingDetails('today-training', 'confirmed')">
-                    <div class="notification-dot"></div>
-                    <div class="booking-date">
-                        <div class="booking-time">17:00</div>
-                    </div>
-                    <div class="booking-info">
-                        <div class="booking-trainer">Александр Петров</div>
-                        <div class="booking-details">Силовая тренировка</div>
-                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ, зал №2</div>
-                    </div>
-                    <div class="booking-status">
-                        <div class="status-icon confirmed">✓</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tomorrow -->
-            <div class="section-header">ЗАВТРА, 14 АВГУСТА</div>
-            
-            <div class="bookings-section">
-                <div class="booking-card" onclick="openBookingDetails('tomorrow-training', 'pending')">
-                    <div class="booking-date">
-                        <div class="booking-time">10:00</div>
-                    </div>
-                    <div class="booking-info">
-                        <div class="booking-trainer">Мария Сидорова</div>
-                        <div class="booking-details">Йога для начинающих</div>
-                        <div class="booking-location">📍 Студия YogaLife</div>
-                    </div>
-                    <div class="booking-status">
-                        <div class="status-icon pending">!</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- This Week -->
-            <div class="section-header">ПЯТНИЦА, 16 АВГУСТА</div>
-            
-            <div class="bookings-section">
-                <div class="booking-card" onclick="openBookingDetails('friday-training', 'confirmed')">
-                    <div class="booking-date">
-                        <div class="booking-time">19:00</div>
-                    </div>
-                    <div class="booking-info">
-                        <div class="booking-trainer">Дмитрий Новиков</div>
-                        <div class="booking-details">Бокс • Индивидуальная</div>
-                        <div class="booking-location">📍 Спортклуб Чемпион</div>
-                    </div>
-                    <div class="booking-status">
-                        <div class="status-icon confirmed">✓</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Next Week -->
-            <div class="section-header">СЛЕДУЮЩАЯ НЕДЕЛЯ</div>
-            
-            <div class="bookings-section">
-                <div class="booking-card" onclick="openBookingDetails('next-week-training', 'reminder')">
-                    <div class="booking-date">
-                        <div class="booking-day">20</div>
-                        <div class="booking-month">АВГ</div>
-                    </div>
-                    <div class="booking-info">
-                        <div class="booking-trainer">Елена Козлова</div>
-                        <div class="booking-details">Пилатес • Групповая</div>
-                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ</div>
-                    </div>
-                    <div class="booking-status">
-                        <div class="status-icon reminder">📨</div>
-                    </div>
-                </div>
-
-                <div class="booking-card" onclick="openBookingDetails('next-week-training-2', 'confirmed')">
-                    <div class="booking-date">
-                        <div class="booking-day">22</div>
-                        <div class="booking-month">АВГ</div>
-                    </div>
-                    <div class="booking-info">
-                        <div class="booking-trainer">Александр Петров</div>
-                        <div class="booking-details">Функциональный тренинг</div>
-                        <div class="booking-location">📍 Фитнес ЭНЕРГИЯ</div>
-                    </div>
-                    <div class="booking-status">
-                        <div class="status-icon confirmed">✓</div>
-                    </div>
-                </div>
+            <div class="empty-state">
+                <div class="empty-icon">⏳</div>
+                <div class="empty-title">Загрузка...</div>
+                <div class="empty-description">Пожалуйста, подождите</div>
             </div>
         </div>
 
