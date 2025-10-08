@@ -409,30 +409,6 @@
             margin-bottom: 24px;
         }
 
-        /* FAB button */
-        .fab {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            border: none;
-            box-shadow: 0 3px 12px rgba(51, 144, 236, 0.4);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            transition: all 0.3s ease;
-            z-index: 90;
-        }
-
-        .fab:active {
-            transform: scale(0.92);
-        }
 
         /* Bottom sheet */
         .bottom-sheet {
@@ -884,9 +860,6 @@
             </div>
         </div>
     </div>
-
-    <!-- FAB Button -->
-    <button class="fab" onclick="quickBook()">+</button>
 
     <!-- Overlay -->
     <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
