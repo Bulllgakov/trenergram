@@ -434,10 +434,10 @@ function updateScheduleDisplay() {
         // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
             const bookingDate = new Date(b.datetime);
-            // Use UTC methods to match the API timezone (API returns times in UTC with Z suffix)
-            const bookingTimeStr = `${bookingDate.getUTCHours().toString().padStart(2, '0')}:${bookingDate.getUTCMinutes().toString().padStart(2, '0')}`;
-            const bookingDateStr = bookingDate.toISOString().slice(0, 10);
-            const currentDateStr = currentDate.toISOString().slice(0, 10);
+            // Use local time (trainer and client are always in same timezone)
+            const bookingTimeStr = `${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+            const bookingDateStr = bookingDate.toDateString();
+            const currentDateStr = currentDate.toDateString();
             return bookingTimeStr === timeStr && bookingDateStr === currentDateStr;
         });
 
