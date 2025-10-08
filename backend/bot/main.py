@@ -209,6 +209,11 @@ def main():
     # Client commands (keep minimal)
     application.add_handler(CommandHandler("my", client.my_bookings_command))
 
+    # Message handlers for keyboard buttons
+    application.add_handler(MessageHandler(filters.Regex("^📱 Открыть кабинет$"), webapp.cabinet_command))
+    application.add_handler(MessageHandler(filters.Regex("^📎 Моя ссылка$"), webapp.my_link_command))
+    application.add_handler(MessageHandler(filters.Regex("^⚙️ Настройки$"), webapp.settings_command))
+
     # Message handlers for registration flow
     application.add_handler(MessageHandler(filters.CONTACT, registration.handle_contact))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registration.handle_text_input))

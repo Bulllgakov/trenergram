@@ -279,7 +279,14 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
 
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{trainer_id}"
 
-    # Создаем клавиатуру с упрощенными кнопками
+    # Создаем Reply Keyboard (постоянное меню внизу)
+    main_keyboard = [
+        [KeyboardButton("📱 Открыть кабинет")],
+        [KeyboardButton("📎 Моя ссылка"), KeyboardButton("⚙️ Настройки")]
+    ]
+    reply_keyboard = ReplyKeyboardMarkup(main_keyboard, resize_keyboard=True)
+
+    # Создаем Inline клавиатуру с WebApp кнопками
     from telegram import WebAppInfo
     keyboard = [
         [InlineKeyboardButton(
@@ -292,7 +299,7 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
             web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}/settings")
         )]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    inline_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         "✅ *Профиль создан!*\n\n"
@@ -302,8 +309,14 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
         "Все функции доступны в кабинете тренера.\n"
         "Используйте команду /cabinet в любой момент.\n\n"
         "Платформа полностью *БЕСПЛАТНА* для вас!",
-        reply_markup=reply_markup,
+        reply_markup=reply_keyboard,
         parse_mode='Markdown'
+    )
+
+    # Отправляем WebApp кнопки отдельным сообщением
+    await update.message.reply_text(
+        "Используйте кнопки ниже для быстрого доступа:",
+        reply_markup=inline_markup
     )
 
 
