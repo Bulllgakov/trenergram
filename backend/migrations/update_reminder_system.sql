@@ -32,6 +32,9 @@ END $$;
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+        -- Add cancellation_hours if not exists
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS cancellation_hours INTEGER DEFAULT 24;
+
         -- Add new reminder columns
         ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_1_days_before INTEGER DEFAULT 1;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_1_time VARCHAR(10) DEFAULT '20:00';
@@ -40,6 +43,7 @@ BEGIN
         ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_cancel_hours_after INTEGER DEFAULT 1;
 
         -- Add comments
+        COMMENT ON COLUMN users.cancellation_hours IS 'Hours before training when money is charged from client balance';
         COMMENT ON COLUMN users.reminder_1_days_before IS 'Days before training to send first reminder (1, 2, or 3)';
         COMMENT ON COLUMN users.reminder_1_time IS 'Time to send first reminder (HH:MM format)';
         COMMENT ON COLUMN users.reminder_2_hours_after IS 'Hours after first reminder to send second (1, 2, or 3)';
