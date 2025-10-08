@@ -233,35 +233,38 @@ class NotificationService:
         booking: Booking,
         trainer: User,
         client: User,
-        hours_before: int = 24
+        reminder_number: int = 1
     ):
-        """Send reminder to client about upcoming training"""
+        """Send reminder to client about upcoming training
+
+        Args:
+            reminder_number: 1 (first), 2 (second), or 3 (third/final warning)
+        """
         try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
+            booking_time_start = booking.datetime.strftime("%H:%M")
+            # Calculate end time (datetime + duration minutes)
+            from datetime import timedelta
+            end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
+            booking_time_end = end_time.strftime("%H:%M")
 
-            if hours_before >= 24:
-                time_text = f"через {hours_before // 24} дн."
+            # Different text for each reminder
+            if reminder_number == 1:
+                text = "Завтра придешь на тренировку?"
+            elif reminder_number == 2:
+                text = f"Завтра тренировка с {booking_time_start} до {booking_time_end}"
+            elif reminder_number == 3:
+                text = "Скоро тренировка будет отменена. Придешь?"
             else:
-                time_text = f"через {hours_before} ч."
-
-            text = (
-                f"⏰ <b>Напоминание о тренировке {time_text}</b>\n\n"
-                f"👨‍🏫 Тренер: {trainer.name}\n"
-                f"📅 Дата: {booking_date}\n"
-                f"⏰ Время: {booking_time}\n"
-                f"💰 Стоимость: {booking.price} ₽\n\n"
-                "<i>Не забудьте взять спортивную форму!</i>"
-            )
+                text = "Напоминание о тренировке"
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="✅ Приду",
+                        text="✅ Подтверждаю",
                         callback_data=f"confirm_attendance:{booking.id}"
                     ),
                     InlineKeyboardButton(
-                        text="❌ Отменить",
+                        text="❌ Не смогу прийти",
                         callback_data=f"cancel_booking:{booking.id}"
                     )
                 ]
@@ -277,6 +280,28 @@ class NotificationService:
             return True
         except Exception as e:
             print(f"Error sending reminder: {e}")
+            return False
+
+    async def send_auto_cancel_notification(
+        self,
+        booking: Booking,
+        trainer: User,
+        client: User
+    ):
+        """Send notification when booking is auto-cancelled due to no response"""
+        try:
+            text = "Тренировка отменена слабак"
+
+            # No buttons - just informational message
+            await self.bot.send_message(
+                chat_id=client.telegram_id,
+                text=text,
+                parse_mode="HTML"
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error sending auto-cancel notification: {e}")
             return False
 
     async def close(self):

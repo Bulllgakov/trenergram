@@ -99,6 +99,10 @@ def check_and_send_reminders():
                             booking.status = BookingStatus.CANCELLED
                             booking.cancelled_at = datetime.now()
                             booking.cancellation_reason = "Автоотмена: не подтверждено клиентом"
+
+                            # Send auto-cancel notification to client
+                            asyncio.run(_send_auto_cancel_notification(booking, trainer, client, db))
+
                             db.commit()
 
         print(f"[{datetime.now()}] Finished check_and_send_reminders task")
@@ -166,12 +170,38 @@ async def _send_reminder_async(
     trainer: User,
     client: User,
     db: Session,
-    hours_before: int
+    reminder_type: str
 ):
-    """Wrapper to call async send_reminder_to_client function"""
+    """Wrapper to call async send_reminder_to_client function
+
+    Args:
+        reminder_type: 'first', 'second', or 'third'
+    """
     try:
+        # Map reminder type to number
+        reminder_number = {
+            'first': 1,
+            'second': 2,
+            'third': 3
+        }.get(reminder_type, 1)
+
         await notification_service.send_reminder_to_client(
-            booking, trainer, client, hours_before
+            booking, trainer, client, reminder_number
         )
     except Exception as e:
         print(f"Error sending reminder: {e}")
+
+
+async def _send_auto_cancel_notification(
+    booking: Booking,
+    trainer: User,
+    client: User,
+    db: Session
+):
+    """Wrapper to send auto-cancel notification to client"""
+    try:
+        await notification_service.send_auto_cancel_notification(
+            booking, trainer, client
+        )
+    except Exception as e:
+        print(f"Error sending auto-cancel notification: {e}")
