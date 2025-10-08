@@ -40,7 +40,7 @@ jobs:
 
           # Rebuild and restart Docker containers
           docker-compose down
-          docker-compose build --no-cache backend bot
+          docker-compose build --no-cache backend bot celery-worker celery-beat
           docker-compose up -d
 
           # Remove old incorrect app directory if exists

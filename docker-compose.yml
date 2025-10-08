@@ -76,6 +76,48 @@ services:
     command: python -m bot.main
     restart: unless-stopped
 
+  celery-worker:
+    build: .
+    container_name: trenergram-celery-worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trenergram:trenergram123@postgres:5432/trenergram
+      REDIS_URL: redis://redis:6379/0
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
+      ENVIRONMENT: production
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trenergram-network
+    command: celery -A celery_app worker --loglevel=info
+    restart: unless-stopped
+
+  celery-beat:
+    build: .
+    container_name: trenergram-celery-beat
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trenergram:trenergram123@postgres:5432/trenergram
+      REDIS_URL: redis://redis:6379/0
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_USERNAME: ${BOT_USERNAME}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
+      ENVIRONMENT: production
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trenergram-network
+    command: celery -A celery_app beat --loglevel=info
+    restart: unless-stopped
+
 networks:
   trenergram-network:
     driver: bridge
