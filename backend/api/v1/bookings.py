@@ -16,7 +16,9 @@ from services.notifications import (
     notify_booking_created,
     notify_booking_confirmed,
     notify_booking_cancelled,
-    notify_booking_rescheduled
+    notify_booking_rescheduled,
+    notify_booking_created_by_trainer,
+    notify_booking_created_by_client
 )
 
 router = APIRouter()
@@ -30,6 +32,7 @@ class BookingCreate(BaseModel):
     duration: int = 60
     price: Optional[int] = None
     notes: Optional[str] = None
+    created_by: str = "trainer"  # "trainer" or "client"
 
 
 class BookingUpdate(BaseModel):
@@ -112,8 +115,23 @@ async def create_booking(
     db.commit()
     db.refresh(new_booking)
 
-    # Send notifications in background
-    background_tasks.add_task(notify_booking_created, new_booking, db)
+    # Send notifications based on who created the booking (TZ 10.6)
+    print(f"DEBUG: Creating booking with created_by='{booking.created_by}', booking_id={new_booking.id}")
+
+    if booking.created_by == "trainer":
+        # No notifications sent (TZ 10.6: first reminder = first notification)
+        print(f"DEBUG: Trainer created booking - NO notifications sent")
+        background_tasks.add_task(notify_booking_created_by_trainer, new_booking, db)
+    elif booking.created_by == "client":
+        # Send notification to trainer for approval
+        print(f"DEBUG: Client created booking - sending notification to trainer")
+        background_tasks.add_task(notify_booking_created_by_client, new_booking, db)
+    else:
+        # Should never happen - log error and do NOT send any notifications
+        print(f"ERROR: Unknown created_by value: '{booking.created_by}' for booking {new_booking.id}")
+        print(f"ERROR: No notifications will be sent (correct behavior per TZ 10.6)")
+        # Do NOT send any notifications if created_by is unknown
+        pass
 
     response = BookingResponse.from_orm(new_booking)
     response.trainer_name = trainer.name

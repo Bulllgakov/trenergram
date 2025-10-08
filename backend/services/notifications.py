@@ -362,17 +362,11 @@ notification_service = NotificationService()
 
 
 # Helper functions for use in API endpoints
-async def notify_booking_created(booking: Booking, db: Session):
-    """Helper to send notifications when booking is created"""
-    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
-    client = db.query(User).filter_by(id=booking.client_id).first()
-
-    if trainer and client:
-        # Send notifications in parallel
-        await asyncio.gather(
-            notification_service.send_booking_created_to_trainer(booking, trainer, client, db),
-            notification_service.send_booking_created_to_client(booking, trainer, client, db)
-        )
+# DEPRECATED: This function violates TZ 10.6 and should not be used
+# Use notify_booking_created_by_trainer() or notify_booking_created_by_client() instead
+# async def notify_booking_created(booking: Booking, db: Session):
+#     """DEPRECATED: Sends notifications to BOTH trainer and client - violates TZ 10.6"""
+#     pass
 
 
 async def notify_booking_confirmed(booking: Booking, db: Session):
@@ -416,3 +410,47 @@ async def notify_booking_rescheduled(
             booking, old_datetime, trainer, client,
             "trainer" if rescheduled_by_trainer else "client"
         )
+
+
+# New simplified notification functions according to TZ 10.6
+async def notify_booking_created_by_trainer(booking: Booking, db: Session):
+    """
+    When trainer creates booking: NO notifications sent to anyone.
+    First reminder will serve as first notification to client.
+    """
+    # According to new TZ 10.6: no notifications when trainer creates booking
+    pass
+
+
+async def notify_booking_created_by_client(booking: Booking, db: Session):
+    """
+    When client creates booking: send notification to trainer for confirmation.
+    """
+    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
+    client = db.query(User).filter_by(id=booking.client_id).first()
+
+    if trainer and client:
+        # Only send notification to trainer for approval
+        await notification_service.send_booking_created_to_trainer(booking, trainer, client, db)
+
+        # Send confirmation to client about request creation
+        try:
+            booking_date = booking.datetime.strftime("%d.%m.%Y")
+            booking_time = booking.datetime.strftime("%H:%M")
+
+            text = (
+                "✅ <b>Запрос на тренировку отправлен!</b>\n\n"
+                f"👨‍🏫 Тренер: {trainer.name}\n"
+                f"📅 Дата: {booking_date}\n"
+                f"⏰ Время: {booking_time}\n"
+                f"💰 Стоимость: {booking.price} ₽\n\n"
+                "<i>Ожидаем подтверждения от тренера</i>"
+            )
+
+            await notification_service.bot.send_message(
+                chat_id=client.telegram_id,
+                text=text,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"Error sending client request confirmation: {e}")
