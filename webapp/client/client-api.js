@@ -244,9 +244,9 @@ function openBookingDetailsAPI(booking) {
     const balance = trainer.balance || 0;
     document.getElementById('detailsBalance').textContent = `${balance.toLocaleString()}₽`;
 
-    if (booking.status === 'PENDING') {
+    if (booking.status.toUpperCase() === 'PENDING') {
         document.getElementById('detailsPaymentStatus').textContent = 'Ожидает подтверждения';
-    } else if (booking.status === 'CONFIRMED') {
+    } else if (booking.status.toUpperCase() === 'CONFIRMED') {
         document.getElementById('detailsPaymentStatus').textContent = '✓ Будет списано со счета';
     } else {
         document.getElementById('detailsPaymentStatus').textContent = getStatusText(booking.status);
@@ -256,8 +256,8 @@ function openBookingDetailsAPI(booking) {
     const actionsContainer = document.getElementById('bookingActions');
     actionsContainer.innerHTML = '';
 
-    if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
-        if (booking.status === 'PENDING') {
+    if (booking.status.toUpperCase() === 'PENDING' || booking.status.toUpperCase() === 'CONFIRMED') {
+        if (booking.status.toUpperCase() === 'PENDING') {
             actionsContainer.innerHTML += `
                 <button class="action-button confirm" onclick="confirmBookingAPI(${booking.id})">
                     ✅ Подтвердить тренировку
