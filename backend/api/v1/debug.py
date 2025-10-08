@@ -5,45 +5,46 @@ DELETE THIS FILE AFTER FIXING THE NOTIFICATION BUG
 
 from fastapi import APIRouter
 import os
+import hashlib
 
 router = APIRouter()
 
 
-@router.get("/version")
-async def get_version():
-    """Check which version of notifications.py is deployed"""
+@router.get("/check-file")
+async def check_file():
+    """Check if the deployed file has the exception-raising code"""
     try:
-        # Read the notifications.py file from disk
         file_path = "/app/services/notifications.py"
         if os.path.exists(file_path):
             with open(file_path, 'r') as f:
                 content = f.read()
 
-            # Check for version marker
-            has_version_marker = "VERSION 2025-10-08-v3" in content
-            has_pass_only = "notify_booking_created_by_trainer" in content
+            # Calculate file hash to compare with local
+            file_hash = hashlib.md5(content.encode()).hexdigest()
 
-            # Get the actual function
+            # Check for our marker text
+            has_exception_code = "raise Exception(\"send_booking_created_to_trainer should NOT be called per TZ 10.6\")" in content
+            has_old_notification = "🆕 <b>Новая запись на тренировку!</b>" in content
+
+            # Find the send_booking_created_to_trainer function
             lines = content.split('\n')
-            function_start = None
-            function_lines = []
-
+            func_lines = []
+            in_func = False
             for i, line in enumerate(lines):
-                if 'async def notify_booking_created_by_trainer' in line:
-                    function_start = i
-                if function_start is not None and i >= function_start:
-                    function_lines.append(line)
-                    if i > function_start and line and not line.startswith(' '):
-                        break
-                    if len(function_lines) > 20:
+                if 'async def send_booking_created_to_trainer' in line:
+                    in_func = True
+                if in_func:
+                    func_lines.append(f"{i+1}: {line}")
+                    if len(func_lines) > 15:
                         break
 
             return {
                 "file_exists": True,
-                "has_version_marker": has_version_marker,
-                "has_correct_function": has_pass_only,
-                "function_code": '\n'.join(function_lines[:15]),
-                "file_size": len(content)
+                "file_hash": file_hash,
+                "file_size": len(content),
+                "has_exception_code": has_exception_code,
+                "has_old_notification_text": has_old_notification,
+                "function_preview": '\n'.join(func_lines)
             }
         else:
             return {
