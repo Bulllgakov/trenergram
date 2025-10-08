@@ -32,7 +32,7 @@ class UserResponse(BaseModel):
     rating: Optional[int]
     is_active: bool
     created_at: datetime
-    timezone: Optional[str] = "Europe/Moscow"  # IANA timezone
+    timezone: Optional[str] = "Europe/Moscow"  # IANA timezone (for trainers)
 
     class Config:
         from_attributes = True
@@ -129,7 +129,7 @@ async def get_trainer_clients(
     db: Session = Depends(get_db)
 ):
     """Get all clients of a trainer with balance and statistics"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     trainer = db.query(User).filter_by(
         telegram_id=telegram_id,
@@ -162,7 +162,16 @@ async def get_trainer_clients(
 
         # Calculate avg bookings per month
         if rel.created_at:
-            months_active = max(1, (datetime.now() - rel.created_at).days / 30)
+            # Use timezone-aware datetime for comparison
+            now = datetime.now(timezone.utc)
+            # Handle both timezone-aware and naive datetimes
+            created_at = rel.created_at
+            if created_at.tzinfo is None:
+                # If created_at is naive, make it aware (assume UTC)
+                from datetime import timezone as tz
+                created_at = created_at.replace(tzinfo=tz.utc)
+
+            months_active = max(1, (now - created_at).days / 30)
             avg_bookings_per_month = round(rel.completed_bookings / months_active, 1)
         else:
             avg_bookings_per_month = 0.0

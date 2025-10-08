@@ -12,6 +12,22 @@ let clientData = {};
 let trainers = [];
 let bookings = [];
 
+// Helper function to format date/time in trainer's timezone
+function formatInTrainerTimezone(date, trainer, options) {
+    const timezone = trainer?.timezone || 'Europe/Moscow';
+    return date.toLocaleString('ru-RU', { ...options, timeZone: timezone });
+}
+
+function formatDateInTrainerTimezone(date, trainer, options) {
+    const timezone = trainer?.timezone || 'Europe/Moscow';
+    return date.toLocaleDateString('ru-RU', { ...options, timeZone: timezone });
+}
+
+function formatTimeInTrainerTimezone(date, trainer, options) {
+    const timezone = trainer?.timezone || 'Europe/Moscow';
+    return date.toLocaleTimeString('ru-RU', { ...options, timeZone: timezone });
+}
+
 // Initialize API integration
 async function initializeAPI() {
     if (!clientId) {
@@ -113,29 +129,40 @@ function updateBookingsDisplay() {
         return;
     }
 
-    // Group bookings by date
+    // Group bookings by date (need to consider trainer timezone for each booking)
     const bookingsByDate = {};
     upcomingBookings.forEach(booking => {
-        const date = new Date(booking.datetime).toDateString();
-        if (!bookingsByDate[date]) {
-            bookingsByDate[date] = [];
+        const date = new Date(booking.datetime);
+        // Use trainer timezone for date grouping
+        const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+        const dateKey = formatDateInTrainerTimezone(date, trainer, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        if (!bookingsByDate[dateKey]) {
+            bookingsByDate[dateKey] = [];
         }
-        bookingsByDate[date].push(booking);
+        bookingsByDate[dateKey].push(booking);
     });
 
     // Display bookings grouped by date
-    Object.entries(bookingsByDate).forEach(([dateStr, dateBookings]) => {
-        const date = new Date(dateStr);
-        const isToday = date.toDateString() === new Date().toDateString();
-        const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString();
+    Object.entries(bookingsByDate).forEach(([dateKey, dateBookings]) => {
+        // Get first booking to determine trainer timezone
+        const firstBooking = dateBookings[0];
+        const trainer = trainers.find(t => t.telegram_id === firstBooking.trainer_telegram_id) || {};
+        const date = new Date(firstBooking.datetime);
+
+        // Check if today/tomorrow in trainer timezone
+        const now = new Date();
+        const dateInTrainerTz = formatDateInTrainerTimezone(date, trainer, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const todayInTrainerTz = formatDateInTrainerTimezone(now, trainer, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const tomorrow = new Date(now.getTime() + 86400000);
+        const tomorrowInTrainerTz = formatDateInTrainerTimezone(tomorrow, trainer, { year: 'numeric', month: '2-digit', day: '2-digit' });
 
         let sectionTitle;
-        if (isToday) {
+        if (dateInTrainerTz === todayInTrainerTz) {
             sectionTitle = 'СЕГОДНЯ';
-        } else if (isTomorrow) {
+        } else if (dateInTrainerTz === tomorrowInTrainerTz) {
             sectionTitle = 'ЗАВТРА';
         } else {
-            sectionTitle = date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            sectionTitle = formatDateInTrainerTimezone(date, trainer, { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
         }
 
         // Add section header
@@ -164,9 +191,11 @@ function createBookingCard(booking, highlight = false) {
     card.onclick = () => openBookingDetailsAPI(booking);
 
     const bookingDate = new Date(booking.datetime);
-    const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    // Find trainer for this booking to get timezone
+    const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
     const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
-    const endTimeStr = endTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
     const timeRangeStr = `${timeStr} - ${endTimeStr}`;
 
     const statusIcon = getStatusIcon(booking.status);
@@ -221,19 +250,18 @@ function openBookingDetailsAPI(booking) {
 
     // Update booking details in the sheet
     const bookingDate = new Date(booking.datetime);
-    const dateStr = bookingDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-    const timeStr = bookingDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000)
-        .toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-    // Update trainer info
+    // Get trainer to use their timezone
     const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const dateStr = formatDateInTrainerTimezone(bookingDate, trainer, { weekday: 'long', day: 'numeric', month: 'long' });
+    const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
+    const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
+    const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
     const trainerInitials = (booking.trainer_name || 'T').split(' ').map(n => n[0]).join('').toUpperCase();
 
     document.getElementById('detailsTrainerAvatar').textContent = trainerInitials;
     document.getElementById('detailsTrainerName').textContent = booking.trainer_name || 'Тренер';
     document.getElementById('detailsDate').textContent = dateStr;
-    document.getElementById('detailsTime').textContent = `${timeStr} - ${endTime}`;
+    document.getElementById('detailsTime').textContent = `${timeStr} - ${endTimeStr}`;
     document.getElementById('detailsType').textContent = booking.service_name || 'Тренировка';
     document.getElementById('detailsFormat').textContent = booking.format || 'Индивидуальная';
     document.getElementById('detailsLocation').textContent = booking.location || 'Не указано';
@@ -456,7 +484,7 @@ function openTrainerProfileAPI(trainer) {
         } else if (diffDays < 7) {
             lastDateText = `${diffDays} дн. назад`;
         } else {
-            lastDateText = lastDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            lastDateText = formatDateInTrainerTimezone(lastDate, trainer, { day: 'numeric', month: 'short' });
         }
         document.getElementById('lastTrainingDate').textContent = lastDateText;
     } else {
@@ -512,7 +540,9 @@ function updatePastBookings() {
     const bookingsByMonth = {};
     pastBookings.forEach(booking => {
         const date = new Date(booking.datetime);
-        const monthKey = date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }).toUpperCase();
+        // Use trainer timezone for grouping
+        const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+        const monthKey = formatDateInTrainerTimezone(date, trainer, { month: 'long', year: 'numeric' }).toUpperCase();
         if (!bookingsByMonth[monthKey]) {
             bookingsByMonth[monthKey] = [];
         }
@@ -544,8 +574,10 @@ function createPastBookingCard(booking) {
     card.onclick = () => openPastBookingDetailsAPI(booking);
 
     const bookingDate = new Date(booking.datetime);
-    const day = bookingDate.getDate();
-    const month = bookingDate.toLocaleDateString('ru-RU', { month: 'short' }).toUpperCase();
+    // Use trainer timezone
+    const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const day = parseInt(formatDateInTrainerTimezone(bookingDate, trainer, { day: 'numeric' }));
+    const month = formatDateInTrainerTimezone(bookingDate, trainer, { month: 'short' }).toUpperCase();
 
     card.innerHTML = `
         <div class="booking-date">

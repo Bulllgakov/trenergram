@@ -43,6 +43,7 @@ class User(Base):
     description = Column(Text)
     rating = Column(Integer, default=50)  # 0-50 (displayed as 0-5.0)
     cancellation_hours = Column(Integer, default=24)  # Hours before training when money is charged from client balance
+    timezone = Column(String(50), default="Europe/Moscow")  # IANA timezone for trainer
 
     # Reminder settings (simplified system)
     reminder_1_days_before = Column(Integer, default=1)  # Days before training: 1, 2, or 3
