@@ -4,6 +4,7 @@ Celery tasks for sending booking reminders to clients
 
 import asyncio
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 from celery_app import celery_app
 from db.session import SessionLocal
@@ -97,7 +98,7 @@ def _should_send_first_reminder(booking: Booking, trainer: User, hours_until: fl
     Check if it's time to send the first reminder.
 
     Logic:
-    - Send at trainer.reminder_1_time (default 20:00)
+    - Send at trainer.reminder_1_time (default 20:00) in TRAINER'S timezone
     - When hours_until <= trainer.reminder_1_hours (default 24)
     - Only if not already sent
     """
@@ -111,15 +112,22 @@ def _should_send_first_reminder(booking: Booking, trainer: User, hours_until: fl
     if hours_until > reminder_hours:
         return False
 
-    # Check if current time matches reminder time (with 5 min tolerance)
-    current_time = datetime.now().time()
+    # Get current time in trainer's timezone
+    trainer_tz = trainer.timezone or "Europe/Moscow"
+    try:
+        tz = ZoneInfo(trainer_tz)
+        current_time_in_trainer_tz = datetime.now(tz).time()
+    except Exception as e:
+        print(f"Invalid timezone '{trainer_tz}' for trainer {trainer.id}, using UTC: {e}")
+        current_time_in_trainer_tz = datetime.now().time()
+
     reminder_hour = reminder_time.hour
     reminder_minute = reminder_time.minute
 
     # Allow 5-minute window around the target time
     is_time_match = (
-        current_time.hour == reminder_hour and
-        abs(current_time.minute - reminder_minute) <= 5
+        current_time_in_trainer_tz.hour == reminder_hour and
+        abs(current_time_in_trainer_tz.minute - reminder_minute) <= 5
     )
 
     return is_time_match
