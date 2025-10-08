@@ -59,6 +59,7 @@ class BookingResponse(BaseModel):
     trainer_telegram_id: Optional[str] = None
     client_telegram_id: Optional[str] = None
     trainer_telegram_username: Optional[str] = None
+    trainer_timezone: Optional[str] = "Europe/Moscow"  # Trainer's IANA timezone
 
     class Config:
         from_attributes = True
@@ -147,6 +148,7 @@ async def create_booking(
     response.trainer_telegram_id = trainer.telegram_id
     response.client_telegram_id = client.telegram_id
     response.trainer_telegram_username = trainer.telegram_username
+    response.trainer_timezone = trainer.timezone if trainer and hasattr(trainer, 'timezone') else "Europe/Moscow"
 
     return response
 
@@ -190,6 +192,7 @@ async def get_trainer_bookings(
         response.client_name = client.name if client else None
         response.trainer_telegram_id = trainer.telegram_id
         response.trainer_telegram_username = trainer.telegram_username
+        response.trainer_timezone = trainer.timezone if trainer and hasattr(trainer, 'timezone') else "Europe/Moscow"
         if client:
             response.client_telegram_id = client.telegram_id
         if booking.club_id:
@@ -240,6 +243,7 @@ async def get_client_bookings(
         if trainer:
             response.trainer_telegram_id = trainer.telegram_id
             response.trainer_telegram_username = trainer.telegram_username
+            response.trainer_timezone = trainer.timezone if hasattr(trainer, 'timezone') else "Europe/Moscow"
         if booking.club_id:
             club = db.query(Club).filter_by(id=booking.club_id).first()
             response.club_name = club.name if club else None
@@ -269,6 +273,7 @@ async def get_booking(
     if trainer:
         response.trainer_telegram_id = trainer.telegram_id
         response.trainer_telegram_username = trainer.telegram_username
+        response.trainer_timezone = trainer.timezone if hasattr(trainer, 'timezone') else "Europe/Moscow"
     if client:
         response.client_telegram_id = client.telegram_id
 
@@ -351,6 +356,7 @@ async def update_booking(
     if trainer:
         response.trainer_telegram_id = trainer.telegram_id
         response.trainer_telegram_username = trainer.telegram_username
+        response.trainer_timezone = trainer.timezone if hasattr(trainer, 'timezone') else "Europe/Moscow"
     if client:
         response.client_telegram_id = client.telegram_id
 

@@ -33,6 +33,9 @@ class Trainer(Base):
     # Working hours
     working_hours = Column(JSON)
 
+    # Timezone (IANA timezone, e.g. "Europe/Moscow", "Asia/Yekaterinburg")
+    timezone = Column(String(50), default="Europe/Moscow")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

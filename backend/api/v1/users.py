@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     rating: Optional[int]
     is_active: bool
     created_at: datetime
+    timezone: Optional[str] = "Europe/Moscow"  # IANA timezone
 
     class Config:
         from_attributes = True
