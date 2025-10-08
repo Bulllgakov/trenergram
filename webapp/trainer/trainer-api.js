@@ -434,9 +434,11 @@ function updateScheduleDisplay() {
         // Check if there's a booking at this time for the current date
         const booking = bookings.find(b => {
             const bookingDate = new Date(b.datetime);
-            const bookingTimeStr = bookingDate.toTimeString().slice(0, 5); // HH:MM format
-            return bookingTimeStr === timeStr &&
-                   bookingDate.toDateString() === currentDate.toDateString();
+            // Use UTC methods to match the API timezone (API returns times in UTC with Z suffix)
+            const bookingTimeStr = `${bookingDate.getUTCHours().toString().padStart(2, '0')}:${bookingDate.getUTCMinutes().toString().padStart(2, '0')}`;
+            const bookingDateStr = bookingDate.toISOString().slice(0, 10);
+            const currentDateStr = currentDate.toISOString().slice(0, 10);
+            return bookingTimeStr === timeStr && bookingDateStr === currentDateStr;
         });
 
         // Create time slot element
