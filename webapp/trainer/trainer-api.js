@@ -885,8 +885,53 @@ window.showLink = function() {
 // Separate function for "My Link" button in interface
 window.showLinkButton = function() {
     const link = `https://t.me/trenergram_bot?start=trainer_${trainerId}`;
-    if (window.safeShowAlert) {
-        safeShowAlert(`📎 Ваша ссылка для клиентов:\n\n${link}\n\nСкопируйте и отправьте клиентам для регистрации.`);
+
+    // Copy link to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => {
+            // Show success notification
+            if (window.safeShowPopup) {
+                safeShowPopup({
+                    title: '✅ Ссылка скопирована!',
+                    message: 'Теперь вы можете поделиться ею с клиентами',
+                    buttons: [
+                        {
+                            id: 'share',
+                            type: 'default',
+                            text: 'Поделиться'
+                        },
+                        {
+                            id: 'close',
+                            type: 'cancel',
+                            text: 'Закрыть'
+                        }
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'share') {
+                        // Open Telegram share dialog
+                        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Запишись на тренировку через этот бот!')}`;
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.openTelegramLink(shareUrl);
+                        } else {
+                            window.open(shareUrl, '_blank');
+                        }
+                    }
+                });
+            } else if (window.safeShowAlert) {
+                safeShowAlert('✅ Ссылка скопирована в буфер обмена!');
+            }
+        }).catch(err => {
+            console.error('Failed to copy link:', err);
+            // Fallback: show link in alert
+            if (window.safeShowAlert) {
+                safeShowAlert(`📎 Ваша ссылка для клиентов:\n\n${link}\n\nСкопируйте и отправьте клиентам для регистрации.`);
+            }
+        });
+    } else {
+        // Fallback for browsers without clipboard API
+        if (window.safeShowAlert) {
+            safeShowAlert(`📎 Ваша ссылка для клиентов:\n\n${link}\n\nСкопируйте и отправьте клиентам для регистрации.`);
+        }
     }
 };
 
