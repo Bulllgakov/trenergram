@@ -859,31 +859,31 @@
                 <div class="setting-item" onclick="openReminderSettings('first')">
                     <div class="setting-info">
                         <div class="setting-label">Первое напоминание</div>
-                        <div class="setting-description">За 24 часа в 20:00</div>
+                        <div class="setting-description" id="firstReminderDesc">За день в 20:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
-                
+
                 <div class="setting-item" onclick="openReminderSettings('second')">
                     <div class="setting-info">
                         <div class="setting-label">Второе напоминание</div>
-                        <div class="setting-description">Через 2 часа после первого (22:00)</div>
+                        <div class="setting-description" id="secondReminderDesc">Через час после первого</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
-                
+
                 <div class="setting-item" onclick="openReminderSettings('third')">
                     <div class="setting-info">
                         <div class="setting-label">Третье напоминание</div>
-                        <div class="setting-description">Через 4 часа после первого (00:00)</div>
+                        <div class="setting-description" id="thirdReminderDesc">Через час после второго</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
-                
+
                 <div class="setting-item" onclick="openReminderSettings('cancel')">
                     <div class="setting-info">
                         <div class="setting-label">Автоотмена при неответе</div>
-                        <div class="setting-description">Через 5 часов после первого (01:00)</div>
+                        <div class="setting-description" id="cancelReminderDesc">Через час после третьего</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -919,7 +919,7 @@
                 <div class="setting-item" onclick="openWorkingHours('monday')">
                     <div class="setting-info">
                         <div class="setting-label">Понедельник</div>
-                        <div class="setting-description" id="hours-monday">09:00 - 21:00</div>
+                        <div class="setting-description" id="hours-monday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -927,7 +927,7 @@
                 <div class="setting-item" onclick="openWorkingHours('tuesday')">
                     <div class="setting-info">
                         <div class="setting-label">Вторник</div>
-                        <div class="setting-description" id="hours-tuesday">09:00 - 21:00</div>
+                        <div class="setting-description" id="hours-tuesday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -935,7 +935,7 @@
                 <div class="setting-item" onclick="openWorkingHours('wednesday')">
                     <div class="setting-info">
                         <div class="setting-label">Среда</div>
-                        <div class="setting-description" id="hours-wednesday">09:00 - 21:00</div>
+                        <div class="setting-description" id="hours-wednesday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -943,7 +943,7 @@
                 <div class="setting-item" onclick="openWorkingHours('thursday')">
                     <div class="setting-info">
                         <div class="setting-label">Четверг</div>
-                        <div class="setting-description" id="hours-thursday">09:00 - 21:00</div>
+                        <div class="setting-description" id="hours-thursday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -951,7 +951,7 @@
                 <div class="setting-item" onclick="openWorkingHours('friday')">
                     <div class="setting-info">
                         <div class="setting-label">Пятница</div>
-                        <div class="setting-description" id="hours-friday">09:00 - 21:00</div>
+                        <div class="setting-description" id="hours-friday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -959,7 +959,7 @@
                 <div class="setting-item" onclick="openWorkingHours('saturday')">
                     <div class="setting-info">
                         <div class="setting-label">Суббота</div>
-                        <div class="setting-description" id="hours-saturday">10:00 - 18:00</div>
+                        <div class="setting-description" id="hours-saturday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -967,7 +967,7 @@
                 <div class="setting-item" onclick="openWorkingHours('sunday')">
                     <div class="setting-info">
                         <div class="setting-label">Воскресенье</div>
-                        <div class="setting-description" id="hours-sunday">Выходной</div>
+                        <div class="setting-description" id="hours-sunday">09:00 - 18:00</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -1009,38 +1009,55 @@
             <div class="sheet-close" onclick="closeSheet('reminderSettingsSheet')">Сохранить</div>
         </div>
         <div class="sheet-content">
-            <div class="form-group">
-                <label class="form-label">За сколько часов до тренировки</label>
-                <div class="reminder-grid">
-                    <div class="time-option" onclick="selectHours(this, 12)">12ч</div>
-                    <div class="time-option selected" onclick="selectHours(this, 24)">24ч</div>
-                    <div class="time-option" onclick="selectHours(this, 36)">36ч</div>
-                    <div class="time-option" onclick="selectHours(this, 48)">48ч</div>
+            <!-- First reminder: days before + time -->
+            <div class="form-group" id="firstReminderOptions" style="display: none;">
+                <label class="form-label">За сколько дней до тренировки</label>
+                <div class="reminder-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="time-option selected" onclick="selectDays(this, 1)">За день</div>
+                    <div class="time-option" onclick="selectDays(this, 2)">За два дня</div>
+                    <div class="time-option" onclick="selectDays(this, 3)">За три дня</div>
                 </div>
             </div>
-            
-            <div class="form-group">
+
+            <div class="form-group" id="firstReminderTime" style="display: none;">
                 <label class="form-label">В какое время отправлять</label>
                 <div class="time-picker-group">
-                    <input type="number" class="time-input" value="20" min="0" max="23" id="hoursInput">
+                    <input type="number" class="time-input" value="20" min="0" max="23" id="firstHoursInput">
                     <span class="time-separator">:</span>
-                    <input type="number" class="time-input" value="00" min="0" max="59" id="minutesInput">
+                    <input type="number" class="time-input" value="00" min="0" max="59" id="firstMinutesInput">
                 </div>
             </div>
-            
-            <div class="settings-list">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Включить напоминание</div>
-                        <div class="setting-description">Отправлять автоматически</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
+
+            <!-- Second reminder: hours after first -->
+            <div class="form-group" id="secondReminderOptions" style="display: none;">
+                <label class="form-label">Отправить напоминание после первого</label>
+                <div class="reminder-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="time-option selected" onclick="selectAfterHours(this, 1, 'second')">Через час</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 2, 'second')">Через два</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 3, 'second')">Через три</div>
                 </div>
             </div>
-            
+
+            <!-- Third reminder: hours after second -->
+            <div class="form-group" id="thirdReminderOptions" style="display: none;">
+                <label class="form-label">Отправить напоминание после второго</label>
+                <div class="reminder-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="time-option selected" onclick="selectAfterHours(this, 1, 'third')">Через час</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 2, 'third')">Через два</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 3, 'third')">Через три</div>
+                </div>
+            </div>
+
+            <!-- Auto-cancel: hours after third -->
+            <div class="form-group" id="cancelReminderOptions" style="display: none;">
+                <label class="form-label">Отменить тренировку после третьего напоминания</label>
+                <div class="reminder-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="time-option selected" onclick="selectAfterHours(this, 1, 'cancel')">Через час</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 2, 'cancel')">Через два</div>
+                    <div class="time-option" onclick="selectAfterHours(this, 3, 'cancel')">Через три</div>
+                </div>
+            </div>
+
             <button class="submit-button" onclick="saveReminderSettings()">
                 Сохранить изменения
             </button>
@@ -1316,14 +1333,33 @@
                 'third': 'Третье напоминание',
                 'cancel': 'Автоотмена'
             };
-            
+
             document.getElementById('reminderTitle').textContent = titles[type];
-            
+
+            // Hide all options first
+            document.getElementById('firstReminderOptions').style.display = 'none';
+            document.getElementById('firstReminderTime').style.display = 'none';
+            document.getElementById('secondReminderOptions').style.display = 'none';
+            document.getElementById('thirdReminderOptions').style.display = 'none';
+            document.getElementById('cancelReminderOptions').style.display = 'none';
+
+            // Show relevant options based on type
+            if (type === 'first') {
+                document.getElementById('firstReminderOptions').style.display = 'block';
+                document.getElementById('firstReminderTime').style.display = 'block';
+            } else if (type === 'second') {
+                document.getElementById('secondReminderOptions').style.display = 'block';
+            } else if (type === 'third') {
+                document.getElementById('thirdReminderOptions').style.display = 'block';
+            } else if (type === 'cancel') {
+                document.getElementById('cancelReminderOptions').style.display = 'block';
+            }
+
             const sheet = document.getElementById('reminderSettingsSheet');
             const overlay = document.getElementById('overlay');
             sheet.classList.add('active');
             overlay.classList.add('active');
-            
+
             // Haptic feedback
             if (window.Telegram && window.Telegram.WebApp) {
                 if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
@@ -1482,35 +1518,67 @@
             }
         }
 
-        function selectHours(element, hours) {
-            document.querySelectorAll('.time-option').forEach(option => {
+        // New variables for reminder settings
+        let selectedDaysValue = 1;
+        let selectedAfterHoursSecond = 1;
+        let selectedAfterHoursThird = 1;
+        let selectedAfterHoursCancel = 1;
+
+        function selectDays(element, days) {
+            const parent = element.parentElement;
+            parent.querySelectorAll('.time-option').forEach(option => {
                 option.classList.remove('selected');
             });
             element.classList.add('selected');
-            selectedHoursValue = hours;
-            
-            // Haptic feedback
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    if (window.safeHapticFeedback) {
-                        window.safeHapticFeedback('selectionChanged');
-                    }
-                } catch (e) {
-                    console.log('HapticFeedback not supported:', e.message);
-                }
+            selectedDaysValue = days;
+
+            if (window.safeHapticFeedback) window.safeHapticFeedback('selectionChanged');
+        }
+
+        function selectAfterHours(element, hours, type) {
+            const parent = element.parentElement;
+            parent.querySelectorAll('.time-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            if (type === 'second') {
+                selectedAfterHoursSecond = hours;
+            } else if (type === 'third') {
+                selectedAfterHoursThird = hours;
+            } else if (type === 'cancel') {
+                selectedAfterHoursCancel = hours;
             }
+
+            if (window.safeHapticFeedback) window.safeHapticFeedback('selectionChanged');
         }
 
         function saveReminderSettings() {
-            const hours = document.getElementById('hoursInput').value;
-            const minutes = document.getElementById('minutesInput').value;
-            
-            showNotification(`✅ Напоминание сохранено: за ${selectedHoursValue}ч в ${hours}:${minutes.padStart(2, '0')}`);
+            const type = currentReminderType;
+            let description = '';
+
+            if (type === 'first') {
+                const hours = document.getElementById('firstHoursInput').value;
+                const minutes = document.getElementById('firstMinutesInput').value;
+                const daysText = selectedDaysValue === 1 ? 'день' : (selectedDaysValue === 2 ? 'два дня' : 'три дня');
+                description = `За ${daysText} в ${hours}:${minutes.padStart(2, '0')}`;
+                document.getElementById('firstReminderDesc').textContent = description;
+            } else if (type === 'second') {
+                const hoursText = selectedAfterHoursSecond === 1 ? 'час' : (selectedAfterHoursSecond === 2 ? 'два' : 'три');
+                description = `Через ${hoursText} после первого`;
+                document.getElementById('secondReminderDesc').textContent = description;
+            } else if (type === 'third') {
+                const hoursText = selectedAfterHoursThird === 1 ? 'час' : (selectedAfterHoursThird === 2 ? 'два' : 'три');
+                description = `Через ${hoursText} после второго`;
+                document.getElementById('thirdReminderDesc').textContent = description;
+            } else if (type === 'cancel') {
+                const hoursText = selectedAfterHoursCancel === 1 ? 'час' : (selectedAfterHoursCancel === 2 ? 'два' : 'три');
+                description = `Через ${hoursText} после третьего`;
+                document.getElementById('cancelReminderDesc').textContent = description;
+            }
+
+            showNotification(`✅ Настройка сохранена`);
             closeSheet('reminderSettingsSheet');
-            
-            // Update the description in main settings
-            const settingItems = document.querySelectorAll('.setting-item');
-            // In real implementation, update the correct setting item
         }
 
         // Date selection
@@ -1767,7 +1835,7 @@
         }
     </script>
     <!-- API Integration -->
-    <script src="trainer-api.js?v=20251008-1800"></script>
+    <script src="trainer-api.js?v=20251008-2000"></script>
     <script>
         // Generate date tabs immediately if not already done
         setTimeout(() => {

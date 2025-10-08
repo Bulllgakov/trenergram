@@ -54,8 +54,15 @@ async def register_trainer(
             specialization=specialization or "fitness",
             description="",
             settings={
-                "reminder_hours": 24,
-                "work_hours": {"start": "09:00", "end": "21:00"}
+                "work_hours": {
+                    "monday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "tuesday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "wednesday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "thursday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "friday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "saturday": {"start": "09:00", "end": "18:00", "is_working": True},
+                    "sunday": {"start": "09:00", "end": "18:00", "is_working": True}
+                }
             }
         )
         db.add(trainer)

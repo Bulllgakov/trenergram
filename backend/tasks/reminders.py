@@ -17,14 +17,11 @@ def check_and_send_reminders():
     """
     Periodic task to check all bookings and send reminders based on trainer settings.
 
-    According to TZ 10.6:
-    - First reminder = first notification to client (when trainer creates booking)
-    - Reminders sent based on trainer's settings:
-      - reminder_1_hours: hours before training (default 24)
-      - reminder_1_time: time to send (default 20:00)
-      - reminder_2_delay: hours after first reminder (default 2)
-      - reminder_3_delay: hours after second reminder (default 4)
-    - Auto-cancel if not confirmed within auto_cancel_delay hours
+    New simplified system:
+    - First reminder: sent X days before at reminder_1_time (1, 2, or 3 days)
+    - Second reminder: sent Y hours after first (1, 2, or 3 hours)
+    - Third reminder: sent Z hours after second (1, 2, or 3 hours)
+    - Auto-cancel: W hours after third if not confirmed (1, 2, or 3 hours)
     """
     print(f"[{datetime.now()}] Running check_and_send_reminders task...")
 
@@ -47,41 +44,62 @@ def check_and_send_reminders():
                 print(f"Skipping booking {booking.id}: trainer or client not found")
                 continue
 
-            # Calculate time until training
-            time_until_training = booking.datetime - datetime.now()
-            hours_until_training = time_until_training.total_seconds() / 3600
+            # Track when reminders were sent
+            if not hasattr(booking, 'reminder_1_sent_at'):
+                booking.reminder_1_sent_at = None
+            if not hasattr(booking, 'reminder_2_sent_at'):
+                booking.reminder_2_sent_at = None
+            if not hasattr(booking, 'reminder_3_sent_at'):
+                booking.reminder_3_sent_at = None
 
-            # Check if it's time to send first reminder (24h before at 20:00)
-            should_send_first = _should_send_first_reminder(
-                booking, trainer, hours_until_training
-            )
-
-            if should_send_first:
-                print(f"Sending first reminder for booking {booking.id}")
-                asyncio.run(_send_reminder_async(booking, trainer, client, db, 24))
-                booking.reminder_24h_sent = True
-                db.commit()
-                continue
-
-            # Check if it's time to send second reminder
-            if booking.reminder_24h_sent and not booking.reminder_2h_sent:
-                hours_since_first = trainer.reminder_2_delay or 2
-                if hours_until_training <= (24 - hours_since_first):
-                    print(f"Sending second reminder for booking {booking.id}")
-                    asyncio.run(_send_reminder_async(booking, trainer, client, db, int(hours_until_training)))
-                    booking.reminder_2h_sent = True
+            # Check if it's time to send first reminder (X days before at specific time)
+            if not booking.reminder_24h_sent:
+                if _should_send_first_reminder(booking, trainer):
+                    print(f"Sending first reminder for booking {booking.id}")
+                    asyncio.run(_send_reminder_async(booking, trainer, client, db, "first"))
+                    booking.reminder_24h_sent = True
+                    booking.reminder_1_sent_at = datetime.now()
                     db.commit()
                     continue
 
-            # Auto-cancel if PENDING and not confirmed within time limit
+            # Check if it's time to send second reminder (Y hours after first)
+            if booking.reminder_24h_sent and not booking.reminder_2h_sent:
+                hours_after_first = trainer.reminder_2_hours_after or 1
+                if booking.reminder_1_sent_at:
+                    hours_since_first = (datetime.now() - booking.reminder_1_sent_at).total_seconds() / 3600
+                    if hours_since_first >= hours_after_first:
+                        print(f"Sending second reminder for booking {booking.id}")
+                        asyncio.run(_send_reminder_async(booking, trainer, client, db, "second"))
+                        booking.reminder_2h_sent = True
+                        booking.reminder_2_sent_at = datetime.now()
+                        db.commit()
+                        continue
+
+            # Check if it's time to send third reminder (Z hours after second)
+            if booking.reminder_2h_sent and not hasattr(booking, 'reminder_3_sent'):
+                hours_after_second = trainer.reminder_3_hours_after or 1
+                if booking.reminder_2_sent_at:
+                    hours_since_second = (datetime.now() - booking.reminder_2_sent_at).total_seconds() / 3600
+                    if hours_since_second >= hours_after_second:
+                        print(f"Sending third reminder for booking {booking.id}")
+                        asyncio.run(_send_reminder_async(booking, trainer, client, db, "third"))
+                        booking.reminder_3_sent = True
+                        booking.reminder_3_sent_at = datetime.now()
+                        db.commit()
+                        continue
+
+            # Auto-cancel if PENDING and W hours passed after third reminder
             if booking.status == BookingStatus.PENDING:
-                auto_cancel_hours = trainer.auto_cancel_delay or 5
-                if booking.reminder_24h_sent and hours_until_training <= (24 - auto_cancel_hours):
-                    print(f"Auto-canceling booking {booking.id} (not confirmed)")
-                    booking.status = BookingStatus.CANCELLED
-                    booking.cancelled_at = datetime.now()
-                    booking.cancellation_reason = "Автоотмена: не подтверждено клиентом"
-                    db.commit()
+                if hasattr(booking, 'reminder_3_sent') and booking.reminder_3_sent:
+                    auto_cancel_hours = trainer.auto_cancel_hours_after or 1
+                    if booking.reminder_3_sent_at:
+                        hours_since_third = (datetime.now() - booking.reminder_3_sent_at).total_seconds() / 3600
+                        if hours_since_third >= auto_cancel_hours:
+                            print(f"Auto-canceling booking {booking.id} (not confirmed)")
+                            booking.status = BookingStatus.CANCELLED
+                            booking.cancelled_at = datetime.now()
+                            booking.cancellation_reason = "Автоотмена: не подтверждено клиентом"
+                            db.commit()
 
         print(f"[{datetime.now()}] Finished check_and_send_reminders task")
 
@@ -93,27 +111,37 @@ def check_and_send_reminders():
         db.close()
 
 
-def _should_send_first_reminder(booking: Booking, trainer: User, hours_until: float) -> bool:
+def _should_send_first_reminder(booking: Booking, trainer: User) -> bool:
     """
     Check if it's time to send the first reminder.
 
-    Logic:
-    - Send at trainer.reminder_1_time (default 20:00) in TRAINER'S timezone
-    - When hours_until <= trainer.reminder_1_hours (default 24)
-    - Only if not already sent
+    New logic:
+    - Send X days before training (1, 2, or 3 days)
+    - At specific time (reminder_1_time, default 20:00) in TRAINER'S timezone
+    - Example: training on Oct 10, reminder_1_days_before=2 → send on Oct 8 at 20:00
     """
-    if booking.reminder_24h_sent:
-        return False
+    # Calculate days until training
+    days_until_training = (booking.datetime.date() - datetime.now().date()).days
 
-    reminder_hours = trainer.reminder_1_hours or 24
-    reminder_time = trainer.reminder_1_time or datetime.strptime("20:00", "%H:%M").time()
+    # Get trainer settings
+    days_before = trainer.reminder_1_days_before or 1
+    reminder_time_str = trainer.reminder_1_time or "20:00"
 
-    # Check if we're within the reminder window
-    if hours_until > reminder_hours:
+    # Parse reminder time
+    try:
+        if isinstance(reminder_time_str, str):
+            reminder_time = datetime.strptime(reminder_time_str, "%H:%M").time()
+        else:
+            reminder_time = reminder_time_str
+    except:
+        reminder_time = datetime.strptime("20:00", "%H:%M").time()
+
+    # Check if we're on the right day
+    if days_until_training != days_before:
         return False
 
     # Get current time in trainer's timezone
-    trainer_tz = trainer.timezone or "Europe/Moscow"
+    trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
     try:
         tz = ZoneInfo(trainer_tz)
         current_time_in_trainer_tz = datetime.now(tz).time()

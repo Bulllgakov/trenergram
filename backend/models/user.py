@@ -20,12 +20,12 @@ class Trainer(Base):
     rating = Column(Integer, default=50)  # Rating from 0 to 50 (5.0)
     is_active = Column(Boolean, default=True)
 
-    # Reminder settings
-    reminder_1_hours = Column(Integer, default=24)
-    reminder_1_time = Column(Time, default="20:00")
-    reminder_2_delay = Column(Integer, default=2)
-    reminder_3_delay = Column(Integer, default=4)
-    auto_cancel_delay = Column(Integer, default=5)
+    # Reminder settings (simplified system)
+    reminder_1_days_before = Column(Integer, default=1)  # Days before training: 1, 2, or 3
+    reminder_1_time = Column(Time, default="20:00")  # Time to send first reminder
+    reminder_2_hours_after = Column(Integer, default=1)  # Hours after first: 1, 2, or 3
+    reminder_3_hours_after = Column(Integer, default=1)  # Hours after second: 1, 2, or 3
+    auto_cancel_hours_after = Column(Integer, default=1)  # Hours after third: 1, 2, or 3
 
     # Transfer rules
     transfer_block_hours = Column(Integer, default=24)

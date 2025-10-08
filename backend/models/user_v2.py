@@ -44,9 +44,16 @@ class User(Base):
     rating = Column(Integer, default=50)  # 0-50 (displayed as 0-5.0)
     cancellation_hours = Column(Integer, default=24)  # Hours before training when money is charged from client balance
 
+    # Reminder settings (simplified system)
+    reminder_1_days_before = Column(Integer, default=1)  # Days before training: 1, 2, or 3
+    reminder_1_time = Column(String(10), default="20:00")  # Time to send first reminder (HH:MM)
+    reminder_2_hours_after = Column(Integer, default=1)  # Hours after first: 1, 2, or 3
+    reminder_3_hours_after = Column(Integer, default=1)  # Hours after second: 1, 2, or 3
+    auto_cancel_hours_after = Column(Integer, default=1)  # Hours after third: 1, 2, or 3
+
     # Settings (stored as JSON)
     settings = Column(JSON, default={})
-    # For trainers: reminder_hours, work_hours, etc.
+    # For trainers: work_hours, etc.
     # For clients: notifications, preferences, etc.
 
     # Status
