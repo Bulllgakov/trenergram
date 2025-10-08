@@ -54,7 +54,7 @@ BEGIN
             reminder_2_hours_after = 1,
             reminder_3_hours_after = 1,
             auto_cancel_hours_after = 1
-        WHERE role = 'trainer'
+        WHERE role = 'TRAINER'
         AND (reminder_1_days_before IS NULL OR reminder_1_time IS NULL);
     END IF;
 END $$;
