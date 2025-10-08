@@ -397,6 +397,24 @@ function updateMyTrainersList() {
 // Override showMyTrainers to update with real data
 const originalShowMyTrainers = window.showMyTrainers;
 window.showMyTrainers = function() {
+    // Calculate statistics
+    const totalTrainers = trainers.length;
+    const totalBalance = trainers.reduce((sum, t) => sum + (t.balance || 0), 0);
+    const needsTopup = trainers.filter(t => (t.balance || 0) <= 0).length;
+
+    // Update statistics in UI
+    document.getElementById('totalTrainersCount').textContent = totalTrainers;
+    document.getElementById('totalBalance').textContent = `${totalBalance.toLocaleString()}₽`;
+
+    const needsTopupElement = document.getElementById('needsTopup');
+    if (needsTopup > 0) {
+        needsTopupElement.textContent = `${needsTopup} ${needsTopup === 1 ? 'тренер' : 'тренера'}`;
+        needsTopupElement.style.color = 'var(--tg-theme-destructive-text-color)';
+    } else {
+        needsTopupElement.textContent = 'Нет';
+        needsTopupElement.style.color = 'var(--tg-theme-hint-color)';
+    }
+
     // First update the trainers list
     const trainersGrid = document.querySelector('#myTrainersListSheet .trainers-grid');
     if (trainersGrid) {
