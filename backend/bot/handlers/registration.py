@@ -277,6 +277,19 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
         )
         return
 
+    # Set trainer commands menu
+    from telegram import BotCommand, BotCommandScopeChat
+    trainer_commands = [
+        BotCommand("start", "Начать работу"),
+        BotCommand("cabinet", "Открыть календарь тренера"),
+        BotCommand("my_link", "Получить ссылку для клиентов"),
+        BotCommand("support", "Связаться с поддержкой")
+    ]
+    try:
+        await context.bot.set_my_commands(trainer_commands, scope=BotCommandScopeChat(chat_id=user.id))
+    except Exception as e:
+        print(f"Failed to set trainer commands: {e}")
+
     trainer_link = f"https://t.me/{context.bot.username}?start=trainer_{trainer_id}"
 
     # Создаем Reply Keyboard (постоянное меню внизу)
@@ -347,6 +360,18 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
             parse_mode='Markdown'
         )
         return
+
+    # Set client commands menu
+    from telegram import BotCommand, BotCommandScopeChat
+    client_commands = [
+        BotCommand("start", "Начать работу"),
+        BotCommand("my", "Открыть мой календарь"),
+        BotCommand("support", "Связаться с поддержкой")
+    ]
+    try:
+        await context.bot.set_my_commands(client_commands, scope=BotCommandScopeChat(chat_id=user.id))
+    except Exception as e:
+        logger.error(f"Failed to set client commands: {e}")
 
     # Show WebApp buttons for client
     from telegram import WebAppInfo

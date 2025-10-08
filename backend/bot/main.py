@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, BotCommandScopeDefault, BotCommandScopeChat
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from core.config import settings
@@ -11,6 +11,34 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+
+async def set_user_commands(bot, user_id: int, role: str):
+    """Set commands menu based on user role"""
+    if role == "trainer":
+        commands = [
+            BotCommand("start", "Начать работу"),
+            BotCommand("cabinet", "Открыть календарь тренера"),
+            BotCommand("my_link", "Получить ссылку для клиентов"),
+            BotCommand("support", "Связаться с поддержкой")
+        ]
+    elif role == "client":
+        commands = [
+            BotCommand("start", "Начать работу"),
+            BotCommand("my", "Открыть мой календарь"),
+            BotCommand("support", "Связаться с поддержкой")
+        ]
+    else:
+        commands = [
+            BotCommand("start", "Начать работу"),
+            BotCommand("support", "Связаться с поддержкой")
+        ]
+
+    try:
+        await bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=user_id))
+        logger.info(f"Commands set for user {user_id} with role {role}")
+    except Exception as e:
+        logger.error(f"Failed to set commands for user {user_id}: {e}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,6 +54,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if existing_user:
         logger.info(f"User {user.id} already registered as {existing_user.role}")
+        # Set commands based on role
+        await set_user_commands(context.bot, user.id, existing_user.role)
     else:
         logger.info(f"User {user.id} not found in database, starting registration")
 
@@ -191,15 +221,28 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(application: Application) -> None:
     """Set up bot commands menu after initialization"""
-    commands = [
+    # Commands for trainers
+    trainer_commands = [
         BotCommand("start", "Начать работу"),
-        BotCommand("cabinet", "Открыть кабинет тренера"),
+        BotCommand("cabinet", "Открыть календарь тренера"),
         BotCommand("my_link", "Получить ссылку для клиентов"),
-        BotCommand("my", "Мои тренировки (для клиентов)"),
-        BotCommand("help", "Справка по командам"),
         BotCommand("support", "Связаться с поддержкой")
     ]
-    await application.bot.set_my_commands(commands)
+
+    # Commands for clients
+    client_commands = [
+        BotCommand("start", "Начать работу"),
+        BotCommand("my", "Открыть мой календарь"),
+        BotCommand("support", "Связаться с поддержкой")
+    ]
+
+    # Set default commands (for all users)
+    default_commands = [
+        BotCommand("start", "Начать работу"),
+        BotCommand("support", "Связаться с поддержкой")
+    ]
+
+    await application.bot.set_my_commands(default_commands)
     logger.info("Bot commands menu configured")
 
 
