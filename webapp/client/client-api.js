@@ -299,20 +299,14 @@ function getStatusText(status) {
 // Confirm booking via API
 async function confirmBookingAPI(bookingId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/confirm`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                telegram_id: clientId
-            })
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/confirm?telegram_id=${clientId}`, {
+            method: 'PUT'
         });
 
         if (response.ok) {
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                window.Telegram.WebApp.showAlert('✅ Тренировка подтверждена!');
+                window.Telegram.WebApp.showAlert('✅ Тренировка подтверждена!\n\nСредства будут списаны с вашего баланса.');
             }
             closeSheet('bookingDetailsSheet');
 
@@ -320,7 +314,9 @@ async function confirmBookingAPI(bookingId) {
             await loadClientData();
             updateUIWithData();
         } else {
-            showNotification('❌ Не удалось подтвердить запись');
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.detail || 'Не удалось подтвердить запись';
+            showNotification(`❌ ${errorMessage}`);
         }
     } catch (error) {
         console.error('Failed to confirm booking:', error);

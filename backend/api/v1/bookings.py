@@ -357,6 +357,57 @@ async def update_booking(
     return response
 
 
+@router.put("/{booking_id}/confirm")
+async def confirm_booking(
+    booking_id: int,
+    telegram_id: str = Query(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db)
+):
+    """Confirm booking by client (no balance check - can go negative)"""
+    booking = db.query(Booking).filter_by(id=booking_id).first()
+
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Get client
+    client = db.query(User).filter_by(telegram_id=telegram_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Check if user is the client of this booking
+    if client.id != booking.client_id:
+        raise HTTPException(status_code=403, detail="Only client can confirm this booking")
+
+    # Check if already confirmed
+    if booking.status == BookingStatus.CONFIRMED:
+        raise HTTPException(status_code=400, detail="Booking is already confirmed")
+
+    # Check if status allows confirmation
+    if booking.status != BookingStatus.PENDING:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot confirm booking with status {booking.status}"
+        )
+
+    # Confirm booking (no balance check - balance can go negative)
+    booking.status = BookingStatus.CONFIRMED
+    booking.confirmed_at = datetime.now()
+
+    db.commit()
+    db.refresh(booking)
+
+    # Send notification to trainer
+    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
+    if trainer and background_tasks:
+        background_tasks.add_task(
+            notify_booking_confirmed,
+            booking, trainer, client, db
+        )
+
+    return {"message": "Booking confirmed successfully", "booking_id": booking.id}
+
+
 @router.delete("/{booking_id}")
 async def delete_booking(
     booking_id: int,
