@@ -623,6 +623,9 @@ async function quickBookAPI(time) {
 
     if (clients.length === 0) {
         showNotification('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
+        if (window.showLink) {
+            window.showLink();
+        }
         return;
     }
 
@@ -874,8 +877,8 @@ window.shareTrainerLink = function() {
 // Override showLink to use real trainer ID
 const originalShowLink = window.showLink;
 window.showLink = function() {
-    const link = `https://t.me/trenergram_bot?start=trainer_${trainerId}`;
-    safeShowAlert(`Ваша ссылка для клиентов:\n${link}\n\nQR-код доступен в боте по команде /qr`);
+    // Do nothing - link alert removed per user request
+    // User will see only the notification about no clients
 };
 
 // Duration settings functions
