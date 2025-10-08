@@ -368,7 +368,8 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
     from telegram import BotCommand, BotCommandScopeChat
     client_commands = [
         BotCommand("start", "Начать работу"),
-        BotCommand("my", "Открыть мой календарь"),
+        BotCommand("cabinet", "Открыть мои тренировки"),
+        BotCommand("my", "Список всех тренировок"),
         BotCommand("support", "Связаться с поддержкой")
     ]
     try:
@@ -380,12 +381,8 @@ async def complete_client_registration(update: Update, context: ContextTypes.DEF
     from telegram import WebAppInfo
     keyboard = [
         [InlineKeyboardButton(
-            "📅 Мои тренировки",
+            "📅 Открыть мои тренировки",
             web_app=WebAppInfo(url=f"https://trenergram.ru/client/{client_id}")
-        )],
-        [InlineKeyboardButton(
-            "⚙️ Настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/client/{client_id}/settings")
         )]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

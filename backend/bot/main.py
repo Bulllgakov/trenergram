@@ -25,7 +25,8 @@ async def set_user_commands(bot, user_id: int, role: str):
     elif role == "client":
         commands = [
             BotCommand("start", "Начать работу"),
-            BotCommand("my", "Открыть мой календарь"),
+            BotCommand("cabinet", "Открыть мои тренировки"),
+            BotCommand("my", "Список всех тренировок"),
             BotCommand("support", "Связаться с поддержкой")
         ]
     else:
@@ -158,12 +159,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             from telegram import WebAppInfo
             keyboard = [
                 [InlineKeyboardButton(
-                    "📅 Мои тренировки",
+                    "📅 Открыть мои тренировки",
                     web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}")
-                )],
-                [InlineKeyboardButton(
-                    "⚙️ Настройки",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}/settings")
                 )]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
