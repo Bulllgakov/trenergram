@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from core.config import settings
@@ -189,10 +189,24 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def post_init(application: Application) -> None:
+    """Set up bot commands menu after initialization"""
+    commands = [
+        BotCommand("start", "Начать работу"),
+        BotCommand("cabinet", "Открыть кабинет тренера"),
+        BotCommand("my_link", "Получить ссылку для клиентов"),
+        BotCommand("my", "Мои тренировки (для клиентов)"),
+        BotCommand("help", "Справка по командам"),
+        BotCommand("support", "Связаться с поддержкой")
+    ]
+    await application.bot.set_my_commands(commands)
+    logger.info("Bot commands menu configured")
+
+
 def main():
     """Start the bot"""
     # Create the Application
-    application = Application.builder().token(settings.BOT_TOKEN).build()
+    application = Application.builder().token(settings.BOT_TOKEN).post_init(post_init).build()
 
     # Common handlers
     application.add_handler(CommandHandler("start", start))
