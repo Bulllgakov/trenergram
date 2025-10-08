@@ -71,6 +71,15 @@ async def create_booking(
     db: Session = Depends(get_db)
 ):
     """Create a new booking"""
+    # DETAILED LOGGING FOR DEBUGGING
+    print(f"=" * 80)
+    print(f"CREATE_BOOKING API CALLED")
+    print(f"=" * 80)
+    print(f"Raw booking data: {booking.dict()}")
+    print(f"created_by: '{booking.created_by}' (type: {type(booking.created_by)})")
+    print(f"status from request: '{booking.dict().get('status', 'NOT_PROVIDED')}'")
+    print(f"=" * 80)
+
     # Get trainer and client
     trainer = db.query(User).filter_by(
         telegram_id=booking.trainer_telegram_id,

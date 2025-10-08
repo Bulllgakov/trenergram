@@ -419,6 +419,8 @@ async def notify_booking_created_by_trainer(booking: Booking, db: Session):
     First reminder will serve as first notification to client.
     """
     # According to new TZ 10.6: no notifications when trainer creates booking
+    print(f"🚫 notify_booking_created_by_trainer() called for booking {booking.id}")
+    print(f"🚫 NO notifications will be sent (correct per TZ 10.6)")
     pass
 
 
@@ -426,10 +428,14 @@ async def notify_booking_created_by_client(booking: Booking, db: Session):
     """
     When client creates booking: send notification to trainer for confirmation.
     """
+    print(f"📧 notify_booking_created_by_client() called for booking {booking.id}")
+    print(f"📧 Will send notification to TRAINER for approval")
+
     trainer = db.query(User).filter_by(id=booking.trainer_id).first()
     client = db.query(User).filter_by(id=booking.client_id).first()
 
     if trainer and client:
+        print(f"📧 Sending notification to trainer {trainer.telegram_id}")
         # Only send notification to trainer for approval
         await notification_service.send_booking_created_to_trainer(booking, trainer, client, db)
 
