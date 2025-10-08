@@ -371,34 +371,49 @@ const originalShowMyTrainers = window.showMyTrainers;
 window.showMyTrainers = function() {
     // First update the trainers list
     const trainersGrid = document.querySelector('#myTrainersListSheet .trainers-grid');
-    if (trainersGrid && trainers.length > 0) {
-        trainersGrid.innerHTML = '';
+    if (trainersGrid) {
+        if (trainers.length > 0) {
+            trainersGrid.innerHTML = '';
 
-        trainers.forEach(trainer => {
-            const initials = (trainer.name || 'T').split(' ').map(n => n[0]).join('').toUpperCase();
-            const balance = trainer.balance || 0;
-            const balanceStyle = balance < 0 ? 'color: var(--tg-theme-destructive-text-color);' : '';
-            const balanceText = balance < 0 ? `💰 ${balance}₽` : `💰 ${balance.toLocaleString()}₽`;
+            trainers.forEach(trainer => {
+                const initials = (trainer.name || 'T').split(' ').map(n => n[0]).join('').toUpperCase();
+                const balance = trainer.balance || 0;
+                const balanceStyle = balance < 0 ? 'color: var(--tg-theme-destructive-text-color);' : '';
+                const balanceText = balance < 0 ? `💰 ${balance}₽` : `💰 ${balance.toLocaleString()}₽`;
 
-            const trainerCard = document.createElement('div');
-            trainerCard.className = 'trainer-card';
-            trainerCard.onclick = () => openTrainerProfileAPI(trainer);
+                const trainerCard = document.createElement('div');
+                trainerCard.className = 'trainer-card';
+                trainerCard.onclick = () => openTrainerProfileAPI(trainer);
 
-            trainerCard.innerHTML = `
-                <div class="trainer-avatar">${initials}</div>
-                <div class="trainer-card-info">
-                    <div class="trainer-card-name">${trainer.name || 'Тренер'}</div>
-                    <div class="trainer-card-specialty">${trainer.specialization || ''}</div>
-                    <div class="trainer-card-meta">
-                        <span style="font-weight: 600; ${balanceStyle}">${balanceText}</span>
-                        ${trainer.rating ? `<span>⭐ ${trainer.rating}</span>` : ''}
+                trainerCard.innerHTML = `
+                    <div class="trainer-avatar">${initials}</div>
+                    <div class="trainer-card-info">
+                        <div class="trainer-card-name">${trainer.name || 'Тренер'}</div>
+                        <div class="trainer-card-specialty">${trainer.specialization || ''}</div>
+                        <div class="trainer-card-meta">
+                            <span style="font-weight: 600; ${balanceStyle}">${balanceText}</span>
+                            ${trainer.rating ? `<span>⭐ ${trainer.rating}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="trainer-action">${balance <= 0 ? 'Пополнить' : 'Профиль'}</div>
+                `;
+
+                trainersGrid.appendChild(trainerCard);
+            });
+        } else {
+            // Show empty state when no trainers
+            trainersGrid.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--tg-theme-hint-color);">
+                    <div style="font-size: 64px; margin-bottom: 20px;">👤</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--tg-theme-text-color);">
+                        У вас нет привязанных тренеров
+                    </div>
+                    <div style="font-size: 15px; line-height: 1.5;">
+                        Чтобы записаться на тренировки, получите персональную ссылку от вашего тренера и перейдите по ней
                     </div>
                 </div>
-                <div class="trainer-action">${balance <= 0 ? 'Пополнить' : 'Профиль'}</div>
             `;
-
-            trainersGrid.appendChild(trainerCard);
-        });
+        }
     }
 
     // Open the sheet
@@ -413,6 +428,40 @@ function openTrainerProfileAPI(trainer) {
     document.getElementById('profileTrainerAvatar').textContent = initials;
     document.getElementById('profileTrainerName').textContent = trainer.name || 'Тренер';
     document.getElementById('trainerBalance').textContent = `${balance.toLocaleString()}₽`;
+
+    // Calculate statistics for this trainer
+    const trainerBookings = bookings.filter(b => b.trainer_id === trainer.id);
+    const completedBookings = trainerBookings.filter(b => b.status.toUpperCase() === 'COMPLETED');
+
+    // Total trainings count
+    const totalCount = completedBookings.length;
+    document.getElementById('totalTrainingsCount').textContent = totalCount;
+
+    // Total spent (completed bookings * price)
+    const totalSpent = completedBookings.reduce((sum, b) => sum + (b.price || trainer.price || 0), 0);
+    document.getElementById('totalSpent').textContent = `${totalSpent.toLocaleString()}₽`;
+
+    // Last training date
+    const sortedCompleted = completedBookings.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+    if (sortedCompleted.length > 0) {
+        const lastDate = new Date(sortedCompleted[0].datetime);
+        const now = new Date();
+        const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+
+        let lastDateText;
+        if (diffDays === 0) {
+            lastDateText = 'Сегодня';
+        } else if (diffDays === 1) {
+            lastDateText = 'Вчера';
+        } else if (diffDays < 7) {
+            lastDateText = `${diffDays} дн. назад`;
+        } else {
+            lastDateText = lastDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        }
+        document.getElementById('lastTrainingDate').textContent = lastDateText;
+    } else {
+        document.getElementById('lastTrainingDate').textContent = 'Нет данных';
+    }
 
     // Close trainers list sheet if open
     closeSheet('myTrainersListSheet');
