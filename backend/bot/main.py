@@ -220,30 +220,8 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def post_init(application: Application) -> None:
-    """Set up bot commands menu after initialization"""
-    # Commands for trainers
-    trainer_commands = [
-        BotCommand("start", "Начать работу"),
-        BotCommand("cabinet", "Открыть календарь тренера"),
-        BotCommand("my_link", "Получить ссылку для клиентов"),
-        BotCommand("support", "Связаться с поддержкой")
-    ]
-
-    # Commands for clients
-    client_commands = [
-        BotCommand("start", "Начать работу"),
-        BotCommand("my", "Открыть мой календарь"),
-        BotCommand("support", "Связаться с поддержкой")
-    ]
-
-    # Set default commands (for all users)
-    default_commands = [
-        BotCommand("start", "Начать работу"),
-        BotCommand("support", "Связаться с поддержкой")
-    ]
-
-    await application.bot.set_my_commands(default_commands)
-    logger.info("Bot commands menu configured")
+    """Bot initialization - commands will be set individually per user after registration"""
+    logger.info("Bot initialized - commands menu will be set per user after registration")
 
 
 def main():
