@@ -474,7 +474,7 @@ function updateScheduleDisplay() {
                 <div class="time-slot-time">${displayTime}</div>
                 <div class="time-slot-content">
                     <div class="time-slot-name">${booking.client_name || 'Клиент'}</div>
-                    <div class="time-slot-info">${booking.service_name || 'Тренировка'} ${booking.status === 'PENDING' ? '• Ждет подтверждения' : ''}</div>
+                    <div class="time-slot-info">${booking.service_name || 'Тренировка'} ${booking.status.toUpperCase() === 'PENDING' ? '• Ждет подтверждения' : ''}</div>
                 </div>
                 <div class="time-slot-status">
                     <div class="status-icon ${statusClass}">${statusIcon}</div>
