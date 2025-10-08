@@ -402,8 +402,46 @@ function updateScheduleDisplay() {
     const workingHours = getWorkingHoursForDate(currentDate);
     console.log('Working hours received:', workingHours);
 
-    // If it's a day off, show message
-    if (workingHours.length === 0) {
+    // Get all bookings for current date (including those outside working hours)
+    const currentDateStr = currentDate.toDateString();
+    const dayBookings = bookings.filter(b => {
+        const bookingDate = new Date(b.datetime);
+        return bookingDate.toDateString() === currentDateStr;
+    });
+    console.log('Bookings for current date:', dayBookings);
+
+    // Collect all time slots (working hours + bookings outside working hours)
+    const allSlots = new Map(); // Map<timeStr, slot>
+
+    // Add working hours slots
+    workingHours.forEach(slot => {
+        let timeStr, endTimeStr, hour;
+        if (typeof slot === 'number') {
+            hour = slot;
+            timeStr = `${slot.toString().padStart(2, '0')}:00`;
+            endTimeStr = `${(slot + 1).toString().padStart(2, '0')}:00`;
+        } else {
+            hour = slot.hour;
+            timeStr = slot.timeString;
+            endTimeStr = slot.endTimeString;
+        }
+        allSlots.set(timeStr, { timeStr, endTimeStr, hour, isWorkingHour: true });
+    });
+
+    // Add booking slots (even if outside working hours)
+    dayBookings.forEach(booking => {
+        const bookingDate = new Date(booking.datetime);
+        const timeStr = `${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+        if (!allSlots.has(timeStr)) {
+            const hour = bookingDate.getHours();
+            const endHour = hour + 1;
+            const endTimeStr = `${endHour.toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+            allSlots.set(timeStr, { timeStr, endTimeStr, hour, isWorkingHour: false });
+        }
+    });
+
+    // If no slots at all (day off and no bookings), show message
+    if (allSlots.size === 0) {
         scheduleSection.innerHTML = `
             <div style="padding: 40px 20px; text-align: center; color: var(--tg-theme-hint-color);">
                 <div style="font-size: 48px; margin-bottom: 16px;">🏖️</div>
@@ -414,31 +452,20 @@ function updateScheduleDisplay() {
         return;
     }
 
-    workingHours.forEach(slot => {
-        // Support both old format (numbers) and new format (objects)
-        let timeStr, endTimeStr, hour;
-        if (typeof slot === 'number') {
-            // Old format - just hour
-            hour = slot;
-            timeStr = `${slot.toString().padStart(2, '0')}:00`;
-            endTimeStr = `${(slot + 1).toString().padStart(2, '0')}:00`;
-        } else {
-            // New format - object with time range
-            hour = slot.hour;
-            timeStr = slot.timeString;
-            endTimeStr = slot.endTimeString;
-        }
+    // Sort slots by time
+    const sortedSlots = Array.from(allSlots.values()).sort((a, b) => {
+        return a.timeStr.localeCompare(b.timeStr);
+    });
 
+    sortedSlots.forEach(slot => {
+        const { timeStr, endTimeStr, hour, isWorkingHour } = slot;
         const displayTime = `${timeStr}<br>${endTimeStr}`;
 
         // Check if there's a booking at this time for the current date
-        const booking = bookings.find(b => {
+        const booking = dayBookings.find(b => {
             const bookingDate = new Date(b.datetime);
-            // Use local time (trainer and client are always in same timezone)
             const bookingTimeStr = `${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
-            const bookingDateStr = bookingDate.toDateString();
-            const currentDateStr = currentDate.toDateString();
-            return bookingTimeStr === timeStr && bookingDateStr === currentDateStr;
+            return bookingTimeStr === timeStr;
         });
 
         // Create time slot element
@@ -447,7 +474,7 @@ function updateScheduleDisplay() {
         // Check if this time slot should show lunch break
         const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const dayData = window.workingHoursData && window.workingHoursData[dayOfWeek];
-        const shouldShowLunchBreak = dayData && dayData.hasBreak && hour === 12;
+        const shouldShowLunchBreak = dayData && dayData.hasBreak && hour === 12 && isWorkingHour;
 
         if (shouldShowLunchBreak) {
             // Lunch break
@@ -480,8 +507,8 @@ function updateScheduleDisplay() {
                     <div class="status-icon ${statusClass}">${statusIcon}</div>
                 </div>
             `;
-        } else {
-            // Free slot
+        } else if (isWorkingHour) {
+            // Free slot (only for working hours)
             timeSlot.className = 'time-slot empty';
             timeSlot.dataset.time = timeStr;
             timeSlot.onclick = () => quickBookAPI(timeStr);
@@ -498,10 +525,12 @@ function updateScheduleDisplay() {
             `;
         }
 
-        scheduleSection.appendChild(timeSlot);
+        if (timeSlot.className) {
+            scheduleSection.appendChild(timeSlot);
+        }
     });
 
-    console.log('Schedule updated. Total slots added:', workingHours.length);
+    console.log('Schedule updated. Total slots added:', sortedSlots.length);
     console.log('Schedule section HTML length:', scheduleSection.innerHTML.length);
 }
 
