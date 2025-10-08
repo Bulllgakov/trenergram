@@ -97,8 +97,8 @@ function displayBookings() {
     if (!upcomingContainer || !pastContainer) return;
 
     const now = new Date();
-    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status !== 'CANCELLED');
-    const pastBookings = bookings.filter(b => new Date(b.datetime) < now || b.status === 'CANCELLED');
+    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status.toUpperCase() !== 'CANCELLED');
+    const pastBookings = bookings.filter(b => new Date(b.datetime) < now || b.status.toUpperCase() === 'CANCELLED');
 
     // Display upcoming bookings
     upcomingContainer.innerHTML = '';
@@ -279,7 +279,7 @@ ${booking.notes ? `\nКомментарий: ${booking.notes}` : ''}
     const buttons = [];
 
     // Add action buttons based on booking status
-    if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
+    if (booking.status.toUpperCase() === 'PENDING' || booking.status.toUpperCase() === 'CONFIRMED') {
         if (new Date(booking.datetime) > new Date()) {
             buttons.push({id: 'cancel', type: 'destructive', text: 'Отменить запись'});
         }

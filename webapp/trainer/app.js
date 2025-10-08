@@ -81,12 +81,12 @@ function updateClientsBadge() {
 
 // Update header stats
 function updateHeaderStats() {
-    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
-    const pending = bookings.filter(b => b.status === 'PENDING').length;
+    const confirmed = bookings.filter(b => b.status.toUpperCase() === 'CONFIRMED').length;
+    const pending = bookings.filter(b => b.status.toUpperCase() === 'PENDING').length;
 
     // Calculate free slots (assuming 8 working hours)
     const totalSlots = 8;
-    const busySlots = bookings.filter(b => b.status !== 'CANCELLED').length;
+    const busySlots = bookings.filter(b => b.status.toUpperCase() !== 'CANCELLED').length;
     const freeSlots = Math.max(0, totalSlots - busySlots);
 
     const headerStats = document.querySelector('.header-stats');
@@ -209,14 +209,14 @@ function handleBookingAction(bookingId, status) {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) return;
 
-    if (status === 'CONFIRMED') {
+    if (status.toUpperCase() === 'CONFIRMED') {
         // Open chat with client
         if (booking.client_telegram_username) {
             tg.openLink(`https://t.me/${booking.client_telegram_username}`);
         } else {
             tg.showAlert('У клиента нет username для связи');
         }
-    } else if (status === 'PENDING') {
+    } else if (status.toUpperCase() === 'PENDING') {
         // Confirm booking
         confirmBooking(bookingId);
     }
@@ -301,8 +301,8 @@ function showLink() {
 
 function showStats() {
     const totalBookings = bookings.length;
-    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
-    const pending = bookings.filter(b => b.status === 'PENDING').length;
+    const confirmed = bookings.filter(b => b.status.toUpperCase() === 'CONFIRMED').length;
+    const pending = bookings.filter(b => b.status.toUpperCase() === 'PENDING').length;
 
     const stats = `
 Клиентов: ${clients.length}

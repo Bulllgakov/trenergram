@@ -66,7 +66,7 @@ function updateUIWithData() {
 // Update header statistics
 function updateHeaderStats() {
     const now = new Date();
-    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status !== 'CANCELLED');
+    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status.toUpperCase() !== 'CANCELLED');
     const thisWeekBookings = upcomingBookings.filter(b => {
         const bookingDate = new Date(b.datetime);
         const weekFromNow = new Date();
@@ -99,7 +99,7 @@ function updateBookingsDisplay() {
     upcomingTab.innerHTML = '';
 
     const now = new Date();
-    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status !== 'CANCELLED')
+    const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status.toUpperCase() !== 'CANCELLED')
         .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 
     if (upcomingBookings.length === 0) {
@@ -173,7 +173,7 @@ function createBookingCard(booking, highlight = false) {
     const statusClass = getStatusClass(booking.status);
 
     // Add notification dot for pending confirmations
-    const notificationDot = booking.status === 'PENDING' ? '<div class="notification-dot"></div>' : '';
+    const notificationDot = booking.status.toUpperCase() === 'PENDING' ? '<div class="notification-dot"></div>' : '';
 
     card.innerHTML = `
         ${notificationDot}
@@ -442,7 +442,7 @@ function updatePastBookings() {
     if (!pastTab) return;
 
     const now = new Date();
-    const pastBookings = bookings.filter(b => new Date(b.datetime) < now || b.status === 'COMPLETED')
+    const pastBookings = bookings.filter(b => new Date(b.datetime) < now || b.status.toUpperCase() === 'COMPLETED')
         .sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
 
     if (pastBookings.length === 0) {
@@ -528,7 +528,7 @@ function updateCancelledBookings() {
     const cancelledTab = document.getElementById('cancelledTab');
     if (!cancelledTab) return;
 
-    const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED');
+    const cancelledBookings = bookings.filter(b => b.status.toUpperCase() === 'CANCELLED');
 
     if (cancelledBookings.length === 0) {
         cancelledTab.innerHTML = `
@@ -600,7 +600,7 @@ async function showTrainerScheduleAPI(trainerId) {
                 // Count free slots based on session duration
                 const dayBookings = trainerBookings.filter(b => {
                     const bookingDate = new Date(b.datetime);
-                    return bookingDate.toDateString() === date.toDateString() && b.status !== 'CANCELLED';
+                    return bookingDate.toDateString() === date.toDateString() && b.status.toUpperCase() !== 'CANCELLED';
                 });
 
                 // Calculate slots based on session duration (default 60 minutes)

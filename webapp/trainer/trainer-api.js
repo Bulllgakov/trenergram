@@ -281,12 +281,12 @@ function generateTimeSlots(startTime, endTime, hasBreak = false) {
 
 // Update header statistics
 function updateHeaderStats() {
-    const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
-    const pending = bookings.filter(b => b.status === 'PENDING').length;
+    const confirmed = bookings.filter(b => b.status.toUpperCase() === 'CONFIRMED').length;
+    const pending = bookings.filter(b => b.status.toUpperCase() === 'PENDING').length;
 
     // Calculate free slots (8 working hours minus occupied)
     const totalSlots = 8;
-    const busySlots = bookings.filter(b => b.status !== 'CANCELLED').length;
+    const busySlots = bookings.filter(b => b.status.toUpperCase() !== 'CANCELLED').length;
     const freeSlots = Math.max(0, totalSlots - busySlots);
 
     const headerSubtitle = document.getElementById('headerStats');
@@ -537,14 +537,14 @@ function openBookingActionsAPI(booking) {
 
         let buttons = [];
 
-        if (status === 'PENDING') {
+        if (status.toUpperCase() === 'PENDING') {
             buttons = [
                 {id: 'confirm', type: 'default', text: 'Подтвердить запись'},
                 {id: 'contact', type: 'default', text: 'Связаться с клиентом'},
                 {id: 'cancel', type: 'destructive', text: 'Отменить'},
                 {type: 'cancel'}
             ];
-        } else if (status === 'CONFIRMED') {
+        } else if (status.toUpperCase() === 'CONFIRMED') {
             buttons = [
                 {id: 'contact', type: 'default', text: 'Связаться с клиентом'},
                 {id: 'cancel', type: 'destructive', text: 'Отменить'},
@@ -749,8 +749,8 @@ window.showClients = function() {
 // Show client details
 function showClientDetails(client) {
     const clientBookings = bookings.filter(b => b.client_telegram_id === client.telegram_id);
-    const completedBookings = clientBookings.filter(b => b.status === 'COMPLETED').length;
-    const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date() && b.status !== 'CANCELLED');
+    const completedBookings = clientBookings.filter(b => b.status.toUpperCase() === 'COMPLETED').length;
+    const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date() && b.status.toUpperCase() !== 'CANCELLED');
 
     let message = `👤 ${client.name || 'Клиент'}\n\n`;
     message += `📊 Статистика:\n`;
@@ -1665,7 +1665,7 @@ function updateBookingTimeOptions() {
             const bookingDate = new Date(booking.datetime);
             return bookingDate.getHours() === hour &&
                    bookingDate.toDateString() === currentDate.toDateString() &&
-                   booking.status !== 'CANCELLED';
+                   booking.status.toUpperCase() !== 'CANCELLED';
         });
 
         console.log(`Time slot ${timeStr}: hour=${hour}, isBooked=${isBooked}`);
