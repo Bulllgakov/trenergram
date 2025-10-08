@@ -189,8 +189,14 @@ async function loadTrainerData() {
 async function loadSchedule() {
     try {
         // Format current date for API (YYYY-MM-DDTHH:MM:SS)
-        const fromDateStr = currentDate.toISOString().split('T')[0] + 'T00:00:00';
-        const toDateStr = currentDate.toISOString().split('T')[0] + 'T23:59:59';
+        // Use local time, not UTC, to match the date displayed to user
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        const fromDateStr = `${dateStr}T00:00:00`;
+        const toDateStr = `${dateStr}T23:59:59`;
 
         // Use from_date and to_date to get only bookings for this specific day
         const url = `${API_BASE_URL}/bookings/trainer/${trainerId}?from_date=${fromDateStr}&to_date=${toDateStr}`;
