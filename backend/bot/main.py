@@ -83,25 +83,35 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # If user is already registered, show their interface
     if existing_user:
         if existing_user.role == "trainer":
-            from telegram import WebAppInfo
+            from telegram import WebAppInfo, KeyboardButton, ReplyKeyboardMarkup
+
+            # Reply Keyboard (постоянное меню внизу)
+            main_keyboard = [
+                [KeyboardButton("📱 Открыть кабинет")],
+                [KeyboardButton("📎 Моя ссылка")]
+            ]
+            reply_keyboard = ReplyKeyboardMarkup(main_keyboard, resize_keyboard=True)
+
+            # Inline клавиатура с WebApp кнопками
             keyboard = [
                 [InlineKeyboardButton(
                     "📱 Открыть кабинет тренера",
                     web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user.id}")
                 )],
-                [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
-                [InlineKeyboardButton(
-                    "⚙️ Настройки",
-                    web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user.id}/settings")
-                )]
+                [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")]
             ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            inline_markup = InlineKeyboardMarkup(keyboard)
 
             await update.message.reply_text(
                 f"С возвращением, {existing_user.name}! 👋\n\n"
                 "Используйте кнопки ниже для управления профилем.",
-                reply_markup=reply_markup,
+                reply_markup=reply_keyboard,
                 parse_mode='Markdown'
+            )
+
+            await update.message.reply_text(
+                "Быстрый доступ:",
+                reply_markup=inline_markup
             )
             return
         elif existing_user.role == "client":
@@ -212,7 +222,6 @@ def main():
     # Message handlers for keyboard buttons
     application.add_handler(MessageHandler(filters.Regex("^📱 Открыть кабинет$"), webapp.cabinet_command))
     application.add_handler(MessageHandler(filters.Regex("^📎 Моя ссылка$"), webapp.my_link_command))
-    application.add_handler(MessageHandler(filters.Regex("^⚙️ Настройки$"), webapp.settings_command))
 
     # Message handlers for registration flow
     application.add_handler(MessageHandler(filters.CONTACT, registration.handle_contact))

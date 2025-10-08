@@ -282,7 +282,7 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
     # Создаем Reply Keyboard (постоянное меню внизу)
     main_keyboard = [
         [KeyboardButton("📱 Открыть кабинет")],
-        [KeyboardButton("📎 Моя ссылка"), KeyboardButton("⚙️ Настройки")]
+        [KeyboardButton("📎 Моя ссылка")]
     ]
     reply_keyboard = ReplyKeyboardMarkup(main_keyboard, resize_keyboard=True)
 
@@ -293,11 +293,7 @@ async def complete_trainer_registration(update: Update, context: ContextTypes.DE
             "📱 Открыть кабинет тренера",
             web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}")
         )],
-        [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")],
-        [InlineKeyboardButton(
-            "⚙️ Настройки",
-            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{trainer_id}/settings")
-        )]
+        [InlineKeyboardButton("📎 Ссылка для клиентов", callback_data="copy_link")]
     ]
     inline_markup = InlineKeyboardMarkup(keyboard)
 
