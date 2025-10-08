@@ -47,6 +47,32 @@ class ClientResponse(UserResponse):
     trainers: List[UserResponse] = []
 
 
+class ClientWithBalanceResponse(BaseModel):
+    """Client info with balance and statistics for trainer's view"""
+    id: int
+    telegram_id: str
+    telegram_username: Optional[str]
+    name: str
+    phone: Optional[str]
+    email: Optional[str]
+    # Balance and stats from TrainerClient relationship
+    balance: int
+    total_bookings: int
+    completed_bookings: int
+    cancelled_bookings: int
+    total_spent: int
+    avg_bookings_per_month: float
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TopupBalanceRequest(BaseModel):
+    """Request model for topping up client balance"""
+    amount: int
+
+
 class TrainerSettingsUpdate(BaseModel):
     session_duration: Optional[int] = None
     price: Optional[int] = None
@@ -97,12 +123,14 @@ async def get_trainer_info(
     return response
 
 
-@router.get("/trainer/{telegram_id}/clients", response_model=List[UserResponse])
+@router.get("/trainer/{telegram_id}/clients", response_model=List[ClientWithBalanceResponse])
 async def get_trainer_clients(
     telegram_id: str,
     db: Session = Depends(get_db)
 ):
-    """Get all clients of a trainer"""
+    """Get all clients of a trainer with balance and statistics"""
+    from datetime import datetime, timedelta
+
     trainer = db.query(User).filter_by(
         telegram_id=telegram_id,
         role=UserRole.TRAINER
@@ -117,11 +145,46 @@ async def get_trainer_clients(
         is_active=True
     ).all()
 
-    # Get client users
-    client_ids = [rel.client_id for rel in relationships]
-    clients = db.query(User).filter(User.id.in_(client_ids)).all() if client_ids else []
+    # Build response with balance and stats
+    result = []
+    for rel in relationships:
+        client = db.query(User).filter_by(id=rel.client_id).first()
+        if not client:
+            continue
 
-    return clients
+        # Calculate total spent (sum of all charged bookings)
+        charged_bookings = db.query(Booking).filter_by(
+            trainer_id=trainer.id,
+            client_id=client.id,
+            is_charged=True
+        ).all()
+        total_spent = sum(b.price or 0 for b in charged_bookings)
+
+        # Calculate avg bookings per month
+        if rel.created_at:
+            months_active = max(1, (datetime.now() - rel.created_at).days / 30)
+            avg_bookings_per_month = round(rel.completed_bookings / months_active, 1)
+        else:
+            avg_bookings_per_month = 0.0
+
+        client_data = ClientWithBalanceResponse(
+            id=client.id,
+            telegram_id=client.telegram_id,
+            telegram_username=client.telegram_username,
+            name=client.name,
+            phone=client.phone,
+            email=client.email,
+            balance=rel.balance,
+            total_bookings=rel.total_bookings,
+            completed_bookings=rel.completed_bookings,
+            cancelled_bookings=rel.cancelled_bookings,
+            total_spent=total_spent,
+            avg_bookings_per_month=avg_bookings_per_month,
+            created_at=rel.created_at
+        )
+        result.append(client_data)
+
+    return result
 
 
 @router.get("/client/{telegram_id}", response_model=ClientResponse)
@@ -227,3 +290,54 @@ async def update_trainer_settings(
     db.refresh(trainer)
 
     return trainer
+
+
+@router.post("/trainer/{trainer_telegram_id}/client/{client_telegram_id}/topup")
+async def topup_client_balance(
+    trainer_telegram_id: str,
+    client_telegram_id: str,
+    topup_data: TopupBalanceRequest,
+    db: Session = Depends(get_db)
+):
+    """Top up client balance with specified amount"""
+    # Validate amount
+    if topup_data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    # Get trainer
+    trainer = db.query(User).filter_by(
+        telegram_id=trainer_telegram_id,
+        role=UserRole.TRAINER
+    ).first()
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    # Get client
+    client = db.query(User).filter_by(
+        telegram_id=client_telegram_id,
+        role=UserRole.CLIENT
+    ).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Get trainer-client relationship
+    trainer_client = db.query(TrainerClient).filter_by(
+        trainer_id=trainer.id,
+        client_id=client.id,
+        is_active=True
+    ).first()
+
+    if not trainer_client:
+        raise HTTPException(status_code=404, detail="Client relationship not found")
+
+    # Add to balance
+    trainer_client.balance += topup_data.amount
+    db.commit()
+    db.refresh(trainer_client)
+
+    return {
+        "message": "Balance topped up successfully",
+        "client_name": client.name,
+        "amount": topup_data.amount,
+        "new_balance": trainer_client.balance
+    }

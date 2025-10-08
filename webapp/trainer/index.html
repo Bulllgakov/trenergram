@@ -901,13 +901,13 @@
                 </div>
             </div>
 
-            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ПРАВИЛА ПЕРЕНОСА</div>
+            <div class="section-header" style="margin: 20px -16px 10px; padding-left: 16px;">ПРАВИЛА ОТМЕНЫ</div>
 
             <div class="settings-list">
                 <div class="setting-item" onclick="openTransferSettings()">
                     <div class="setting-info">
-                        <div class="setting-label">Запрет переноса</div>
-                        <div class="setting-description">За 24 часа до тренировки</div>
+                        <div class="setting-label">Списание баланса</div>
+                        <div class="setting-description">За 24 часа списываются деньги с баланса клиента</div>
                     </div>
                     <div class="setting-arrow">›</div>
                 </div>
@@ -1203,9 +1203,43 @@
             <div class="clients-list" id="clientsList">
                 <!-- Will be populated with real clients -->
             </div>
+        </div>
+    </div>
 
-            <button class="submit-button" style="margin-top: 20px;" onclick="shareTrainerLink()">
-                📤 Поделиться ссылкой для клиентов
+    <!-- Topup Balance Sheet -->
+    <div class="bottom-sheet" id="topupBalanceSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Пополнить баланс</div>
+            <button class="sheet-close" onclick="closeSheet('topupBalanceSheet')">✕</button>
+        </div>
+        <div class="sheet-content" style="padding: 16px;">
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 16px; margin-bottom: 8px;">Клиент:</div>
+                <div style="font-size: 18px; font-weight: 600;" id="topupClientName">-</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 14px; color: var(--tg-theme-hint-color); margin-bottom: 4px;">Текущий баланс:</div>
+                <div style="font-size: 24px; font-weight: 600;" id="topupCurrentBalance">0 ₽</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 14px; margin-bottom: 8px; color: var(--tg-theme-text-color);">
+                    Сумма пополнения (₽)
+                </label>
+                <input
+                    type="number"
+                    id="topupAmount"
+                    placeholder="Введите сумму"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--tg-theme-hint-color); border-radius: 8px; font-size: 16px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color);"
+                />
+            </div>
+
+            <button
+                class="submit-button"
+                onclick="confirmTopup()"
+                style="width: 100%;">
+                Пополнить баланс
             </button>
         </div>
     </div>
@@ -1733,7 +1767,7 @@
         }
     </script>
     <!-- API Integration -->
-    <script src="trainer-api.js?v=20251008-1700"></script>
+    <script src="trainer-api.js?v=20251008-1800"></script>
     <script>
         // Generate date tabs immediately if not already done
         setTimeout(() => {

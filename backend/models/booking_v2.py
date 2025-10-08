@@ -42,6 +42,10 @@ class Booking(Base):
     is_paid = Column(Boolean, default=False)
     payment_method = Column(String(50))  # 'balance', 'cash', 'card'
 
+    # Balance charging (automatic charge before training)
+    is_charged = Column(Boolean, default=False)  # Whether balance was charged
+    charged_at = Column(DateTime(timezone=True))  # When balance was charged
+
     # Reminder status
     reminder_24h_sent = Column(Boolean, default=False)
     reminder_2h_sent = Column(Boolean, default=False)

@@ -11,7 +11,7 @@ celery_app = Celery(
     "trenergram",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["tasks.reminders"]
+    include=["tasks.reminders", "tasks.balance"]
 )
 
 # Celery configuration
@@ -31,6 +31,10 @@ celery_app.conf.update(
 celery_app.conf.beat_schedule = {
     "check-and-send-reminders": {
         "task": "tasks.reminders.check_and_send_reminders",
+        "schedule": 300.0,  # Run every 5 minutes
+    },
+    "check-and-charge-bookings": {
+        "task": "tasks.balance.check_and_charge_bookings",
         "schedule": 300.0,  # Run every 5 minutes
     },
 }

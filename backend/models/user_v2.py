@@ -42,6 +42,7 @@ class User(Base):
     session_duration = Column(Integer, default=60)  # Training session duration in minutes
     description = Column(Text)
     rating = Column(Integer, default=50)  # 0-50 (displayed as 0-5.0)
+    cancellation_hours = Column(Integer, default=24)  # Hours before training when money is charged from client balance
 
     # Settings (stored as JSON)
     settings = Column(JSON, default={})

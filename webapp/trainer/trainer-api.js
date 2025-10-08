@@ -759,21 +759,36 @@ window.showClients = function() {
 
             const initials = (client.name || 'К').split(' ').map(n => n[0]).join('').toUpperCase();
 
-            // Count client's bookings
-            const clientBookings = bookings.filter(b => b.client_telegram_id === client.telegram_id);
-            const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date());
+            // Get balance and stats from API response (now includes balance)
+            const balance = client.balance || 0;
+            const totalBookings = client.total_bookings || 0;
+            const upcomingBookings = bookings.filter(b =>
+                b.client_telegram_id === client.telegram_id &&
+                new Date(b.datetime) >= new Date()
+            ).length;
 
             clientCard.innerHTML = `
                 <div class="client-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--tg-theme-button-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; margin-right: 12px;">
                     ${initials}
                 </div>
-                <div style="flex: 1;">
+                <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 16px; font-weight: 500;">${client.name || 'Клиент'}</div>
                     <div style="font-size: 13px; color: var(--tg-theme-hint-color);">
-                        ${clientBookings.length} тренировок • ${upcomingBookings.length} предстоящих
+                        ${totalBookings} тренировок • ${upcomingBookings} предстоящих
                     </div>
                 </div>
-                <div style="color: var(--tg-theme-hint-color); font-size: 20px;">›</div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 14px; font-weight: 600; color: ${balance >= 0 ? 'var(--tg-theme-text-color)' : 'var(--tg-theme-destructive-text-color)'};">
+                            ${balance} ₽
+                        </div>
+                    </div>
+                    <button
+                        onclick="event.stopPropagation(); openTopupSheet('${client.telegram_id}', '${client.name}', ${balance});"
+                        style="padding: 6px 12px; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                        💰
+                    </button>
+                </div>
             `;
 
             clientsList.appendChild(clientCard);
@@ -794,11 +809,23 @@ function showClientDetails(client) {
     const completedBookings = clientBookings.filter(b => b.status.toUpperCase() === 'COMPLETED').length;
     const upcomingBookings = clientBookings.filter(b => new Date(b.datetime) >= new Date() && b.status.toUpperCase() !== 'CANCELLED');
 
+    // Get balance and stats from API response
+    const balance = client.balance || 0;
+    const totalSpent = client.total_spent || 0;
+    const avgBookingsPerMonth = client.avg_bookings_per_month || 0;
+
     let message = `👤 ${client.name || 'Клиент'}\n\n`;
+
+    message += `💰 Финансы:\n`;
+    message += `• Баланс: ${balance} ₽\n`;
+    message += `• Потрачено за всё время: ${totalSpent} ₽\n\n`;
+
     message += `📊 Статистика:\n`;
-    message += `• Всего тренировок: ${clientBookings.length}\n`;
-    message += `• Завершено: ${completedBookings}\n`;
-    message += `• Предстоящих: ${upcomingBookings.length}\n\n`;
+    message += `• Всего тренировок: ${client.total_bookings || 0}\n`;
+    message += `• Завершено: ${client.completed_bookings || 0}\n`;
+    message += `• Отменено: ${client.cancelled_bookings || 0}\n`;
+    message += `• Предстоящих: ${upcomingBookings.length}\n`;
+    message += `• Среднее в месяц: ${avgBookingsPerMonth}\n\n`;
 
     if (upcomingBookings.length > 0) {
         message += `📅 Ближайшие тренировки:\n`;
@@ -1795,8 +1822,71 @@ async function loadBookingData() {
     }
 }
 
+// Balance topup functions
+let currentTopupClient = null;
+
+function openTopupSheet(clientTelegramId, clientName, currentBalance) {
+    currentTopupClient = clientTelegramId;
+
+    // Fill in client details
+    document.getElementById('topupClientName').textContent = clientName;
+    document.getElementById('topupCurrentBalance').textContent = `${currentBalance} ₽`;
+    document.getElementById('topupAmount').value = '';
+
+    // Open sheet
+    const sheet = document.getElementById('topupBalanceSheet');
+    if (sheet) {
+        sheet.classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+    }
+}
+
+async function confirmTopup() {
+    const amount = parseInt(document.getElementById('topupAmount').value);
+
+    if (!amount || amount <= 0) {
+        safeShowAlert('Пожалуйста, введите корректную сумму');
+        return;
+    }
+
+    if (!currentTopupClient) {
+        safeShowAlert('Ошибка: клиент не выбран');
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/users/trainer/${trainerId}/client/${currentTopupClient}/topup`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ amount })
+            }
+        );
+
+        if (response.ok) {
+            const result = await response.json();
+            safeShowAlert(`✅ Баланс пополнен!\n\n${result.client_name}\nСумма: +${amount} ₽\nНовый баланс: ${result.new_balance} ₽`);
+
+            // Close sheet and reload clients
+            closeSheet('topupBalanceSheet');
+            await showClients();
+        } else {
+            const error = await response.json();
+            safeShowAlert(`Ошибка: ${error.detail || 'Не удалось пополнить баланс'}`);
+        }
+    } catch (error) {
+        console.error('Error topping up balance:', error);
+        safeShowAlert('Ошибка при пополнении баланса');
+    }
+}
+
 // Make functions available globally for HTML
 window.saveWorkingHoursAPI = saveWorkingHoursAPI;
 window.saveTrainerSettings = saveTrainerSettings;
 window.updateBookingTimeOptions = updateBookingTimeOptions;
 window.loadBookingData = loadBookingData;
+window.openTopupSheet = openTopupSheet;
+window.confirmTopup = confirmTopup;
