@@ -138,6 +138,13 @@ async function initializeAPI() {
     // Update UI with real data
     updateUIWithData();
 
+    // Auto-refresh schedule every 30 seconds to catch status changes
+    setInterval(async () => {
+        console.log('Auto-refreshing schedule...');
+        await loadSchedule();
+        updateUIWithData();
+    }, 30000); // 30 seconds
+
     console.log('API initialization complete');
 }
 

@@ -50,29 +50,30 @@ class NotificationService:
         client: User,
         db: Session
     ):
-        """Send confirmation notification to client"""
+        """Send confirmation notification to trainer when client confirms booking"""
         try:
             booking_date = booking.datetime.strftime("%d.%m.%Y")
             booking_time = booking.datetime.strftime("%H:%M")
 
+            # Notify TRAINER that client confirmed
             text = (
-                "✅ <b>Запись подтверждена!</b>\n\n"
-                f"👨‍🏫 Тренер: {trainer.name}\n"
+                "✅ <b>Клиент подтвердил тренировку!</b>\n\n"
+                f"👤 Клиент: {client.name}\n"
                 f"📅 Дата: {booking_date}\n"
                 f"⏰ Время: {booking_time}\n"
                 f"💰 Стоимость: {booking.price} ₽\n\n"
-                "<i>Не забудьте прийти вовремя!</i>"
+                "<i>Тренировка подтверждена</i>"
             )
 
             await self.bot.send_message(
-                chat_id=client.telegram_id,
+                chat_id=trainer.telegram_id,
                 text=text,
                 parse_mode="HTML"
             )
 
             return True
         except Exception as e:
-            print(f"Error sending confirmation to client: {e}")
+            print(f"Error sending confirmation to trainer: {e}")
             return False
 
     async def send_booking_cancelled(
