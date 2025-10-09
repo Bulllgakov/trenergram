@@ -7,8 +7,8 @@ Removes test trainer (236692046) and test client (8384084241)
 import sys
 import os
 
-# Add parent directory to path to import from backend
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
@@ -70,7 +70,6 @@ def cleanup_test_data():
             print(f"   - 1 trainer user")
 
             # Step 3: Confirm (check for --confirm flag)
-            import sys
             if "--confirm" not in sys.argv:
                 print("\n⚠️  To proceed, run with --confirm flag:")
                 print(f"   python {sys.argv[0]} --confirm")
