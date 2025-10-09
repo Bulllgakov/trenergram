@@ -1130,7 +1130,7 @@
             <!-- Actions -->
             <div class="action-buttons">
                 <button class="action-button primary" onclick="requestTopUp()">
-                    💳 Запросить пополнение
+                    💰 Сообщить о пополнении
                 </button>
                 <button class="action-button" onclick="bookWithTrainer('Александр Петров')">
                     📅 Записаться на тренировку
@@ -1393,13 +1393,50 @@
 
         function requestTopUp() {
             if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.sendData(JSON.stringify({
-                    action: 'request_topup',
-                    trainer: document.getElementById('profileTrainerName').textContent
-                }));
-                
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                window.Telegram.WebApp.showAlert('✅ Запрос на пополнение отправлен тренеру!\n\nТренер получит уведомление и сможет пополнить ваш счет после получения оплаты.');
+                const tg = window.Telegram.WebApp;
+
+                // Show prompt for amount input
+                const amount = prompt('Введите сумму пополнения (₽):\n\n📋 Отправим тренеру сообщение с суммой.\n✅ После подтверждения ваш баланс пополнится.');
+
+                if (!amount) {
+                    return; // User cancelled
+                }
+
+                const amountNum = parseInt(amount);
+                if (isNaN(amountNum) || amountNum <= 0) {
+                    tg.HapticFeedback.notificationOccurred('error');
+                    tg.showAlert('❌ Неверная сумма!\n\nВведите положительное число.');
+                    return;
+                }
+
+                // Get trainer info from current profile
+                const trainerName = document.getElementById('profileTrainerName').textContent;
+
+                // API base URL
+                const apiUrl = 'https://trenergram.ru/api/v1';
+
+                // Send request to API
+                fetch(`${apiUrl}/users/topup-request`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_telegram_id: clientId,
+                        trainer_name: trainerName,
+                        amount: amountNum
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert(`✅ Сообщение отправлено тренеру!\n\n💰 Сумма: ${amountNum.toLocaleString()}₽\n\nТренер получит уведомление и подтвердит поступление средств.`);
+                })
+                .catch(error => {
+                    console.error('Failed to send topup request:', error);
+                    tg.HapticFeedback.notificationOccurred('error');
+                    tg.showAlert('❌ Ошибка отправки запроса');
+                });
             }
             closeSheet('trainerProfileSheet');
         }

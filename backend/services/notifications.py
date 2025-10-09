@@ -304,6 +304,42 @@ class NotificationService:
             print(f"Error sending auto-cancel notification: {e}")
             return False
 
+    async def send_topup_request_to_trainer(
+        self,
+        client: User,
+        trainer: User,
+        amount: int,
+        db: Session
+    ):
+        """Send notification to trainer when client reports topup payment"""
+        try:
+            text = f"💰 <b>Уведомление о пополнении баланса</b>\n\n"
+            text += f"Клиент <b>{client.name}</b> сообщил о пополнении баланса на <b>{amount:,}₽</b>\n\n"
+            text += f"Если деньги поступили, подтвердите пополнение.\n"
+            text += f"Баланс клиента будет увеличен автоматически."
+
+            # Create callback data for buttons
+            callback_confirm = f"topup_confirm:{trainer.telegram_id}:{client.telegram_id}:{amount}"
+            callback_pending = f"topup_pending:{trainer.telegram_id}:{client.telegram_id}:{amount}"
+
+            # Create inline keyboard with buttons
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Подтвердить поступление", callback_data=callback_confirm)],
+                [InlineKeyboardButton(text="⏳ Деньги еще не поступили", callback_data=callback_pending)]
+            ])
+
+            await self.bot.send_message(
+                chat_id=trainer.telegram_id,
+                text=text,
+                parse_mode="HTML",
+                reply_markup=keyboard
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error sending topup request notification: {e}")
+            return False
+
     async def close(self):
         """Close bot session"""
         await self.bot.session.close()

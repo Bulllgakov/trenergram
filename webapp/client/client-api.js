@@ -444,7 +444,7 @@ window.showMyTrainers = function() {
                             ${trainer.rating ? `<span>⭐ ${trainer.rating}</span>` : ''}
                         </div>
                     </div>
-                    <div class="trainer-action">${balance <= 0 ? 'Пополнить' : 'Профиль'}</div>
+                    <div class="trainer-action">Профиль</div>
                 `;
 
                 trainersGrid.appendChild(trainerCard);

@@ -264,6 +264,10 @@ def main():
     application.add_handler(CallbackQueryHandler(booking_callbacks.handle_decline_reschedule, pattern="^decline_reschedule:"))
     application.add_handler(CallbackQueryHandler(booking_callbacks.handle_confirm_attendance, pattern="^confirm_attendance:"))
 
+    # Topup callback handlers
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_topup_confirm, pattern="^topup_confirm:"))
+    application.add_handler(CallbackQueryHandler(booking_callbacks.handle_topup_pending, pattern="^topup_pending:"))
+
     # Main commands - simplified interface
     application.add_handler(CommandHandler("cabinet", webapp.cabinet_command))
     application.add_handler(CommandHandler("my_link", webapp.my_link_command))

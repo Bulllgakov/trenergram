@@ -244,3 +244,113 @@ async def handle_confirm_attendance(update: Update, context: ContextTypes.DEFAUL
         query.message.text + "\n\n✅ <b>Присутствие подтверждено</b>",
         parse_mode="HTML"
     )
+
+
+async def handle_topup_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle topup confirmation by trainer"""
+    query = update.callback_query
+    await query.answer()
+
+    # Parse callback data: topup_confirm:trainer_id:client_id:amount
+    try:
+        parts = query.data.split(":")
+        trainer_telegram_id = parts[1]
+        client_telegram_id = parts[2]
+        amount = int(parts[3])
+    except (IndexError, ValueError) as e:
+        await query.message.reply_text("❌ Ошибка обработки данных")
+        logger.error(f"Error parsing topup callback data: {e}")
+        return
+
+    db = next(get_db())
+    try:
+        # Verify user is the trainer
+        trainer = db.query(User).filter_by(telegram_id=trainer_telegram_id).first()
+        if not trainer or str(query.from_user.id) != trainer_telegram_id:
+            await query.message.reply_text("❌ Вы не можете подтвердить это пополнение")
+            return
+
+        # Get client
+        client = db.query(User).filter_by(telegram_id=client_telegram_id).first()
+        if not client:
+            await query.message.reply_text("❌ Клиент не найден")
+            return
+
+        # Call existing topup API endpoint logic
+        from models import TrainerClient
+        trainer_client = db.query(TrainerClient).filter_by(
+            trainer_id=trainer.id,
+            client_id=client.id,
+            is_active=True
+        ).first()
+
+        if not trainer_client:
+            await query.message.reply_text("❌ Связь с клиентом не найдена")
+            return
+
+        # Add to balance
+        old_balance = trainer_client.balance
+        trainer_client.balance += amount
+        db.commit()
+
+        # Update message
+        await query.edit_message_text(
+            query.message.text + f"\n\n✅ <b>Пополнение подтверждено</b>\n"
+            f"Баланс клиента: {old_balance:,}₽ → {trainer_client.balance:,}₽",
+            parse_mode="HTML"
+        )
+
+        await query.message.reply_text(
+            f"✅ Баланс клиента <b>{client.name}</b> пополнен на <b>{amount:,}₽</b>\n"
+            f"Новый баланс: <b>{trainer_client.balance:,}₽</b>",
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error confirming topup: {e}")
+        await query.message.reply_text(f"❌ Ошибка при подтверждении пополнения: {str(e)}")
+    finally:
+        db.close()
+
+
+async def handle_topup_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle topup pending (money not received yet) by trainer"""
+    query = update.callback_query
+    await query.answer("ℹ️ Уведомление сохранено")
+
+    # Parse callback data
+    try:
+        parts = query.data.split(":")
+        trainer_telegram_id = parts[1]
+        client_telegram_id = parts[2]
+        amount = int(parts[3])
+    except (IndexError, ValueError) as e:
+        await query.message.reply_text("❌ Ошибка обработки данных")
+        logger.error(f"Error parsing topup callback data: {e}")
+        return
+
+    db = next(get_db())
+    try:
+        # Get client name for display
+        client = db.query(User).filter_by(telegram_id=client_telegram_id).first()
+        client_name = client.name if client else "Клиент"
+
+        # Update message
+        await query.edit_message_text(
+            query.message.text + f"\n\n⏳ <b>Ожидание поступления средств</b>\n"
+            f"Вы можете подтвердить пополнение позже, когда деньги поступят.",
+            parse_mode="HTML"
+        )
+
+        await query.message.reply_text(
+            f"ℹ️ Уведомление о пополнении от <b>{client_name}</b> сохранено.\n"
+            f"Когда деньги поступят, вы сможете пополнить баланс вручную через Mini App.",
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        logger.error(f"Error handling pending topup: {e}")
+        await query.message.reply_text(f"❌ Ошибка: {str(e)}")
+    finally:
+        db.close()

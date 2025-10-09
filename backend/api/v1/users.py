@@ -73,6 +73,13 @@ class TopupBalanceRequest(BaseModel):
     amount: int
 
 
+class TopupRequestData(BaseModel):
+    """Request model for client reporting topup to trainer"""
+    client_telegram_id: str
+    trainer_name: str
+    amount: int
+
+
 class TrainerSettingsUpdate(BaseModel):
     session_duration: Optional[int] = None
     price: Optional[int] = None
@@ -349,4 +356,61 @@ async def topup_client_balance(
         "client_name": client.name,
         "amount": topup_data.amount,
         "new_balance": trainer_client.balance
+    }
+
+
+@router.post("/topup-request")
+async def request_topup_from_trainer(
+    request_data: TopupRequestData,
+    db: Session = Depends(get_db)
+):
+    """Client reports topup payment to trainer (trainer needs to confirm)"""
+    # Validate amount
+    if request_data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    # Get client
+    client = db.query(User).filter_by(
+        telegram_id=request_data.client_telegram_id,
+        role=UserRole.CLIENT
+    ).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Find trainer by name (from trainer profile opened by client)
+    # We need to find the trainer_client relationship to get the exact trainer
+    relationships = db.query(TrainerClient).filter_by(
+        client_id=client.id,
+        is_active=True
+    ).all()
+
+    trainer = None
+    for rel in relationships:
+        t = db.query(User).filter_by(id=rel.trainer_id).first()
+        if t and t.name == request_data.trainer_name:
+            trainer = t
+            break
+
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    # Send notification to trainer using NotificationService
+    from services.notifications import NotificationService
+    notification_service = NotificationService()
+
+    try:
+        await notification_service.send_topup_request_to_trainer(
+            client=client,
+            trainer=trainer,
+            amount=request_data.amount,
+            db=db
+        )
+    finally:
+        await notification_service.close()
+
+    return {
+        "message": "Topup request sent to trainer",
+        "trainer_name": trainer.name,
+        "client_name": client.name,
+        "amount": request_data.amount
     }
