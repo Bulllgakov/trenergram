@@ -195,6 +195,20 @@ async def handle_club_selection(update: Update, context: ContextTypes.DEFAULT_TY
         )
         context.user_data['registration_step'] = 'trainer_price'
 
+    elif query.data == "club_back":
+        # Возврат к выбору между клубом и без клуба
+        keyboard = [
+            [InlineKeyboardButton("🏢 Выбрать клуб", callback_data="club_list")],
+            [InlineKeyboardButton("💪 Без клуба", callback_data="club_private")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await query.edit_message_text(
+            "Где вы проводите тренировки?",
+            reply_markup=reply_markup
+        )
+        context.user_data['registration_step'] = 'trainer_club'
+
 
 async def handle_specialization_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle specialization selection during trainer registration"""
@@ -248,18 +262,15 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     if step == 'trainer_contact':
-        # Ask for club
-        keyboard = [
-            [InlineKeyboardButton("🏢 Выбрать клуб", callback_data="club_list")],
-            [InlineKeyboardButton("💪 Без клуба", callback_data="club_private")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
+        # Skip club selection - ask for price directly
+        context.user_data['club_id'] = None
         await update.message.reply_text(
-            "Где вы проводите тренировки?",
-            reply_markup=reply_markup
+            "💰 *Стоимость тренировки*\n\n"
+            "Укажите стоимость одной тренировки в рублях\n"
+            "(например: 2000)",
+            parse_mode='Markdown'
         )
-        context.user_data['registration_step'] = 'trainer_club'
+        context.user_data['registration_step'] = 'trainer_price'
 
     elif step == 'client_contact':
         await complete_client_registration(update, context)
