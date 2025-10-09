@@ -50,7 +50,8 @@ def get_trainer_schedule(
                 "end_time": day_info.get('end', '18:00'),
                 "is_recurring": True,
                 "is_active": day_info.get('is_working', True),
-                "is_break": False
+                "is_break": False,
+                "has_break": day_info.get('hasBreak', False)  # Lunch break flag
             })
 
         return schedule_data

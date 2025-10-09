@@ -1337,7 +1337,7 @@ async function loadWorkingHours() {
                         isWorkingDay: true,
                         start: schedule.start_time,
                         end: schedule.end_time,
-                        hasBreak: false
+                        hasBreak: schedule.has_break || false
                     };
                 } else {
                     // Inactive schedule - day off
@@ -1345,7 +1345,7 @@ async function loadWorkingHours() {
                         isWorkingDay: false,
                         start: schedule.start_time,
                         end: schedule.end_time,
-                        hasBreak: false
+                        hasBreak: schedule.has_break || false
                     };
                 }
             });
