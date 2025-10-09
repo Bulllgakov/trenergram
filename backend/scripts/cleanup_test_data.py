@@ -86,7 +86,7 @@ def cleanup_test_data():
         # Step 4: Delete in correct order (foreign keys)
         print("\n🗑️  Deleting data...")
 
-        # Delete bookings first
+        # Delete bookings first (FK to users)
         deleted_bookings = session.execute(
             text("""
                 DELETE FROM bookings
@@ -96,7 +96,7 @@ def cleanup_test_data():
         )
         print(f"   ✅ Deleted {deleted_bookings.rowcount} bookings")
 
-        # Delete trainer_clients relationship
+        # Delete trainer_clients relationship (FK to users)
         deleted_relations = session.execute(
             text("""
                 DELETE FROM trainer_clients
@@ -106,14 +106,21 @@ def cleanup_test_data():
         )
         print(f"   ✅ Deleted {deleted_relations.rowcount} relationships")
 
-        # Delete client user
+        # Delete client user (no FK constraints)
         deleted_client = session.execute(
             text("DELETE FROM users WHERE id = :cid"),
             {"cid": client.id}
         )
         print(f"   ✅ Deleted client user")
 
-        # Delete trainer user
+        # Delete trainer schedules (FK to trainer)
+        deleted_schedules = session.execute(
+            text("DELETE FROM schedules WHERE trainer_id = :tid"),
+            {"tid": trainer.id}
+        )
+        print(f"   ✅ Deleted {deleted_schedules.rowcount} schedules")
+
+        # Delete trainer user (must be last)
         deleted_trainer = session.execute(
             text("DELETE FROM users WHERE id = :tid"),
             {"tid": trainer.id}
