@@ -1,0 +1,30 @@
+name: Cleanup Test Data
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Run cleanup on production server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VDS_HOST || '81.200.157.102' }}
+        username: ${{ secrets.VDS_USER || 'root' }}
+        key: ${{ secrets.VDS_SSH_KEY }}
+        port: ${{ secrets.VDS_PORT || 22 }}
+        script: |
+          cd /opt/trenergram
+
+          # Pull latest code with cleanup script
+          git pull origin main
+
+          # Run cleanup script inside backend container
+          docker-compose exec -T backend python /app/scripts/cleanup_test_data.py --confirm
+
+          echo "✅ Cleanup completed"

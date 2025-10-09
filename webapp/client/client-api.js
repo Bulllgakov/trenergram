@@ -114,14 +114,9 @@ function updateBookingsDisplay() {
     // Clear current content
     upcomingTab.innerHTML = '';
 
-    console.log('[updateBookingsDisplay] Total bookings:', bookings.length);
-
     const now = new Date();
     const upcomingBookings = bookings.filter(b => new Date(b.datetime) >= now && b.status.toUpperCase() !== 'CANCELLED')
         .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
-    console.log('[updateBookingsDisplay] Upcoming bookings:', upcomingBookings.length);
-    console.log('[updateBookingsDisplay] Upcoming bookings data:', upcomingBookings);
 
     if (upcomingBookings.length === 0) {
         upcomingTab.innerHTML = `
@@ -184,35 +179,23 @@ function updateBookingsDisplay() {
         const isToday = (sectionTitle === 'СЕГОДНЯ');
 
         dateBookings.forEach(booking => {
-            console.log('[updateBookingsDisplay] Creating card for booking:', booking.id);
             const bookingCard = createBookingCard(booking, isToday);
-            if (bookingCard) {
-                bookingsSection.appendChild(bookingCard);
-            } else {
-                console.error('[updateBookingsDisplay] createBookingCard returned null for booking:', booking.id);
-            }
+            bookingsSection.appendChild(bookingCard);
         });
 
-        console.log('[updateBookingsDisplay] Section', sectionTitle, 'has', dateBookings.length, 'bookings');
         upcomingTab.appendChild(bookingsSection);
     });
 }
 
 // Create booking card
 function createBookingCard(booking, highlight = false) {
-    console.log('[createBookingCard] Creating card for:', booking);
-
     const card = document.createElement('div');
     card.className = `booking-card${highlight ? ' highlight' : ''}`;
     card.onclick = () => openBookingDetailsAPI(booking);
 
     const bookingDate = new Date(booking.datetime);
-    console.log('[createBookingCard] Booking date:', bookingDate);
-
     // Find trainer for this booking to get timezone
     const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
-    console.log('[createBookingCard] Found trainer:', trainer);
-
     const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
     const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
     const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
@@ -239,7 +222,6 @@ function createBookingCard(booking, highlight = false) {
         </div>
     `;
 
-    console.log('[createBookingCard] Card created successfully');
     return card;
 }
 
