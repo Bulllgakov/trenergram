@@ -37,23 +37,45 @@ def get_trainer_schedule(
     if not trainer:
         raise HTTPException(status_code=404, detail="Trainer not found")
 
-    # Get schedule (including inactive ones)
+    # Get schedule from trainer settings (new approach)
+    if trainer.settings and 'work_hours' in trainer.settings:
+        work_hours = trainer.settings['work_hours']
+        schedule_data = []
+
+        for day_name, day_info in work_hours.items():
+            schedule_data.append({
+                "id": None,  # No database ID for settings-based schedule
+                "day_of_week": day_name.capitalize(),
+                "start_time": day_info.get('start', '09:00'),
+                "end_time": day_info.get('end', '18:00'),
+                "is_recurring": True,
+                "is_active": day_info.get('is_working', True),
+                "is_break": False
+            })
+
+        return schedule_data
+
+    # Fallback: Get schedule from Schedule table (old approach)
     schedule = db.query(Schedule).filter_by(
         trainer_id=trainer.id
     ).order_by(Schedule.day_of_week, Schedule.start_time).all()
 
-    return [
-        {
-            "id": s.id,
-            "day_of_week": s.day_of_week,
-            "start_time": s.start_time.strftime("%H:%M"),
-            "end_time": s.end_time.strftime("%H:%M"),
-            "is_recurring": s.is_recurring,
-            "is_active": s.is_active,
-            "is_break": False
-        }
-        for s in schedule
-    ]
+    if schedule:
+        return [
+            {
+                "id": s.id,
+                "day_of_week": s.day_of_week,
+                "start_time": s.start_time.strftime("%H:%M"),
+                "end_time": s.end_time.strftime("%H:%M"),
+                "is_recurring": s.is_recurring,
+                "is_active": s.is_active,
+                "is_break": False
+            }
+            for s in schedule
+        ]
+
+    # Default schedule if nothing found
+    return []
 
 
 @router.get("/trainer/{telegram_id}/slots")

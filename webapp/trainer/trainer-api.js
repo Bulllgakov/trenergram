@@ -1227,12 +1227,25 @@ function getWorkingHoursForDate(date) {
         return slots;
     }
 
-    console.log('No working hours data - using default schedule');
-    // Default working hours based on typical schedule
-    // Monday-Friday: 9:00-21:00
-    // Saturday-Sunday: 10:00-18:00
-    const defaultStart = (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') ? '10:00' : '09:00';
-    const defaultEnd = (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') ? '18:00' : '21:00';
+    console.log('No working hours data - using trainer settings fallback');
+    // Fallback to trainer settings if available
+    if (trainerData && trainerData.settings && trainerData.settings.work_hours) {
+        const dayData = trainerData.settings.work_hours[dayOfWeek];
+        if (dayData) {
+            if (!dayData.is_working) {
+                return []; // Day off
+            }
+            return generateTimeSlots(dayData.start, dayData.end);
+        }
+    }
+
+    // Final fallback: default schedule from registration
+    // Monday-Friday: 9:00-18:00, Saturday: 9:00-13:00, Sunday: off
+    if (dayOfWeek === 'sunday') {
+        return []; // Sunday is day off
+    }
+    const defaultStart = '09:00';
+    const defaultEnd = (dayOfWeek === 'saturday') ? '13:00' : '18:00';
 
     return generateTimeSlots(defaultStart, defaultEnd);
 }
@@ -1313,16 +1326,8 @@ async function loadWorkingHours() {
         if (response.ok) {
             const schedules = await response.json();
 
-            // Convert to UI format - start with working days by default
-            const workingHoursData = {
-                monday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
-                tuesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
-                wednesday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
-                thursday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
-                friday: { isWorkingDay: true, start: '09:00', end: '21:00', hasBreak: false },
-                saturday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false },
-                sunday: { isWorkingDay: false, start: '10:00', end: '18:00', hasBreak: false }
-            };
+            // Convert to UI format - initialize empty object
+            const workingHoursData = {};
 
             schedules.forEach(schedule => {
                 const day = schedule.day_of_week.toLowerCase();
