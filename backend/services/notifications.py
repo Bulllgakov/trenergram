@@ -56,14 +56,7 @@ class NotificationService:
             booking_time = booking.datetime.strftime("%H:%M")
 
             # Notify TRAINER that client confirmed
-            text = (
-                "✅ <b>Клиент подтвердил тренировку!</b>\n\n"
-                f"👤 Клиент: {client.name}\n"
-                f"📅 Дата: {booking_date}\n"
-                f"⏰ Время: {booking_time}\n"
-                f"💰 Стоимость: {booking.price} ₽\n\n"
-                "<i>Тренировка подтверждена</i>"
-            )
+            text = f"✅ Клиент {client.name} подтвердил {booking_date} в {booking_time}"
 
             await self.bot.send_message(
                 chat_id=trainer.telegram_id,
