@@ -1502,8 +1502,13 @@ if (document.readyState === 'loading') {
 function updateTrainerSettings() {
     // Update price
     const priceElement = document.getElementById('trainerPrice');
-    if (priceElement && trainerData.price) {
-        priceElement.textContent = `${trainerData.price}₽`;
+    if (priceElement) {
+        if (trainerData.price) {
+            priceElement.textContent = `${trainerData.price}₽`;
+        } else {
+            priceElement.textContent = 'Не указана';
+            priceElement.style.color = '#999';
+        }
     }
 
     // Update club name

@@ -1002,6 +1002,30 @@
         </div>
     </div>
 
+    <!-- Price Settings Sheet -->
+    <div class="bottom-sheet" id="priceSettingsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Стоимость тренировки</div>
+            <div class="sheet-close" onclick="closeSheet('priceSettingsSheet')">Закрыть</div>
+        </div>
+        <div class="sheet-content">
+            <div class="form-group">
+                <label class="form-label">Стандартная цена за тренировку</label>
+                <input type="number"
+                       id="priceInput"
+                       class="form-input"
+                       placeholder="Например: 2000"
+                       min="0"
+                       step="100">
+                <div class="form-description">Эта цена будет использоваться по умолчанию при создании новых тренировок</div>
+            </div>
+
+            <button class="submit-button" onclick="savePriceSettings()">
+                Сохранить
+            </button>
+        </div>
+    </div>
+
     <!-- Reminder Settings Sheet -->
     <div class="bottom-sheet" id="reminderSettingsSheet">
         <div class="sheet-header">
@@ -1507,8 +1531,65 @@
         }
 
         function openPriceSettings() {
-            showNotification('Настройка цены тренировки');
-            // In real implementation, open price settings
+            // Fill current price value
+            const priceInput = document.getElementById('priceInput');
+            if (priceInput && trainerData.price) {
+                priceInput.value = trainerData.price;
+            }
+            openSheet('priceSettingsSheet');
+        }
+
+        async function savePriceSettings() {
+            const priceInput = document.getElementById('priceInput');
+            const newPrice = parseInt(priceInput.value);
+
+            if (!newPrice || newPrice <= 0) {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert('❌ Укажите корректную цену');
+                } else {
+                    alert('❌ Укажите корректную цену');
+                }
+                return;
+            }
+
+            try {
+                // Update trainer settings via API
+                const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        price: newPrice
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update price');
+                }
+
+                // Update local data
+                trainerData.price = newPrice;
+
+                // Update UI
+                const priceElement = document.getElementById('trainerPrice');
+                if (priceElement) {
+                    priceElement.textContent = `${newPrice}₽`;
+                }
+
+                showNotification('✅ Цена обновлена');
+                closeSheet('priceSettingsSheet');
+
+                // Haptic feedback
+                if (window.safeHapticFeedback) window.safeHapticFeedback('notificationOccurred', 'success');
+            } catch (error) {
+                console.error('Error saving price:', error);
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert('❌ Ошибка при сохранении цены');
+                } else {
+                    alert('❌ Ошибка при сохранении цены');
+                }
+            }
         }
 
         function restoreDefaults() {
