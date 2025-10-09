@@ -64,6 +64,15 @@ jobs:
             cp -r webapp /var/www/trenergram/
           fi
 
+          # Deploy public website files
+          if [ -d "public" ]; then
+            echo "Deploying public website files to /var/www/trenergram/"
+            # Ensure directory exists
+            mkdir -p /var/www/trenergram
+            # Copy public directory with contents
+            cp -r public /var/www/trenergram/
+          fi
+
           # Update nginx config if exists
           if [ -f "nginx-ssl.conf" ]; then
             cp nginx-ssl.conf /etc/nginx/sites-available/trenergram
