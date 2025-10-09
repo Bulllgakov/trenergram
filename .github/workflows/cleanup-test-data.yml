@@ -25,6 +25,6 @@ jobs:
           git pull origin main
 
           # Run cleanup script inside backend container
-          docker-compose exec -T backend python /app/scripts/cleanup_test_data.py --confirm
+          docker-compose exec -T backend python scripts/cleanup_test_data.py --confirm
 
           echo "✅ Cleanup completed"
