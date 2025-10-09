@@ -1060,52 +1060,25 @@
 
             <!-- Account info -->
             <div class="section-header" style="margin: 16px -16px 12px;">ИНФОРМАЦИЯ О СЧЕТЕ</div>
-            
+
             <div class="booking-details-card">
                 <div class="booking-detail-row">
                     <span class="booking-detail-label">Стоимость тренировки</span>
-                    <span class="booking-detail-value">2,000₽</span>
+                    <span class="booking-detail-value" id="profileTrainerPrice">Загрузка...</span>
                 </div>
                 <div class="booking-detail-row">
-                    <span class="booking-detail-label">Групповая тренировка</span>
-                    <span class="booking-detail-value">800₽</span>
-                </div>
-                <div class="booking-detail-row">
-                    <span class="booking-detail-label">Время для отмены</span>
-                    <span class="booking-detail-value">До подтверждения</span>
+                    <span class="booking-detail-label">Правила отмены</span>
+                    <span class="booking-detail-value" id="profileCancellationRules">Загрузка...</span>
                 </div>
             </div>
 
             <!-- Transaction history -->
             <div class="section-header" style="margin: 16px -16px 12px;">ПОСЛЕДНИЕ ОПЕРАЦИИ</div>
-            
-            <div class="booking-details-card">
-                <div class="transaction-item" style="padding: 12px 0; border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 14px; font-weight: 500;">Пополнение счета</div>
-                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">10 августа, 14:30</div>
-                        </div>
-                        <div style="font-size: 16px; font-weight: 600; color: #34c759;">+10,000₽</div>
-                    </div>
-                </div>
-                <div class="transaction-item" style="padding: 12px 0; border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 14px; font-weight: 500;">Тренировка</div>
-                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">10 августа, 17:00</div>
-                        </div>
-                        <div style="font-size: 16px; font-weight: 600; color: var(--tg-theme-destructive-text-color);">-2,000₽</div>
-                    </div>
-                </div>
-                <div class="transaction-item" style="padding: 12px 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 14px; font-weight: 500;">Тренировка</div>
-                            <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">8 августа, 17:00</div>
-                        </div>
-                        <div style="font-size: 16px; font-weight: 600; color: var(--tg-theme-destructive-text-color);">-2,000₽</div>
-                    </div>
+
+            <div class="booking-details-card" id="transactionHistoryContainer">
+                <div style="text-align: center; padding: 40px 20px; color: var(--tg-theme-hint-color);">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📊</div>
+                    <div style="font-size: 15px;">Операций пока нет</div>
                 </div>
             </div>
 
@@ -1131,9 +1104,6 @@
             <div class="action-buttons">
                 <button class="action-button primary" onclick="requestTopUp()">
                     💰 Сообщить о пополнении
-                </button>
-                <button class="action-button" onclick="bookWithTrainer('Александр Петров')">
-                    📅 Записаться на тренировку
                 </button>
             </div>
         </div>

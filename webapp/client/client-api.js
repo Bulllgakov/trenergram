@@ -478,9 +478,28 @@ function openTrainerProfileAPI(trainer) {
     document.getElementById('profileTrainerName').textContent = trainer.name || 'Тренер';
     document.getElementById('trainerBalance').textContent = `${balance.toLocaleString()}₽`;
 
+    // Update trainer price
+    const priceElement = document.getElementById('profileTrainerPrice');
+    if (priceElement) {
+        if (trainer.price) {
+            priceElement.textContent = `${trainer.price.toLocaleString()}₽`;
+        } else {
+            priceElement.textContent = 'Не указана';
+        }
+    }
+
+    // Update cancellation rules
+    const rulesElement = document.getElementById('profileCancellationRules');
+    if (rulesElement) {
+        const settings = trainer.settings || {};
+        const cancellationHours = settings.cancellation_hours || 24;
+        rulesElement.textContent = `За ${cancellationHours} ч. до тренировки`;
+    }
+
     // Calculate statistics for this trainer
     const trainerBookings = bookings.filter(b => b.trainer_id === trainer.id);
     const completedBookings = trainerBookings.filter(b => b.status.toUpperCase() === 'COMPLETED');
+    const chargedBookings = trainerBookings.filter(b => b.is_charged);
 
     // Total trainings count
     const totalCount = completedBookings.length;
@@ -510,6 +529,42 @@ function openTrainerProfileAPI(trainer) {
         document.getElementById('lastTrainingDate').textContent = lastDateText;
     } else {
         document.getElementById('lastTrainingDate').textContent = 'Нет данных';
+    }
+
+    // Update transaction history (last 10 charged bookings)
+    const transactionContainer = document.getElementById('transactionHistoryContainer');
+    if (transactionContainer) {
+        const sortedCharged = chargedBookings
+            .sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
+            .slice(0, 10);
+
+        if (sortedCharged.length === 0) {
+            transactionContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: var(--tg-theme-hint-color);">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📊</div>
+                    <div style="font-size: 15px;">Операций пока нет</div>
+                </div>
+            `;
+        } else {
+            transactionContainer.innerHTML = sortedCharged.map((booking, index) => {
+                const date = new Date(booking.datetime);
+                const dateStr = formatDateInTrainerTimezone(date, trainer, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+                const price = booking.price || trainer.price || 0;
+                const isLast = index === sortedCharged.length - 1;
+
+                return `
+                    <div class="transaction-item" style="padding: 12px 0; ${!isLast ? 'border-bottom: 0.33px solid rgba(0, 0, 0, 0.08);' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 14px; font-weight: 500;">Тренировка</div>
+                                <div style="font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px;">${dateStr}</div>
+                            </div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--tg-theme-destructive-text-color);">-${price.toLocaleString()}₽</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
 
     // Close trainers list sheet if open
