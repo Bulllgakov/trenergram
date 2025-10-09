@@ -60,8 +60,8 @@ async def register_trainer(
                     "wednesday": {"start": "09:00", "end": "18:00", "is_working": True},
                     "thursday": {"start": "09:00", "end": "18:00", "is_working": True},
                     "friday": {"start": "09:00", "end": "18:00", "is_working": True},
-                    "saturday": {"start": "09:00", "end": "18:00", "is_working": True},
-                    "sunday": {"start": "09:00", "end": "18:00", "is_working": True}
+                    "saturday": {"start": "09:00", "end": "13:00", "is_working": True},
+                    "sunday": {"start": "09:00", "end": "18:00", "is_working": False}
                 }
             }
         )
