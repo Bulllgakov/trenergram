@@ -1536,7 +1536,15 @@
             if (priceInput && trainerData.price) {
                 priceInput.value = trainerData.price;
             }
-            openSheet('priceSettingsSheet');
+
+            // Open sheet
+            const sheet = document.getElementById('priceSettingsSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+
+            // Haptic feedback
+            if (window.safeHapticFeedback) window.safeHapticFeedback('impactOccurred', 'light');
         }
 
         async function savePriceSettings() {
