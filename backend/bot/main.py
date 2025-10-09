@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, BotCommandScopeDefault, BotCommandScopeChat
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, BotCommandScopeDefault, BotCommandScopeChat, MenuButtonWebApp, WebAppInfo
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from core.config import settings
@@ -22,6 +22,11 @@ async def set_user_commands(bot, user_id: int, role: str):
             BotCommand("my_link", "Получить ссылку для клиентов"),
             BotCommand("support", "Связаться с поддержкой")
         ]
+        # Set menu button to open Mini App
+        menu_button = MenuButtonWebApp(
+            text="📅 Календарь",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/trainer/{user_id}")
+        )
     elif role == "client":
         commands = [
             BotCommand("start", "Начать работу"),
@@ -29,17 +34,28 @@ async def set_user_commands(bot, user_id: int, role: str):
             BotCommand("my", "Список всех тренировок"),
             BotCommand("support", "Связаться с поддержкой")
         ]
+        # Set menu button to open Mini App
+        menu_button = MenuButtonWebApp(
+            text="📅 Тренировки",
+            web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user_id}")
+        )
     else:
         commands = [
             BotCommand("start", "Начать работу"),
             BotCommand("support", "Связаться с поддержкой")
         ]
+        menu_button = None
 
     try:
         await bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=user_id))
         logger.info(f"Commands set for user {user_id} with role {role}")
+
+        # Set menu button if defined
+        if menu_button:
+            await bot.set_chat_menu_button(chat_id=user_id, menu_button=menu_button)
+            logger.info(f"Menu button set for user {user_id} with role {role}")
     except Exception as e:
-        logger.error(f"Failed to set commands for user {user_id}: {e}")
+        logger.error(f"Failed to set commands/menu button for user {user_id}: {e}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
