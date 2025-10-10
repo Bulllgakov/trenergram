@@ -404,11 +404,10 @@ async def confirm_booking(
     db.refresh(booking)
 
     # Send notification to trainer
-    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
-    if trainer and background_tasks:
+    if background_tasks:
         background_tasks.add_task(
             notify_booking_confirmed,
-            booking, trainer, client, db
+            booking, db
         )
 
     return {"message": "Booking confirmed successfully", "booking_id": booking.id}

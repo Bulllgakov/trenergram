@@ -352,11 +352,23 @@ notification_service = NotificationService()
 
 async def notify_booking_confirmed(booking: Booking, db: Session):
     """Helper to send notification when booking is confirmed"""
-    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
-    client = db.query(User).filter_by(id=booking.client_id).first()
+    from db.session import SessionLocal
 
-    if trainer and client:
-        await notification_service.send_booking_confirmed(booking, trainer, client, db)
+    # Create new DB session for background task
+    new_db = SessionLocal()
+    try:
+        # Reload booking and users in new session
+        booking_obj = new_db.query(Booking).filter_by(id=booking.id).first()
+        if not booking_obj:
+            return
+
+        trainer = new_db.query(User).filter_by(id=booking_obj.trainer_id).first()
+        client = new_db.query(User).filter_by(id=booking_obj.client_id).first()
+
+        if trainer and client:
+            await notification_service.send_booking_confirmed(booking_obj, trainer, client, new_db)
+    finally:
+        new_db.close()
 
 
 async def notify_booking_cancelled(
