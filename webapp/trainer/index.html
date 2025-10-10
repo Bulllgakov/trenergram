@@ -1203,6 +1203,12 @@
             <div class="sheet-close" onclick="closeSheet('bookingSheet')">Готово</div>
         </div>
         <div class="sheet-content">
+            <!-- Selected date display -->
+            <div style="margin-bottom: 20px; padding: 12px; background: var(--tg-theme-secondary-bg-color); border-radius: 10px;">
+                <div style="font-size: 13px; color: var(--tg-theme-hint-color); margin-bottom: 4px;">Дата тренировки</div>
+                <div style="font-size: 16px; font-weight: 600;" id="bookingDateDisplay">Загрузка...</div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">Выберите клиента</label>
                 <input type="text" class="form-input" id="clientSearch" placeholder="Поиск по имени..." oninput="searchClient(this.value)">
@@ -1696,6 +1702,15 @@
             // Ensure currentDate is set
             if (!window.currentDate) {
                 window.currentDate = new Date();
+            }
+
+            // Update date display
+            const dateDisplay = document.getElementById('bookingDateDisplay');
+            if (dateDisplay && window.currentDate) {
+                const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                const dateStr = window.currentDate.toLocaleDateString('ru-RU', options);
+                // Capitalize first letter
+                dateDisplay.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
             }
 
             // Haptic feedback
