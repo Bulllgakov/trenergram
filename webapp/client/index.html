@@ -1369,7 +1369,9 @@
                 const amount = prompt('Введите сумму пополнения (₽):\n\n📋 Отправим тренеру сообщение с суммой.\n✅ После подтверждения ваш баланс пополнится.');
 
                 if (!amount) {
-                    return; // User cancelled
+                    // User cancelled - close sheet
+                    closeSheet('trainerProfileSheet');
+                    return;
                 }
 
                 const amountNum = parseInt(amount);
@@ -1401,14 +1403,19 @@
                 .then(data => {
                     tg.HapticFeedback.notificationOccurred('success');
                     tg.showAlert(`✅ Сообщение отправлено тренеру!\n\n💰 Сумма: ${amountNum.toLocaleString()}₽\n\nТренер получит уведомление и подтвердит поступление средств.`);
+                    // Close sheet after successful request
+                    closeSheet('trainerProfileSheet');
                 })
                 .catch(error => {
                     console.error('Failed to send topup request:', error);
                     tg.HapticFeedback.notificationOccurred('error');
                     tg.showAlert('❌ Ошибка отправки запроса');
+                    // Don't close sheet on error - let user try again
                 });
+            } else {
+                // Fallback if not in Telegram
+                closeSheet('trainerProfileSheet');
             }
-            closeSheet('trainerProfileSheet');
         }
 
         function contactTrainer() {
