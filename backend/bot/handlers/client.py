@@ -28,6 +28,23 @@ async def my_bookings_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     )
 
 
+async def handle_show_my_bookings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle callback for showing bookings list"""
+    query = update.callback_query
+    await query.answer()
+
+    # Show same message as /my command
+    await query.message.reply_text(
+        "📋 *Ваши предстоящие тренировки*\n\n"
+        "*Сегодня:*\n"
+        "15:00 - Иван Петров (Фитнес ЭНЕРГИЯ)\n\n"
+        "*Завтра:*\n"
+        "10:00 - Мария Сидорова (World Class)\n\n"
+        "Для отмены используйте /cancel",
+        parse_mode='Markdown'
+    )
+
+
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start cancellation process"""
     await update.message.reply_text(

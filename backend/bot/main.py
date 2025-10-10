@@ -123,8 +123,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}")
                     )],
                     [InlineKeyboardButton(
-                        "⚙️ Настройки",
-                        web_app=WebAppInfo(url=f"https://trenergram.ru/client/{user.id}/settings")
+                        "📋 Список ближайших тренировок",
+                        callback_data=f"show_my_bookings"
                     )]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
@@ -283,6 +283,9 @@ def main():
     # Topup callback handlers
     application.add_handler(CallbackQueryHandler(booking_callbacks.handle_topup_confirm, pattern="^topup_confirm:"))
     application.add_handler(CallbackQueryHandler(booking_callbacks.handle_topup_pending, pattern="^topup_pending:"))
+
+    # Client callback handlers
+    application.add_handler(CallbackQueryHandler(client.handle_show_my_bookings, pattern="^show_my_bookings$"))
 
     # Main commands - simplified interface
     application.add_handler(CommandHandler("cabinet", webapp.cabinet_command))
