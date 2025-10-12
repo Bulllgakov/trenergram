@@ -1560,19 +1560,93 @@ function loadAndDisplayClients() {
         clientElement.className = 'client-item';
 
         const initials = (client.name || 'C').split(' ').map(n => n[0]).join('').toUpperCase();
+        const balance = client.balance || 0;
+        const balanceStyle = balance < 0 ? 'color: var(--tg-theme-destructive-text-color);' : '';
+        const balanceText = balance < 0 ? `${balance}₽` : `${balance.toLocaleString()}₽`;
 
         clientElement.innerHTML = `
             <div class="client-avatar">${initials}</div>
-            <div class="client-name">${client.name || 'Клиент'}</div>
+            <div class="client-info" style="flex: 1;">
+                <div class="client-name">${client.name || 'Клиент'}</div>
+                <div style="font-size: 14px; ${balanceStyle}">💰 ${balanceText}</div>
+            </div>
+            <button class="profile-button" onclick="event.stopPropagation(); openClientProfile('${client.telegram_id}')">Профиль</button>
         `;
-
-        // Add click handler to show client details
-        clientElement.onclick = () => {
-            safeShowAlert(`Клиент: ${client.name}\nТелефон: ${client.phone || 'Не указан'}\nEmail: ${client.email || 'Не указан'}`);
-        };
 
         clientsListElement.appendChild(clientElement);
     });
+}
+
+// Open client profile with full details
+function openClientProfile(clientTelegramId) {
+    const client = clients.find(c => c.telegram_id === clientTelegramId);
+    if (!client) {
+        safeShowAlert('Клиент не найден');
+        return;
+    }
+
+    // Store current client for topup
+    window.currentClientForTopup = client;
+
+    // Set avatar and name
+    const initials = (client.name || 'C').split(' ').map(n => n[0]).join('').toUpperCase();
+    document.getElementById('clientProfileAvatar').textContent = initials;
+    document.getElementById('clientProfileName').textContent = client.name || 'Клиент';
+    document.getElementById('clientProfilePhone').textContent = client.phone || '—';
+
+    // Set balance
+    const balance = client.balance || 0;
+    const balanceElement = document.getElementById('clientProfileBalance');
+    balanceElement.textContent = `${balance.toLocaleString()}₽`;
+    balanceElement.style.color = balance < 0 ? 'var(--tg-theme-destructive-text-color)' : 'var(--tg-theme-text-color)';
+
+    // Set statistics
+    document.getElementById('clientProfileTotalBookings').textContent = client.total_bookings || 0;
+    document.getElementById('clientProfileCompletedBookings').textContent = client.completed_bookings || 0;
+    document.getElementById('clientProfileTotalSpent').textContent = `${(client.total_spent || 0).toLocaleString()}₽`;
+    document.getElementById('clientProfileAvgPerMonth').textContent = (client.avg_bookings_per_month || 0).toFixed(1);
+
+    // Set contact info
+    document.getElementById('clientProfilePhoneDetail').textContent = client.phone || '—';
+    const emailContainer = document.getElementById('clientProfileEmailContainer');
+    if (client.email) {
+        emailContainer.style.display = 'block';
+        document.getElementById('clientProfileEmail').textContent = client.email;
+    } else {
+        emailContainer.style.display = 'none';
+    }
+
+    // Open the sheet
+    const sheet = document.getElementById('clientProfileSheet');
+    const overlay = document.getElementById('overlay');
+    sheet.classList.add('active');
+    overlay.classList.add('active');
+
+    if (window.safeHapticFeedback) {
+        window.safeHapticFeedback('impactOccurred', 'light');
+    }
+}
+
+// Open topup sheet for current client
+function openTopupForClient() {
+    if (!window.currentClientForTopup) {
+        safeShowAlert('Клиент не выбран');
+        return;
+    }
+
+    // Close client profile
+    closeSheet('clientProfileSheet');
+
+    // Set client info in topup sheet
+    const client = window.currentClientForTopup;
+    document.getElementById('topupClientName').textContent = client.name || 'Клиент';
+    document.getElementById('topupCurrentBalance').textContent = `${(client.balance || 0).toLocaleString()}₽`;
+
+    // Open topup sheet
+    const sheet = document.getElementById('topupBalanceSheet');
+    const overlay = document.getElementById('overlay');
+    sheet.classList.add('active');
+    overlay.classList.add('active');
 }
 
 // Load clients for booking sheet

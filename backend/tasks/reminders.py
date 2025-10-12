@@ -124,8 +124,20 @@ def _should_send_first_reminder(booking: Booking, trainer: User) -> bool:
     - At specific time (reminder_1_time, default 20:00) in TRAINER'S timezone
     - Example: training on Oct 10, reminder_1_days_before=2 → send on Oct 8 at 20:00
     """
-    # Calculate days until training
-    days_until_training = (booking.datetime.date() - datetime.now().date()).days
+    # Get trainer timezone for consistent date/time calculations
+    trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+    try:
+        tz = ZoneInfo(trainer_tz)
+        current_datetime_in_trainer_tz = datetime.now(tz)
+        current_date_in_trainer_tz = current_datetime_in_trainer_tz.date()
+        current_time_in_trainer_tz = current_datetime_in_trainer_tz.time()
+    except Exception as e:
+        print(f"Invalid timezone '{trainer_tz}' for trainer {trainer.id}, using UTC: {e}")
+        current_date_in_trainer_tz = datetime.now().date()
+        current_time_in_trainer_tz = datetime.now().time()
+
+    # Calculate days until training using trainer's timezone
+    days_until_training = (booking.datetime.date() - current_date_in_trainer_tz).days
 
     # Get trainer settings
     days_before = trainer.reminder_1_days_before or 1
@@ -143,15 +155,6 @@ def _should_send_first_reminder(booking: Booking, trainer: User) -> bool:
     # Check if we're on the right day
     if days_until_training != days_before:
         return False
-
-    # Get current time in trainer's timezone
-    trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
-    try:
-        tz = ZoneInfo(trainer_tz)
-        current_time_in_trainer_tz = datetime.now(tz).time()
-    except Exception as e:
-        print(f"Invalid timezone '{trainer_tz}' for trainer {trainer.id}, using UTC: {e}")
-        current_time_in_trainer_tz = datetime.now().time()
 
     reminder_hour = reminder_time.hour
     reminder_minute = reminder_time.minute

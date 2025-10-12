@@ -3,7 +3,7 @@ Celery tasks for automatic balance charging before trainings
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from celery_app import celery_app
 from db.session import SessionLocal
@@ -47,7 +47,7 @@ def check_and_charge_bookings():
                 continue
 
             # Calculate time until training
-            time_until_training = booking.datetime - datetime.now()
+            time_until_training = booking.datetime - datetime.now(timezone.utc)
             hours_until_training = time_until_training.total_seconds() / 3600
 
             # Get trainer's cancellation policy

@@ -43,8 +43,29 @@ class TrainerResponse(UserResponse):
     total_bookings: int = 0
 
 
+class TrainerWithBalanceResponse(BaseModel):
+    """Trainer info with balance for client's view"""
+    id: int
+    telegram_id: str
+    telegram_username: Optional[str]
+    name: str
+    phone: Optional[str]
+    email: Optional[str]
+    specialization: Optional[str]
+    price: Optional[int]
+    session_duration: Optional[int]
+    description: Optional[str]
+    rating: Optional[int]
+    timezone: Optional[str] = "Europe/Moscow"
+    # Balance from TrainerClient relationship
+    balance: int
+
+    class Config:
+        from_attributes = True
+
+
 class ClientResponse(UserResponse):
-    trainers: List[UserResponse] = []
+    trainers: List[TrainerWithBalanceResponse] = []
 
 
 class ClientWithBalanceResponse(BaseModel):
@@ -217,17 +238,36 @@ async def get_client_info(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    # Get all trainers
+    # Get all trainers with balance
     relationships = db.query(TrainerClient).filter_by(
         client_id=client.id,
         is_active=True
     ).all()
 
-    trainer_ids = [rel.trainer_id for rel in relationships]
-    trainers = db.query(User).filter(User.id.in_(trainer_ids)).all() if trainer_ids else []
+    # Build trainers list with balance from relationship
+    trainers_with_balance = []
+    for rel in relationships:
+        trainer = db.query(User).filter_by(id=rel.trainer_id).first()
+        if trainer:
+            trainer_data = TrainerWithBalanceResponse(
+                id=trainer.id,
+                telegram_id=trainer.telegram_id,
+                telegram_username=trainer.telegram_username,
+                name=trainer.name,
+                phone=trainer.phone,
+                email=trainer.email,
+                specialization=trainer.specialization,
+                price=trainer.price,
+                session_duration=trainer.session_duration,
+                description=trainer.description,
+                rating=trainer.rating,
+                timezone=trainer.timezone if hasattr(trainer, 'timezone') else "Europe/Moscow",
+                balance=rel.balance  # Balance from TrainerClient relationship
+            )
+            trainers_with_balance.append(trainer_data)
 
     response = ClientResponse.from_orm(client)
-    response.trainers = trainers
+    response.trainers = trainers_with_balance
 
     return response
 

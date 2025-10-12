@@ -4,7 +4,7 @@ Callback handlers for booking actions via inline buttons
 
 from telegram import Update
 from telegram.ext import ContextTypes
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 import logging
 
@@ -104,7 +104,7 @@ async def handle_cancel_booking(update: Update, context: ContextTypes.DEFAULT_TY
             return
 
         # Check 24-hour rule
-        hours_before = (booking.datetime - datetime.now()).total_seconds() / 3600
+        hours_before = (booking.datetime - datetime.now(timezone.utc)).total_seconds() / 3600
         if hours_before < 24:
             await query.message.reply_text(
                 "⚠️ Отмена менее чем за 24 часа до тренировки.\n"
