@@ -890,7 +890,7 @@
     <div class="bottom-sheet" id="settingsSheet">
         <div class="sheet-header">
             <div class="sheet-title">Настройки</div>
-            <div class="sheet-close" onclick="closeSheet('settingsSheet')">Готово</div>
+            <button class="sheet-close" onclick="closeSheet('settingsSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <div class="section-header" style="margin: -16px -16px 10px; padding-left: 16px;">НАПОМИНАНИЯ КЛИЕНТАМ</div>
@@ -1046,7 +1046,7 @@
     <div class="bottom-sheet" id="priceSettingsSheet">
         <div class="sheet-header">
             <div class="sheet-title">Стоимость тренировки</div>
-            <div class="sheet-close" onclick="closeSheet('priceSettingsSheet')">Закрыть</div>
+            <button class="sheet-close" onclick="closeSheet('priceSettingsSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <div class="form-group">
@@ -1070,7 +1070,7 @@
     <div class="bottom-sheet" id="reminderSettingsSheet">
         <div class="sheet-header">
             <div class="sheet-title" id="reminderTitle">Настройка напоминания</div>
-            <div class="sheet-close" onclick="closeSheet('reminderSettingsSheet')">Сохранить</div>
+            <button class="sheet-close" onclick="closeSheet('reminderSettingsSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <!-- First reminder: days before + time -->
@@ -1132,7 +1132,7 @@
     <div class="bottom-sheet" id="workingHoursSheet">
         <div class="sheet-header">
             <div class="sheet-title" id="workingHoursTitle">Рабочие часы</div>
-            <div class="sheet-close" onclick="saveWorkingHours()">Сохранить</div>
+            <button class="sheet-close" onclick="closeSheet('workingHoursSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <div class="form-group">
@@ -1204,7 +1204,7 @@
     <div class="bottom-sheet" id="durationSheet">
         <div class="sheet-header">
             <div class="sheet-title">Длительность занятия</div>
-            <div class="sheet-close" onclick="closeSheet('durationSheet')">Готово</div>
+            <button class="sheet-close" onclick="closeSheet('durationSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <div class="duration-options">
@@ -1240,7 +1240,7 @@
     <div class="bottom-sheet" id="bookingSheet">
         <div class="sheet-header">
             <div class="sheet-title">Быстрая запись</div>
-            <div class="sheet-close" onclick="closeSheet('bookingSheet')">Готово</div>
+            <button class="sheet-close" onclick="closeSheet('bookingSheet')">✕</button>
         </div>
         <div class="sheet-content">
             <!-- Selected date display -->
