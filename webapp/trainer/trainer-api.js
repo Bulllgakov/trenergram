@@ -1521,6 +1521,16 @@ function updateTrainerSettings() {
     if (clubElement) {
         clubElement.textContent = trainerData.club_name || 'Независимый тренер';
     }
+
+    // Update cancellation hours
+    if (trainerData.settings && trainerData.settings.cancellation_hours) {
+        window.trainerSettings = trainerData.settings;
+        const cancellationDesc = document.querySelector('[onclick="openTransferSettings()"] .setting-description');
+        if (cancellationDesc) {
+            const hours = trainerData.settings.cancellation_hours;
+            cancellationDesc.textContent = `За ${hours} часов списываются деньги с баланса клиента`;
+        }
+    }
 }
 
 // Load and display clients

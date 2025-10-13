@@ -1066,6 +1066,34 @@
         </div>
     </div>
 
+    <!-- Transfer Settings Sheet (Balance Charge) -->
+    <div class="bottom-sheet" id="transferSettingsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Списание баланса</div>
+            <button class="sheet-close" onclick="closeSheet('transferSettingsSheet')">✕</button>
+        </div>
+        <div class="sheet-content">
+            <div class="form-group">
+                <label class="form-label">За сколько часов до тренировки списывать баланс</label>
+                <div class="form-description" style="margin-bottom: 16px;">
+                    После списания баланса клиент не сможет отменить тренировку без потери денег
+                </div>
+                <input type="number"
+                       id="cancellationHoursInput"
+                       class="form-input"
+                       placeholder="Например: 24"
+                       min="1"
+                       max="168"
+                       step="1">
+                <div class="form-description">По умолчанию: 24 часа (1 день)</div>
+            </div>
+
+            <button class="submit-button" onclick="saveTransferSettings()">
+                Сохранить
+            </button>
+        </div>
+    </div>
+
     <!-- Reminder Settings Sheet -->
     <div class="bottom-sheet" id="reminderSettingsSheet">
         <div class="sheet-header">
@@ -1514,8 +1542,55 @@
         }
 
         function openTransferSettings() {
-            showNotification('Настройка правил переноса');
-            // In real implementation, open transfer settings
+            // Load current cancellation hours setting
+            if (window.trainerSettings && window.trainerSettings.cancellation_hours) {
+                document.getElementById('cancellationHoursInput').value = window.trainerSettings.cancellation_hours;
+            } else {
+                document.getElementById('cancellationHoursInput').value = 24; // Default
+            }
+
+            // Open sheet
+            const sheet = document.getElementById('transferSettingsSheet');
+            const overlay = document.getElementById('overlay');
+            sheet.classList.add('active');
+            overlay.classList.add('active');
+
+            if (window.safeHapticFeedback) {
+                window.safeHapticFeedback('impactOccurred', 'light');
+            }
+        }
+
+        function saveTransferSettings() {
+            const hours = parseInt(document.getElementById('cancellationHoursInput').value);
+
+            if (!hours || hours < 1 || hours > 168) {
+                if (window.safeShowAlert) {
+                    window.safeShowAlert('Пожалуйста, укажите количество часов от 1 до 168 (неделя)');
+                }
+                return;
+            }
+
+            // Save via API
+            if (typeof saveTrainerSettings === 'function') {
+                saveTrainerSettings({ cancellation_hours: hours });
+            }
+
+            // Update local settings
+            if (!window.trainerSettings) window.trainerSettings = {};
+            window.trainerSettings.cancellation_hours = hours;
+
+            // Update display in settings list
+            const description = document.querySelector('[onclick="openTransferSettings()"] .setting-description');
+            if (description) {
+                description.textContent = `За ${hours} часов списываются деньги с баланса клиента`;
+            }
+
+            // Close sheet
+            closeSheet('transferSettingsSheet');
+
+            if (window.safeShowAlert) {
+                window.safeShowAlert('Настройки сохранены');
+            }
         }
 
         // Working hours management
