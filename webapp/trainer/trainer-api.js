@@ -1608,6 +1608,19 @@ function openClientProfile(clientTelegramId) {
 
     // Set contact info
     document.getElementById('clientProfilePhoneDetail').textContent = client.phone || '—';
+
+    // Set Telegram link
+    const telegramContainer = document.getElementById('clientProfileTelegramContainer');
+    const telegramLink = document.getElementById('clientProfileTelegram');
+    if (client.telegram_username) {
+        telegramContainer.style.display = 'block';
+        telegramLink.textContent = `@${client.telegram_username}`;
+        telegramLink.href = `https://t.me/${client.telegram_username}`;
+    } else {
+        telegramContainer.style.display = 'none';
+    }
+
+    // Set Email
     const emailContainer = document.getElementById('clientProfileEmailContainer');
     if (client.email) {
         emailContainer.style.display = 'block';
