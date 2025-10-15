@@ -45,12 +45,17 @@ class User(Base):
     cancellation_hours = Column(Integer, default=24)  # Hours before training when money is charged from client balance
     timezone = Column(String(50), default="Europe/Moscow")  # IANA timezone for trainer
 
-    # Reminder settings (simplified system)
+    # Trainer reminder settings (for unconfirmed bookings)
     reminder_1_days_before = Column(Integer, default=1)  # Days before training: 1, 2, or 3
     reminder_1_time = Column(String(10), default="20:00")  # Time to send first reminder (HH:MM)
     reminder_2_hours_after = Column(Integer, default=1)  # Hours after first: 1, 2, or 3
     reminder_3_hours_after = Column(Integer, default=1)  # Hours after second: 1, 2, or 3
     auto_cancel_hours_after = Column(Integer, default=1)  # Hours after third: 1, 2, or 3
+
+    # Client reminder settings (for confirmed bookings)
+    client_reminder_2h_enabled = Column(Boolean, default=True)  # Reminder 2 hours before training
+    client_reminder_1h_enabled = Column(Boolean, default=True)  # Reminder 1 hour before training
+    client_reminder_15m_enabled = Column(Boolean, default=True)  # Reminder 15 minutes before training
 
     # Settings (stored as JSON)
     settings = Column(JSON, default={})

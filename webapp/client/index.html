@@ -739,6 +739,52 @@
             cursor: not-allowed;
         }
 
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 25px;
+            width: 25px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--tg-theme-button-color);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
         /* Animations */
         @keyframes slideUp {
             from {
@@ -763,8 +809,7 @@
                 <div class="header-subtitle" id="headerSubtitle">3 предстоящие • 2 на этой неделе</div>
             </div>
             <div class="header-actions">
-                <a href="#" class="header-action" onclick="showNotifications()">🔔</a>
-                <a href="#" class="header-action" onclick="showProfile()">👤</a>
+                <!-- Icons removed - notifications come via Telegram bot -->
             </div>
         </div>
 
@@ -775,7 +820,10 @@
                 <span class="badge info">5</span>
             </button>
             <button class="quick-action" onclick="showHistory()">
-                📊 История и статистика
+                📊 Статистика
+            </button>
+            <button class="quick-action" onclick="openSettings()">
+                ⚙️ Настройки
             </button>
         </div>
 
@@ -1133,6 +1181,50 @@
         </div>
     </div>
 
+    <!-- Settings Sheet -->
+    <div class="bottom-sheet" id="settingsSheet">
+        <div class="sheet-header">
+            <div class="sheet-title">Настройки</div>
+            <button class="sheet-close" onclick="closeSheet('settingsSheet')">✕</button>
+        </div>
+        <div class="sheet-content">
+            <!-- Reminders Section -->
+            <div class="section-header" style="margin: -16px -16px 12px;">НАПОМИНАНИЯ О ТРЕНИРОВКАХ</div>
+
+            <div class="booking-details-card">
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">За 2 часа до тренировки</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reminder2hToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">За 1 час до тренировки</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reminder1hToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="booking-detail-row">
+                    <span class="booking-detail-label">За 15 минут до тренировки</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reminder15mToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-description" style="margin-top: 8px;">
+                Напоминания приходят только о подтвержденных тренировках
+            </div>
+
+            <button class="submit-button" onclick="saveReminderSettings()">
+                Сохранить
+            </button>
+        </div>
+    </div>
+
     <script>
         // Initialize Telegram WebApp
         if (window.Telegram && window.Telegram.WebApp) {
@@ -1237,16 +1329,73 @@
             }
         }
 
-        function showNotifications() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert('📨 Новые уведомления:\n\n• Напоминание о тренировке сегодня в 17:00\n• Александр Петров подтвердил запись\n• Новое расписание от Марии Сидоровой');
-            }
+        // Settings functions
+        function openSettings() {
+            loadReminderSettings();
+            openSheet('settingsSheet');
         }
 
-        function showProfile() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert('👤 Иван Иванов\n📱 +7 (999) 123-45-67\n\n⚙️ Настройки\n💳 Способы оплаты\n🔔 Уведомления\n❤️ Избранные тренеры\n📄 Условия использования');
+        function loadReminderSettings() {
+            // Load current reminder settings from API
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                console.error('Telegram WebApp user data not available');
+                return;
             }
+
+            const telegramId = tg.initDataUnsafe.user.id.toString();
+
+            fetch(`/api/v1/users/me?telegram_id=${telegramId}`)
+                .then(response => response.json())
+                .then(user => {
+                    // Set toggle states
+                    document.getElementById('reminder2hToggle').checked = user.client_reminder_2h_enabled !== false;
+                    document.getElementById('reminder1hToggle').checked = user.client_reminder_1h_enabled !== false;
+                    document.getElementById('reminder15mToggle').checked = user.client_reminder_15m_enabled !== false;
+                })
+                .catch(error => {
+                    console.error('Error loading reminder settings:', error);
+                });
+        }
+
+        function saveReminderSettings() {
+            const tg = window.Telegram && window.Telegram.WebApp;
+            if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                if (tg) tg.showAlert('Ошибка: не удалось получить данные пользователя');
+                return;
+            }
+
+            const telegramId = tg.initDataUnsafe.user.id.toString();
+
+            // Get toggle states
+            const reminder2h = document.getElementById('reminder2hToggle').checked;
+            const reminder1h = document.getElementById('reminder1hToggle').checked;
+            const reminder15m = document.getElementById('reminder15mToggle').checked;
+
+            // Save via API
+            fetch(`/api/v1/users/client/${telegramId}/reminder-settings`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    reminder_2h: reminder2h,
+                    reminder_1h: reminder1h,
+                    reminder_15m: reminder15m
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to save settings');
+                return response.json();
+            })
+            .then(data => {
+                tg.showAlert('✅ Настройки сохранены');
+                closeSheet('settingsSheet');
+            })
+            .catch(error => {
+                console.error('Error saving reminder settings:', error);
+                tg.showAlert('❌ Ошибка при сохранении настроек');
+            });
         }
 
         // Booking details

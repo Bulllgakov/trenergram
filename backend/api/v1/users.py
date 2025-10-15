@@ -101,6 +101,13 @@ class TopupRequestData(BaseModel):
     amount: int
 
 
+class ClientReminderSettingsUpdate(BaseModel):
+    """Request model for updating client reminder settings"""
+    reminder_2h: Optional[bool] = None
+    reminder_1h: Optional[bool] = None
+    reminder_15m: Optional[bool] = None
+
+
 class TrainerSettingsUpdate(BaseModel):
     session_duration: Optional[int] = None
     price: Optional[int] = None
@@ -454,3 +461,34 @@ async def request_topup_from_trainer(
         "client_name": client.name,
         "amount": request_data.amount
     }
+
+
+@router.put("/client/{telegram_id}/reminder-settings", response_model=UserResponse)
+async def update_client_reminder_settings(
+    telegram_id: str,
+    settings: ClientReminderSettingsUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update client reminder settings"""
+    client = db.query(User).filter_by(
+        telegram_id=telegram_id,
+        role=UserRole.CLIENT
+    ).first()
+
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Update reminder settings if provided
+    if settings.reminder_2h is not None:
+        client.client_reminder_2h_enabled = settings.reminder_2h
+
+    if settings.reminder_1h is not None:
+        client.client_reminder_1h_enabled = settings.reminder_1h
+
+    if settings.reminder_15m is not None:
+        client.client_reminder_15m_enabled = settings.reminder_15m
+
+    db.commit()
+    db.refresh(client)
+
+    return client

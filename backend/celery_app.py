@@ -33,6 +33,10 @@ celery_app.conf.beat_schedule = {
         "task": "tasks.reminders.check_and_send_reminders",
         "schedule": 300.0,  # Run every 5 minutes
     },
+    "send-client-reminders": {
+        "task": "tasks.reminders.send_client_reminders",
+        "schedule": 300.0,  # Run every 5 minutes (checks 2h, 1h, 15m reminders)
+    },
     "check-and-charge-bookings": {
         "task": "tasks.balance.check_and_charge_bookings",
         "schedule": 300.0,  # Run every 5 minutes

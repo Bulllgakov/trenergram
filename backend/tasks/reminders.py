@@ -208,3 +208,105 @@ async def _send_auto_cancel_notification(
         )
     except Exception as e:
         print(f"Error sending auto-cancel notification: {e}")
+
+
+@celery_app.task(name="tasks.reminders.send_client_reminders")
+def send_client_reminders():
+    """
+    Periodic task to send reminders to clients about CONFIRMED trainings.
+
+    Sends reminders at:
+    - 2 hours before training (if enabled by client)
+    - 1 hour before training (if enabled by client)
+    - 15 minutes before training (if enabled by client)
+    """
+    print(f"[{datetime.now()}] Running send_client_reminders task...")
+
+    db: Session = SessionLocal()
+    try:
+        # Get all confirmed bookings happening in the next 3 hours
+        now = datetime.now()
+        window_end = now + timedelta(hours=3)
+
+        confirmed_bookings = db.query(Booking).filter(
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.datetime > now,
+            Booking.datetime <= window_end
+        ).all()
+
+        print(f"Found {len(confirmed_bookings)} confirmed bookings to check for reminders")
+
+        sent_count = 0
+
+        for booking in confirmed_bookings:
+            # Get trainer and client
+            trainer = db.query(User).filter_by(id=booking.trainer_id).first()
+            client = db.query(User).filter_by(id=booking.client_id).first()
+
+            if not trainer or not client:
+                print(f"Skipping booking {booking.id}: trainer or client not found")
+                continue
+
+            # Calculate time until training
+            time_until_training = (booking.datetime - now).total_seconds() / 60  # in minutes
+
+            # Check 2-hour reminder (115-125 minutes before, 5-minute window)
+            if (115 <= time_until_training <= 125 and
+                not booking.client_reminder_2h_sent and
+                getattr(client, 'client_reminder_2h_enabled', True)):
+
+                print(f"Sending 2h reminder for booking {booking.id}")
+                asyncio.run(_send_client_reminder_async(booking, trainer, client, "2h"))
+                booking.client_reminder_2h_sent = True
+                db.commit()
+                sent_count += 1
+
+            # Check 1-hour reminder (55-65 minutes before, 5-minute window)
+            elif (55 <= time_until_training <= 65 and
+                  not booking.client_reminder_1h_sent and
+                  getattr(client, 'client_reminder_1h_enabled', True)):
+
+                print(f"Sending 1h reminder for booking {booking.id}")
+                asyncio.run(_send_client_reminder_async(booking, trainer, client, "1h"))
+                booking.client_reminder_1h_sent = True
+                db.commit()
+                sent_count += 1
+
+            # Check 15-minute reminder (13-17 minutes before, 2-minute window)
+            elif (13 <= time_until_training <= 17 and
+                  not booking.client_reminder_15m_sent and
+                  getattr(client, 'client_reminder_15m_enabled', True)):
+
+                print(f"Sending 15m reminder for booking {booking.id}")
+                asyncio.run(_send_client_reminder_async(booking, trainer, client, "15m"))
+                booking.client_reminder_15m_sent = True
+                db.commit()
+                sent_count += 1
+
+        print(f"[{datetime.now()}] Finished send_client_reminders: sent {sent_count} reminders")
+
+    except Exception as e:
+        print(f"Error in send_client_reminders: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+async def _send_client_reminder_async(
+    booking: Booking,
+    trainer: User,
+    client: User,
+    time_before: str
+):
+    """Wrapper to call async send_client_training_reminder function
+
+    Args:
+        time_before: "2h", "1h", or "15m"
+    """
+    try:
+        await notification_service.send_client_training_reminder(
+            booking, trainer, client, time_before
+        )
+    except Exception as e:
+        print(f"Error sending client reminder: {e}")

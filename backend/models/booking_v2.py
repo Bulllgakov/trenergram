@@ -46,9 +46,14 @@ class Booking(Base):
     is_charged = Column(Boolean, default=False)  # Whether balance was charged
     charged_at = Column(DateTime(timezone=True))  # When balance was charged
 
-    # Reminder status
+    # Trainer reminder status (for unconfirmed bookings)
     reminder_24h_sent = Column(Boolean, default=False)
     reminder_2h_sent = Column(Boolean, default=False)
+
+    # Client reminder status (for confirmed bookings)
+    client_reminder_2h_sent = Column(Boolean, default=False)
+    client_reminder_1h_sent = Column(Boolean, default=False)
+    client_reminder_15m_sent = Column(Boolean, default=False)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

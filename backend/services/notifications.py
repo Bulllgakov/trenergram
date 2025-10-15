@@ -328,6 +328,64 @@ class NotificationService:
             print(f"Error sending auto-cancel notification: {e}")
             return False
 
+    async def send_client_training_reminder(
+        self,
+        booking: Booking,
+        trainer: User,
+        client: User,
+        time_before: str
+    ):
+        """Send reminder to client about confirmed upcoming training
+
+        Args:
+            time_before: "2h", "1h", or "15m"
+        """
+        try:
+            # Convert to trainer's timezone
+            from datetime import timedelta
+            trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+            try:
+                tz = ZoneInfo(trainer_tz)
+                local_start = booking.datetime.astimezone(tz)
+                booking_date = local_start.strftime("%d.%m.%Y")
+                booking_time_start = local_start.strftime("%H:%M")
+                end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
+                local_end = end_time.astimezone(tz)
+                booking_time_end = local_end.strftime("%H:%M")
+            except Exception as e:
+                print(f"Error converting timezone '{trainer_tz}': {e}, using UTC")
+                booking_date = booking.datetime.strftime("%d.%m.%Y")
+                booking_time_start = booking.datetime.strftime("%H:%M")
+                end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
+                booking_time_end = end_time.strftime("%H:%M")
+
+            # Different text based on time before
+            if time_before == "2h":
+                text = f"⏰ Напоминание о тренировке через 2 часа!\n\n"
+            elif time_before == "1h":
+                text = f"⏰ Напоминание о тренировке через 1 час!\n\n"
+            elif time_before == "15m":
+                text = f"⏰ Напоминание: тренировка через 15 минут!\n\n"
+            else:
+                text = f"⏰ Напоминание о тренировке\n\n"
+
+            text += (
+                f"👨‍🏫 Тренер: {trainer.name}\n"
+                f"📅 Дата: {booking_date}\n"
+                f"⏰ Время: {booking_time_start} - {booking_time_end}\n"
+            )
+
+            await self.bot.send_message(
+                chat_id=client.telegram_id,
+                text=text,
+                parse_mode="HTML"
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error sending client training reminder: {e}")
+            return False
+
     async def send_topup_request_to_trainer(
         self,
         client: User,
