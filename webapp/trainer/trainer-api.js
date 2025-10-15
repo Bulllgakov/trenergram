@@ -632,7 +632,7 @@ async function quickBookAPI(time, date) {
         return;
     }
 
-    // Store selected time globally
+    // Store selected time globally for auto-selection
     window.selectedTimeForBooking = time;
 
     // Parse and store the date from the slot
@@ -643,15 +643,11 @@ async function quickBookAPI(time, date) {
         console.log('Set booking date to:', window.currentDate);
     }
 
-    // Open the booking sheet (uses existing UI)
-    if (window.quickBook) {
-        window.quickBook(time);
+    // Open booking sheet directly (skip quickBook to avoid race condition with auto-selection)
+    if (window.openBookingSheet) {
+        window.openBookingSheet();
     } else {
-        console.error('quickBook function not found');
-        // Fallback - directly open booking sheet
-        if (window.openBookingSheet) {
-            window.openBookingSheet();
-        }
+        console.error('openBookingSheet function not found');
     }
 }
 
