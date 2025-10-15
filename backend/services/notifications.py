@@ -5,6 +5,7 @@ Telegram notification service for sending booking-related messages
 import asyncio
 from typing import Optional
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy.orm import Session
@@ -16,6 +17,27 @@ from models import User, Booking, BookingStatus
 class NotificationService:
     def __init__(self):
         self.bot = Bot(token=settings.BOT_TOKEN)
+
+    def _format_datetime_in_timezone(self, dt: datetime, trainer: User) -> tuple[str, str]:
+        """
+        Convert UTC datetime to trainer's timezone and return formatted date and time.
+
+        Args:
+            dt: UTC datetime
+            trainer: Trainer user object with timezone field
+
+        Returns:
+            tuple: (formatted_date, formatted_time) in trainer's timezone
+        """
+        trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+        try:
+            tz = ZoneInfo(trainer_tz)
+            # Convert UTC to trainer's timezone
+            local_dt = dt.astimezone(tz)
+            return local_dt.strftime("%d.%m.%Y"), local_dt.strftime("%H:%M")
+        except Exception as e:
+            print(f"Error converting timezone '{trainer_tz}': {e}, using UTC")
+            return dt.strftime("%d.%m.%Y"), dt.strftime("%H:%M")
 
     async def send_booking_created_to_trainer(
         self,
@@ -52,8 +74,8 @@ class NotificationService:
     ):
         """Send confirmation notification to trainer when client confirms booking"""
         try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
+            # Convert to trainer's timezone
+            booking_date, booking_time = self._format_datetime_in_timezone(booking.datetime, trainer)
 
             # Notify TRAINER that client confirmed
             text = f"✅ Клиент {client.name} подтвердил {booking_date} в {booking_time}"
@@ -79,8 +101,8 @@ class NotificationService:
     ):
         """Send cancellation notification"""
         try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
+            # Convert to trainer's timezone
+            booking_date, booking_time = self._format_datetime_in_timezone(booking.datetime, trainer)
 
             if cancelled_by == "trainer":
                 # Notification to client
@@ -147,10 +169,9 @@ class NotificationService:
     ):
         """Send reschedule notification"""
         try:
-            old_date = old_datetime.strftime("%d.%m.%Y")
-            old_time = old_datetime.strftime("%H:%M")
-            new_date = booking.datetime.strftime("%d.%m.%Y")
-            new_time = booking.datetime.strftime("%H:%M")
+            # Convert to trainer's timezone
+            old_date, old_time = self._format_datetime_in_timezone(old_datetime, trainer)
+            new_date, new_time = self._format_datetime_in_timezone(booking.datetime, trainer)
 
             if rescheduled_by == "trainer":
                 # Notification to client
@@ -234,11 +255,21 @@ class NotificationService:
             reminder_number: 1 (first), 2 (second), or 3 (third/final warning)
         """
         try:
-            booking_time_start = booking.datetime.strftime("%H:%M")
-            # Calculate end time (datetime + duration minutes)
+            # Convert to trainer's timezone
             from datetime import timedelta
-            end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
-            booking_time_end = end_time.strftime("%H:%M")
+            trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+            try:
+                tz = ZoneInfo(trainer_tz)
+                local_start = booking.datetime.astimezone(tz)
+                end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
+                local_end = end_time.astimezone(tz)
+                booking_time_start = local_start.strftime("%H:%M")
+                booking_time_end = local_end.strftime("%H:%M")
+            except Exception as e:
+                print(f"Error converting timezone '{trainer_tz}': {e}, using UTC")
+                booking_time_start = booking.datetime.strftime("%H:%M")
+                end_time = booking.datetime + timedelta(minutes=booking.duration or 60)
+                booking_time_end = end_time.strftime("%H:%M")
 
             # Different text for each reminder
             if reminder_number == 1:
@@ -435,8 +466,17 @@ async def notify_booking_created_by_client(booking: Booking, db: Session):
 
         # Send confirmation to client about request creation
         try:
-            booking_date = booking.datetime.strftime("%d.%m.%Y")
-            booking_time = booking.datetime.strftime("%H:%M")
+            # Convert to trainer's timezone
+            trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+            try:
+                tz = ZoneInfo(trainer_tz)
+                local_dt = booking.datetime.astimezone(tz)
+                booking_date = local_dt.strftime("%d.%m.%Y")
+                booking_time = local_dt.strftime("%H:%M")
+            except Exception as e:
+                print(f"Error converting timezone '{trainer_tz}': {e}, using UTC")
+                booking_date = booking.datetime.strftime("%d.%m.%Y")
+                booking_time = booking.datetime.strftime("%H:%M")
 
             text = (
                 "✅ <b>Запрос на тренировку отправлен!</b>\n\n"
