@@ -1595,8 +1595,11 @@ function openClientProfile(clientTelegramId) {
         return;
     }
 
-    // Store current client for topup
-    window.currentClientForTopup = client;
+    // Set topup button click handler with client ID
+    const topupButton = document.getElementById('topupButton');
+    if (topupButton) {
+        topupButton.onclick = () => openTopupForClient(client.telegram_id);
+    }
 
     // Set avatar and name
     const initials = (client.name || 'C').split(' ').map(n => n[0]).join('').toUpperCase();
@@ -1651,9 +1654,10 @@ function openClientProfile(clientTelegramId) {
 }
 
 // Open topup sheet for current client
-function openTopupForClient() {
-    if (!window.currentClientForTopup) {
-        safeShowAlert('Клиент не выбран');
+function openTopupForClient(clientTelegramId) {
+    const client = clients.find(c => c.telegram_id === clientTelegramId);
+    if (!client) {
+        safeShowAlert('Клиент не найден');
         return;
     }
 
@@ -1661,9 +1665,11 @@ function openTopupForClient() {
     closeSheet('clientProfileSheet');
 
     // Set client info in topup sheet
-    const client = window.currentClientForTopup;
     document.getElementById('topupClientName').textContent = client.name || 'Клиент';
     document.getElementById('topupCurrentBalance').textContent = `${(client.balance || 0).toLocaleString()}₽`;
+
+    // Store client for topup submission
+    window.currentClientForTopup = client;
 
     // Open topup sheet
     const sheet = document.getElementById('topupBalanceSheet');
