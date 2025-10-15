@@ -524,7 +524,10 @@ function updateScheduleDisplay() {
             // Free slot (only for working hours)
             timeSlot.className = 'time-slot empty';
             timeSlot.dataset.time = timeStr;
-            timeSlot.onclick = () => quickBookAPI(timeStr);
+            // Store date in YYYY-MM-DD format
+            const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            timeSlot.dataset.date = dateStr;
+            timeSlot.onclick = () => quickBookAPI(timeStr, dateStr);
 
             timeSlot.innerHTML = `
                 <div class="time-slot-time">${displayTime}</div>
@@ -618,8 +621,8 @@ function openBookingActionsAPI(booking) {
 }
 
 // Quick book for API
-async function quickBookAPI(time) {
-    console.log('quickBookAPI called for time:', time);
+async function quickBookAPI(time, date) {
+    console.log('quickBookAPI called for time:', time, 'date:', date);
 
     if (clients.length === 0) {
         showNotification('У вас пока нет клиентов. Поделитесь своей ссылкой для привлечения клиентов.');
@@ -631,6 +634,14 @@ async function quickBookAPI(time) {
 
     // Store selected time globally
     window.selectedTimeForBooking = time;
+
+    // Parse and store the date from the slot
+    if (date) {
+        const [year, month, day] = date.split('-').map(Number);
+        window.currentDate = new Date(year, month - 1, day); // month is 0-indexed
+        currentDate = window.currentDate; // Also update the local variable
+        console.log('Set booking date to:', window.currentDate);
+    }
 
     // Open the booking sheet (uses existing UI)
     if (window.quickBook) {
@@ -1428,10 +1439,13 @@ function showDefaultSlots() {
         const displayTime = `${timeStr}<br>${endTimeStr}`;
 
         timeSlot.dataset.time = timeStr;
+        // Store date in YYYY-MM-DD format
+        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+        timeSlot.dataset.date = dateStr;
         timeSlot.onclick = () => {
-            console.log('Slot clicked:', timeStr);
+            console.log('Slot clicked:', timeStr, 'date:', dateStr);
             if (typeof quickBookAPI === 'function') {
-                quickBookAPI(timeStr);
+                quickBookAPI(timeStr, dateStr);
             } else if (typeof quickBook === 'function') {
                 quickBook(timeStr);
             } else {
