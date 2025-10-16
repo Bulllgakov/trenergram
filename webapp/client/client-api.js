@@ -199,7 +199,6 @@ function createBookingCard(booking, highlight = false) {
     const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
     const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
     const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
-    const timeRangeStr = `${timeStr} - ${endTimeStr}`;
 
     const statusIcon = getStatusIcon(booking.status);
     const statusClass = getStatusClass(booking.status);
@@ -210,7 +209,8 @@ function createBookingCard(booking, highlight = false) {
     card.innerHTML = `
         ${notificationDot}
         <div class="booking-date">
-            <div class="booking-time">${timeRangeStr}</div>
+            <div class="booking-time">${timeStr}</div>
+            <div class="booking-time">${endTimeStr}</div>
         </div>
         <div class="booking-info">
             <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
@@ -652,13 +652,14 @@ function createPastBookingCard(booking) {
     const bookingDate = new Date(booking.datetime);
     // Use trainer timezone
     const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
-    const day = parseInt(formatDateInTrainerTimezone(bookingDate, trainer, { day: 'numeric' }));
-    const month = formatDateInTrainerTimezone(bookingDate, trainer, { month: 'short' }).toUpperCase();
+    const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
+    const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
+    const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
 
     card.innerHTML = `
         <div class="booking-date">
-            <div class="booking-day">${day}</div>
-            <div class="booking-month">${month}</div>
+            <div class="booking-time">${timeStr}</div>
+            <div class="booking-time">${endTimeStr}</div>
         </div>
         <div class="booking-info">
             <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
@@ -685,7 +686,8 @@ function updateCancelledBookings() {
     const cancelledTab = document.getElementById('cancelledTab');
     if (!cancelledTab) return;
 
-    const cancelledBookings = bookings.filter(b => b.status.toUpperCase() === 'CANCELLED');
+    const cancelledBookings = bookings.filter(b => b.status.toUpperCase() === 'CANCELLED')
+        .sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
 
     if (cancelledBookings.length === 0) {
         cancelledTab.innerHTML = `
@@ -695,6 +697,79 @@ function updateCancelledBookings() {
                 <div class="empty-description">У вас нет отмененных тренировок за последний месяц</div>
             </div>
         `;
+        return;
+    }
+
+    // Clear and update with real data
+    cancelledTab.innerHTML = '';
+
+    // Group by month
+    const bookingsByMonth = {};
+    cancelledBookings.forEach(booking => {
+        const date = new Date(booking.datetime);
+        // Use trainer timezone for grouping
+        const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+        const monthKey = formatDateInTrainerTimezone(date, trainer, { month: 'long', year: 'numeric' }).toUpperCase();
+        if (!bookingsByMonth[monthKey]) {
+            bookingsByMonth[monthKey] = [];
+        }
+        bookingsByMonth[monthKey].push(booking);
+    });
+
+    Object.entries(bookingsByMonth).forEach(([month, monthBookings]) => {
+        const sectionHeader = document.createElement('div');
+        sectionHeader.className = 'section-header';
+        sectionHeader.textContent = month;
+        cancelledTab.appendChild(sectionHeader);
+
+        const bookingsSection = document.createElement('div');
+        bookingsSection.className = 'bookings-section';
+
+        monthBookings.forEach(booking => {
+            const bookingCard = createCancelledBookingCard(booking);
+            bookingsSection.appendChild(bookingCard);
+        });
+
+        cancelledTab.appendChild(bookingsSection);
+    });
+}
+
+// Create cancelled booking card
+function createCancelledBookingCard(booking) {
+    const card = document.createElement('div');
+    card.className = 'booking-card';
+    card.onclick = () => openCancelledBookingDetailsAPI(booking);
+
+    const bookingDate = new Date(booking.datetime);
+    // Use trainer timezone
+    const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
+    const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
+    const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
+
+    card.innerHTML = `
+        <div class="booking-date">
+            <div class="booking-time">${timeStr}</div>
+            <div class="booking-time">${endTimeStr}</div>
+        </div>
+        <div class="booking-info">
+            <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
+            <div class="booking-details">${booking.service_name || 'Тренировка'}</div>
+            ${booking.location ? `<div class="booking-location">📍 ${booking.location}</div>` : ''}
+        </div>
+        <div class="booking-status">
+            <div class="status-icon cancelled">✗</div>
+        </div>
+    `;
+
+    return card;
+}
+
+// Open cancelled booking details
+function openCancelledBookingDetailsAPI(booking) {
+    const reason = booking.cancellation_reason || 'Причина не указана';
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.showAlert(`Тренировка отменена\n\nПричина: ${reason}`);
     }
 }
 
