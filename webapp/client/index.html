@@ -451,6 +451,9 @@
             font-size: 16px;
             cursor: pointer;
             padding: 4px;
+            background: none;
+            border: none;
+            outline: none;
         }
 
         .sheet-content {
@@ -1361,7 +1364,12 @@
         function saveReminderSettings() {
             const tg = window.Telegram && window.Telegram.WebApp;
             if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                if (tg) tg.showAlert('Ошибка: не удалось получить данные пользователя');
+                console.error('Telegram WebApp user data not available');
+                if (tg && tg.showAlert) {
+                    tg.showAlert('Ошибка: не удалось получить данные пользователя');
+                } else {
+                    alert('Ошибка: не удалось получить данные пользователя');
+                }
                 return;
             }
 
@@ -1371,6 +1379,8 @@
             const reminder2h = document.getElementById('reminder2hToggle').checked;
             const reminder1h = document.getElementById('reminder1hToggle').checked;
             const reminder15m = document.getElementById('reminder15mToggle').checked;
+
+            console.log('Saving reminder settings:', { reminder2h, reminder1h, reminder15m });
 
             // Save via API
             fetch(`/api/v1/users/client/${telegramId}/reminder-settings`, {
@@ -1385,16 +1395,26 @@
                 })
             })
             .then(response => {
+                console.log('Save response status:', response.status);
                 if (!response.ok) throw new Error('Failed to save settings');
                 return response.json();
             })
             .then(data => {
-                tg.showAlert('✅ Настройки сохранены');
+                console.log('Settings saved successfully:', data);
+                if (tg && tg.showAlert) {
+                    tg.showAlert('✅ Настройки сохранены');
+                } else {
+                    alert('✅ Настройки сохранены');
+                }
                 closeSheet('settingsSheet');
             })
             .catch(error => {
                 console.error('Error saving reminder settings:', error);
-                tg.showAlert('❌ Ошибка при сохранении настроек');
+                if (tg && tg.showAlert) {
+                    tg.showAlert('❌ Ошибка при сохранении настроек');
+                } else {
+                    alert('❌ Ошибка при сохранении настроек');
+                }
             });
         }
 
