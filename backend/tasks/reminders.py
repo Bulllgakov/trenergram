@@ -220,12 +220,14 @@ def send_client_reminders():
     - 1 hour before training (if enabled by client)
     - 15 minutes before training (if enabled by client)
     """
-    print(f"[{datetime.now()}] Running send_client_reminders task...")
+    from datetime import timezone
+
+    now = datetime.now(timezone.utc)
+    print(f"[{now}] Running send_client_reminders task...")
 
     db: Session = SessionLocal()
     try:
         # Get all confirmed bookings happening in the next 3 hours
-        now = datetime.now()
         window_end = now + timedelta(hours=3)
 
         confirmed_bookings = db.query(Booking).filter(
@@ -235,6 +237,9 @@ def send_client_reminders():
         ).all()
 
         print(f"Found {len(confirmed_bookings)} confirmed bookings to check for reminders")
+        for booking in confirmed_bookings:
+            time_until = (booking.datetime - now).total_seconds() / 60
+            print(f"  Booking {booking.id}: {time_until:.1f} minutes until training")
 
         sent_count = 0
 
@@ -255,7 +260,7 @@ def send_client_reminders():
                 not booking.client_reminder_2h_sent and
                 getattr(client, 'client_reminder_2h_enabled', True)):
 
-                print(f"Sending 2h reminder for booking {booking.id}")
+                print(f"✅ Sending 2h reminder for booking {booking.id} (time_until={time_until_training:.1f}m)")
                 asyncio.run(_send_client_reminder_async(booking, trainer, client, "2h"))
                 booking.client_reminder_2h_sent = True
                 db.commit()
@@ -266,7 +271,7 @@ def send_client_reminders():
                   not booking.client_reminder_1h_sent and
                   getattr(client, 'client_reminder_1h_enabled', True)):
 
-                print(f"Sending 1h reminder for booking {booking.id}")
+                print(f"✅ Sending 1h reminder for booking {booking.id} (time_until={time_until_training:.1f}m)")
                 asyncio.run(_send_client_reminder_async(booking, trainer, client, "1h"))
                 booking.client_reminder_1h_sent = True
                 db.commit()
@@ -277,13 +282,19 @@ def send_client_reminders():
                   not booking.client_reminder_15m_sent and
                   getattr(client, 'client_reminder_15m_enabled', True)):
 
-                print(f"Sending 15m reminder for booking {booking.id}")
+                print(f"✅ Sending 15m reminder for booking {booking.id} (time_until={time_until_training:.1f}m)")
                 asyncio.run(_send_client_reminder_async(booking, trainer, client, "15m"))
                 booking.client_reminder_15m_sent = True
                 db.commit()
                 sent_count += 1
+            else:
+                # Log why reminder was skipped
+                if booking.client_reminder_2h_sent and booking.client_reminder_1h_sent and booking.client_reminder_15m_sent:
+                    print(f"  Booking {booking.id}: all reminders already sent")
+                else:
+                    print(f"  Booking {booking.id}: time_until={time_until_training:.1f}m, outside reminder windows")
 
-        print(f"[{datetime.now()}] Finished send_client_reminders: sent {sent_count} reminders")
+        print(f"[{now}] Finished send_client_reminders: sent {sent_count} reminders")
 
     except Exception as e:
         print(f"Error in send_client_reminders: {e}")
