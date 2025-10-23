@@ -1713,32 +1713,58 @@ function updateTrainerSettings() {
         if (firstReminderDesc) {
             const days = trainerData.reminder_1_days_before || 1;
             const daysText = days === 1 ? 'день' : (days === 2 ? 'два дня' : 'три дня');
-            firstReminderDesc.textContent = `За ${daysText} в ${trainerData.reminder_1_time}`;
+            // Remove seconds from time display (HH:MM:SS -> HH:MM)
+            const timeWithoutSeconds = trainerData.reminder_1_time.substring(0, 5);
+            firstReminderDesc.textContent = `За ${daysText} в ${timeWithoutSeconds}`;
         }
     }
 
-    // Update second reminder description
+    // Update second reminder description with calculated time
     const secondReminderDesc = document.getElementById('secondReminderDesc');
-    if (secondReminderDesc && trainerData.reminder_2_hours_after !== undefined) {
+    if (secondReminderDesc && trainerData.reminder_2_hours_after !== undefined && trainerData.reminder_1_time) {
         const hours = trainerData.reminder_2_hours_after;
         const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
-        secondReminderDesc.textContent = `Через ${hoursText} после первого`;
+
+        // Calculate time for second reminder
+        const firstTime = trainerData.reminder_1_time.substring(0, 5).split(':');
+        const firstHour = parseInt(firstTime[0]);
+        const firstMinute = parseInt(firstTime[1]);
+        const secondHour = (firstHour + hours) % 24;
+        const secondTime = `${String(secondHour).padStart(2, '0')}:${String(firstMinute).padStart(2, '0')}`;
+
+        secondReminderDesc.textContent = `Через ${hoursText} после первого в ${secondTime}`;
     }
 
-    // Update third reminder description
+    // Update third reminder description with calculated time
     const thirdReminderDesc = document.getElementById('thirdReminderDesc');
-    if (thirdReminderDesc && trainerData.reminder_3_hours_after !== undefined) {
+    if (thirdReminderDesc && trainerData.reminder_3_hours_after !== undefined && trainerData.reminder_2_hours_after !== undefined && trainerData.reminder_1_time) {
         const hours = trainerData.reminder_3_hours_after;
         const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
-        thirdReminderDesc.textContent = `Через ${hoursText} после второго`;
+
+        // Calculate time for third reminder (first + second hours + third hours)
+        const firstTime = trainerData.reminder_1_time.substring(0, 5).split(':');
+        const firstHour = parseInt(firstTime[0]);
+        const firstMinute = parseInt(firstTime[1]);
+        const thirdHour = (firstHour + trainerData.reminder_2_hours_after + hours) % 24;
+        const thirdTime = `${String(thirdHour).padStart(2, '0')}:${String(firstMinute).padStart(2, '0')}`;
+
+        thirdReminderDesc.textContent = `Через ${hoursText} после второго в ${thirdTime}`;
     }
 
-    // Update cancel reminder description
+    // Update cancel reminder description with calculated time
     const cancelReminderDesc = document.getElementById('cancelReminderDesc');
-    if (cancelReminderDesc && trainerData.auto_cancel_hours_after !== undefined) {
+    if (cancelReminderDesc && trainerData.auto_cancel_hours_after !== undefined && trainerData.reminder_2_hours_after !== undefined && trainerData.reminder_3_hours_after !== undefined && trainerData.reminder_1_time) {
         const hours = trainerData.auto_cancel_hours_after;
         const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
-        cancelReminderDesc.textContent = `Через ${hoursText} после третьего`;
+
+        // Calculate time for cancel (first + second hours + third hours + cancel hours)
+        const firstTime = trainerData.reminder_1_time.substring(0, 5).split(':');
+        const firstHour = parseInt(firstTime[0]);
+        const firstMinute = parseInt(firstTime[1]);
+        const cancelHour = (firstHour + trainerData.reminder_2_hours_after + trainerData.reminder_3_hours_after + hours) % 24;
+        const cancelTime = `${String(cancelHour).padStart(2, '0')}:${String(firstMinute).padStart(2, '0')}`;
+
+        cancelReminderDesc.textContent = `Через ${hoursText} после третьего в ${cancelTime}`;
     }
 }
 

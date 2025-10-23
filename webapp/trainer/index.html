@@ -1885,38 +1885,22 @@
 
         async function saveReminderSettings() {
             const type = currentReminderType;
-            let description = '';
             const settings = {};
 
             if (type === 'first') {
                 const hours = document.getElementById('firstHoursInput').value;
                 const minutes = document.getElementById('firstMinutesInput').value;
-                const daysText = selectedDaysValue === 1 ? 'день' : (selectedDaysValue === 2 ? 'два дня' : 'три дня');
-                description = `За ${daysText} в ${hours}:${minutes.padStart(2, '0')}`;
-                document.getElementById('firstReminderDesc').textContent = description;
 
                 // Prepare API data
                 settings.reminder_1_days_before = selectedDaysValue;
                 settings.reminder_1_time = `${hours}:${minutes.padStart(2, '0')}`;
             } else if (type === 'second') {
-                const hoursText = selectedAfterHoursSecond === 1 ? 'час' : (selectedAfterHoursSecond === 2 ? 'два' : 'три');
-                description = `Через ${hoursText} после первого`;
-                document.getElementById('secondReminderDesc').textContent = description;
-
                 // Prepare API data
                 settings.reminder_2_hours_after = selectedAfterHoursSecond;
             } else if (type === 'third') {
-                const hoursText = selectedAfterHoursThird === 1 ? 'час' : (selectedAfterHoursThird === 2 ? 'два' : 'три');
-                description = `Через ${hoursText} после второго`;
-                document.getElementById('thirdReminderDesc').textContent = description;
-
                 // Prepare API data
                 settings.reminder_3_hours_after = selectedAfterHoursThird;
             } else if (type === 'cancel') {
-                const hoursText = selectedAfterHoursCancel === 1 ? 'час' : (selectedAfterHoursCancel === 2 ? 'два' : 'три');
-                description = `Через ${hoursText} после третьего`;
-                document.getElementById('cancelReminderDesc').textContent = description;
-
                 // Prepare API data
                 settings.auto_cancel_hours_after = selectedAfterHoursCancel;
             }
@@ -1926,6 +1910,7 @@
                 const success = await saveTrainerSettings(settings);
                 if (success) {
                     showNotification(`✅ Настройка сохранена`);
+                    // UI will be updated automatically by saveTrainerSettings -> loadTrainerData -> updateTrainerSettings
                 } else {
                     showNotification(`❌ Ошибка сохранения`);
                 }
