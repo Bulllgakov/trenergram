@@ -1772,10 +1772,18 @@ function openClientProfile(clientTelegramId) {
     const balance = client.balance || 0;
     const balanceElement = document.getElementById('clientProfileBalance');
     balanceElement.textContent = `${balance.toLocaleString()}₽`;
-    balanceElement.style.color = balance < 0 ? 'var(--tg-theme-destructive-text-color)' : 'var(--tg-theme-text-color)';
 
-    // Set statistics
-    document.getElementById('clientProfileRemainingTrainings').textContent = client.remaining_trainings || 0;
+    // Set remaining trainings with proper word declension
+    const remainingTrainings = client.remaining_trainings || 0;
+    let trainingsWord;
+    if (remainingTrainings === 1) {
+        trainingsWord = 'тренировка';
+    } else if (remainingTrainings >= 2 && remainingTrainings <= 4) {
+        trainingsWord = 'тренировки';
+    } else {
+        trainingsWord = 'тренировок';
+    }
+    document.getElementById('clientProfileRemainingTrainings').textContent = `${remainingTrainings} ${trainingsWord}`;
     document.getElementById('clientProfileCompletedBookings').textContent = client.completed_bookings || 0;
     document.getElementById('clientProfileTotalSpent').textContent = `${(client.total_spent || 0).toLocaleString()}₽`;
     document.getElementById('clientProfileAvgPerMonth').textContent = (client.avg_bookings_per_month || 0).toFixed(1);
