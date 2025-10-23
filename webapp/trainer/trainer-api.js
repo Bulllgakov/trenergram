@@ -1264,15 +1264,26 @@ window.openBookingSheet = async function() {
     if (dataLoaded) {
         console.log('Booking data loaded successfully, updating time options');
         // Update time options with fresh data
+        // Increased delay to ensure DOM is fully rendered
         setTimeout(() => {
             updateBookingTimeOptions();
-        }, 100);
+        }, 200);
+
+        // Retry auto-selection after a bit more time if needed
+        if (window.selectedTimeForBooking) {
+            setTimeout(() => {
+                if (window.selectedTimeForBooking) {
+                    console.log('Retrying auto-selection...');
+                    updateBookingTimeOptions();
+                }
+            }, 500);
+        }
     } else {
         console.error('Failed to load booking data');
         // Still try to update with existing data
         setTimeout(() => {
             updateBookingTimeOptions();
-        }, 100);
+        }, 200);
     }
 
     // Update client list with real data
@@ -2051,14 +2062,22 @@ function updateBookingTimeOptions() {
 
     // Auto-select the pre-selected time if available
     if (window.selectedTimeForBooking) {
+        console.log('Attempting to auto-select time:', window.selectedTimeForBooking);
+        console.log('Available options:', Array.from(timeGrid.children).map(o => ({ text: o.textContent, disabled: o.classList.contains('disabled') })));
+
         const targetOption = Array.from(timeGrid.children).find(option =>
             option.textContent === window.selectedTimeForBooking && !option.classList.contains('disabled')
         );
+
         if (targetOption) {
+            console.log('✅ Auto-selected time slot:', window.selectedTimeForBooking);
             targetOption.classList.add('selected');
             window.selectedTime = window.selectedTimeForBooking;
+            window.selectedTimeForBooking = null; // Clear after successful selection
+        } else {
+            console.warn('❌ Could not auto-select time slot:', window.selectedTimeForBooking, '- slot not found or disabled');
+            // Don't clear selectedTimeForBooking - will retry on next updateBookingTimeOptions call
         }
-        window.selectedTimeForBooking = null; // Clear after use
     }
 }
 
