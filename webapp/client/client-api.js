@@ -628,6 +628,30 @@ function openTrainerProfileAPI(trainer) {
         }
     }
 
+    // Calculate and display remaining trainings
+    const remainingTrainingsElement = document.getElementById('remainingTrainings');
+    if (remainingTrainingsElement && trainer.price && trainer.price > 0) {
+        const remainingTrainings = Math.floor(balance / trainer.price);
+        if (remainingTrainings > 0) {
+            // Правильное склонение слова "тренировка"
+            let word;
+            if (remainingTrainings === 1) {
+                word = 'тренировку';
+            } else if (remainingTrainings >= 2 && remainingTrainings <= 4) {
+                word = 'тренировки';
+            } else {
+                word = 'тренировок';
+            }
+            remainingTrainingsElement.textContent = `Достаточно на ${remainingTrainings} ${word}`;
+        } else if (balance > 0) {
+            remainingTrainingsElement.textContent = `Недостаточно на тренировку (нужно ${trainer.price.toLocaleString()}₽)`;
+        } else {
+            remainingTrainingsElement.textContent = 'Пополните баланс';
+        }
+    } else if (remainingTrainingsElement) {
+        remainingTrainingsElement.textContent = 'Цена тренировки не указана';
+    }
+
     // Update cancellation rules
     const rulesElement = document.getElementById('profileCancellationRules');
     if (rulesElement) {
