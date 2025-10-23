@@ -2012,6 +2012,10 @@ function updateBookingTimeOptions() {
     const currentBookings = window.bookings || [];
     console.log('Current bookings:', currentBookings);
 
+    // Save currently selected time before clearing (to preserve selection during re-render)
+    const previouslySelectedTime = window.selectedTime || window.selectedTimeForBooking;
+    console.log('Previously selected time:', previouslySelectedTime);
+
     // Clear existing options
     timeGrid.innerHTML = '';
     console.log('Cleared existing time options');
@@ -2072,22 +2076,28 @@ function updateBookingTimeOptions() {
         timeGrid.appendChild(timeOption);
     });
 
-    // Auto-select the pre-selected time if available
-    if (window.selectedTimeForBooking) {
-        console.log('Attempting to auto-select time:', window.selectedTimeForBooking);
+    // Auto-select the pre-selected time if available (from either source)
+    const timeToSelect = window.selectedTimeForBooking || previouslySelectedTime;
+
+    if (timeToSelect) {
+        console.log('Attempting to auto-select time:', timeToSelect);
         console.log('Available options:', Array.from(timeGrid.children).map(o => ({ text: o.textContent, disabled: o.classList.contains('disabled') })));
 
         const targetOption = Array.from(timeGrid.children).find(option =>
-            option.textContent === window.selectedTimeForBooking && !option.classList.contains('disabled')
+            option.textContent === timeToSelect && !option.classList.contains('disabled')
         );
 
         if (targetOption) {
-            console.log('✅ Auto-selected time slot:', window.selectedTimeForBooking);
+            console.log('✅ Auto-selected time slot:', timeToSelect);
             targetOption.classList.add('selected');
-            window.selectedTime = window.selectedTimeForBooking;
-            window.selectedTimeForBooking = null; // Clear after successful selection
+            window.selectedTime = timeToSelect;
+
+            // Only clear selectedTimeForBooking, not selectedTime
+            if (window.selectedTimeForBooking) {
+                window.selectedTimeForBooking = null;
+            }
         } else {
-            console.warn('❌ Could not auto-select time slot:', window.selectedTimeForBooking, '- slot not found or disabled');
+            console.warn('❌ Could not auto-select time slot:', timeToSelect, '- slot not found or disabled');
             // Don't clear selectedTimeForBooking - will retry on next updateBookingTimeOptions call
         }
     }
