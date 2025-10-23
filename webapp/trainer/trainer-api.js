@@ -134,13 +134,19 @@ function hideLoadingIndicator() {
 async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator = true) {
     let lastError = null;
     let indicatorShown = false;
+    let indicatorShowTime = 0;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch(url, options);
 
-            // Hide indicator on successful response
+            // Hide indicator on successful response (with minimum show time)
             if (indicatorShown) {
+                const elapsedTime = Date.now() - indicatorShowTime;
+                const minShowTime = 500; // Minimum 500ms to be noticeable
+                if (elapsedTime < minShowTime) {
+                    await new Promise(resolve => setTimeout(resolve, minShowTime - elapsedTime));
+                }
                 hideLoadingIndicator();
             }
 
@@ -151,8 +157,9 @@ async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator =
 
             // Show indicator after first failed attempt
             if (showIndicator && attempt === 0 && !indicatorShown) {
-                showLoadingIndicator('⏳ Переподключение...');
+                showLoadingIndicator('⏳ Переподключение к серверу...');
                 indicatorShown = true;
+                indicatorShowTime = Date.now();
             }
 
             // Don't retry if it's the last attempt
@@ -165,8 +172,13 @@ async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator =
         }
     }
 
-    // All retries failed - hide indicator and throw error
+    // All retries failed - hide indicator and throw error (with minimum show time)
     if (indicatorShown) {
+        const elapsedTime = Date.now() - indicatorShowTime;
+        const minShowTime = 500;
+        if (elapsedTime < minShowTime) {
+            await new Promise(resolve => setTimeout(resolve, minShowTime - elapsedTime));
+        }
         hideLoadingIndicator();
     }
     throw lastError || new Error('Failed to fetch after multiple retries');
