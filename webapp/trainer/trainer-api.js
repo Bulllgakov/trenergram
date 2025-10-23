@@ -1692,6 +1692,54 @@ function updateTrainerSettings() {
             cancellationDesc.textContent = `За ${hours} часов списываются деньги с баланса клиента`;
         }
     }
+
+    // Update reminder settings from backend
+    if (trainerData.reminder_1_days_before !== undefined) {
+        window.selectedDaysValue = trainerData.reminder_1_days_before;
+    }
+    if (trainerData.reminder_2_hours_after !== undefined) {
+        window.selectedAfterHoursSecond = trainerData.reminder_2_hours_after;
+    }
+    if (trainerData.reminder_3_hours_after !== undefined) {
+        window.selectedAfterHoursThird = trainerData.reminder_3_hours_after;
+    }
+    if (trainerData.auto_cancel_hours_after !== undefined) {
+        window.selectedAfterHoursCancel = trainerData.auto_cancel_hours_after;
+    }
+
+    // Update first reminder description
+    if (trainerData.reminder_1_time) {
+        const firstReminderDesc = document.getElementById('firstReminderDesc');
+        if (firstReminderDesc) {
+            const days = trainerData.reminder_1_days_before || 1;
+            const daysText = days === 1 ? 'день' : (days === 2 ? 'два дня' : 'три дня');
+            firstReminderDesc.textContent = `За ${daysText} в ${trainerData.reminder_1_time}`;
+        }
+    }
+
+    // Update second reminder description
+    const secondReminderDesc = document.getElementById('secondReminderDesc');
+    if (secondReminderDesc && trainerData.reminder_2_hours_after !== undefined) {
+        const hours = trainerData.reminder_2_hours_after;
+        const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
+        secondReminderDesc.textContent = `Через ${hoursText} после первого`;
+    }
+
+    // Update third reminder description
+    const thirdReminderDesc = document.getElementById('thirdReminderDesc');
+    if (thirdReminderDesc && trainerData.reminder_3_hours_after !== undefined) {
+        const hours = trainerData.reminder_3_hours_after;
+        const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
+        thirdReminderDesc.textContent = `Через ${hoursText} после второго`;
+    }
+
+    // Update cancel reminder description
+    const cancelReminderDesc = document.getElementById('cancelReminderDesc');
+    if (cancelReminderDesc && trainerData.auto_cancel_hours_after !== undefined) {
+        const hours = trainerData.auto_cancel_hours_after;
+        const hoursText = hours === 1 ? 'час' : (hours === 2 ? 'два' : 'три');
+        cancelReminderDesc.textContent = `Через ${hoursText} после третьего`;
+    }
 }
 
 // Load and display clients

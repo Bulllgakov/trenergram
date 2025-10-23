@@ -33,6 +33,12 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     timezone: Optional[str] = "Europe/Moscow"  # IANA timezone (for trainers)
+    # Reminder settings (for trainers)
+    reminder_1_days_before: Optional[int] = None
+    reminder_1_time: Optional[str] = None
+    reminder_2_hours_after: Optional[int] = None
+    reminder_3_hours_after: Optional[int] = None
+    auto_cancel_hours_after: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -114,6 +120,12 @@ class TrainerSettingsUpdate(BaseModel):
     price: Optional[int] = None
     specialization: Optional[str] = None
     description: Optional[str] = None
+    # Reminder settings
+    reminder_1_days_before: Optional[int] = None
+    reminder_1_time: Optional[str] = None  # Time as string "HH:MM"
+    reminder_2_hours_after: Optional[int] = None
+    reminder_3_hours_after: Optional[int] = None
+    auto_cancel_hours_after: Optional[int] = None
 
 
 @router.get("/me", response_model=UserResponse)
@@ -362,6 +374,40 @@ async def update_trainer_settings(
 
     if settings.description is not None:
         trainer.description = settings.description
+
+    # Update reminder settings if provided
+    if settings.reminder_1_days_before is not None:
+        if 1 <= settings.reminder_1_days_before <= 3:
+            trainer.reminder_1_days_before = settings.reminder_1_days_before
+        else:
+            raise HTTPException(status_code=400, detail="reminder_1_days_before must be 1, 2, or 3")
+
+    if settings.reminder_1_time is not None:
+        from datetime import datetime
+        try:
+            # Parse time string and convert to time object
+            time_obj = datetime.strptime(settings.reminder_1_time, "%H:%M").time()
+            trainer.reminder_1_time = time_obj
+        except ValueError:
+            raise HTTPException(status_code=400, detail="reminder_1_time must be in HH:MM format")
+
+    if settings.reminder_2_hours_after is not None:
+        if 1 <= settings.reminder_2_hours_after <= 3:
+            trainer.reminder_2_hours_after = settings.reminder_2_hours_after
+        else:
+            raise HTTPException(status_code=400, detail="reminder_2_hours_after must be 1, 2, or 3")
+
+    if settings.reminder_3_hours_after is not None:
+        if 1 <= settings.reminder_3_hours_after <= 3:
+            trainer.reminder_3_hours_after = settings.reminder_3_hours_after
+        else:
+            raise HTTPException(status_code=400, detail="reminder_3_hours_after must be 1, 2, or 3")
+
+    if settings.auto_cancel_hours_after is not None:
+        if 1 <= settings.auto_cancel_hours_after <= 3:
+            trainer.auto_cancel_hours_after = settings.auto_cancel_hours_after
+        else:
+            raise HTTPException(status_code=400, detail="auto_cancel_hours_after must be 1, 2, or 3")
 
     db.commit()
     db.refresh(trainer)

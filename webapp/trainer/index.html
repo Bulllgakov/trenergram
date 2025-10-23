@@ -1519,16 +1519,58 @@
             document.getElementById('thirdReminderOptions').style.display = 'none';
             document.getElementById('cancelReminderOptions').style.display = 'none';
 
-            // Show relevant options based on type
+            // Show relevant options based on type and populate with current values
             if (type === 'first') {
                 document.getElementById('firstReminderOptions').style.display = 'block';
                 document.getElementById('firstReminderTime').style.display = 'block';
+
+                // Populate time inputs from backend data or defaults
+                if (trainerData && trainerData.reminder_1_time) {
+                    const timeParts = trainerData.reminder_1_time.split(':');
+                    document.getElementById('firstHoursInput').value = timeParts[0];
+                    document.getElementById('firstMinutesInput').value = timeParts[1];
+                } else {
+                    document.getElementById('firstHoursInput').value = '20';
+                    document.getElementById('firstMinutesInput').value = '00';
+                }
+
+                // Select the correct days option
+                const daysOptions = document.querySelectorAll('#firstReminderOptions .time-option');
+                daysOptions.forEach(opt => opt.classList.remove('selected'));
+                const selectedDaysOption = Array.from(daysOptions).find(opt =>
+                    opt.textContent.includes(selectedDaysValue === 1 ? '1 день' : (selectedDaysValue === 2 ? '2 дня' : '3 дня'))
+                );
+                if (selectedDaysOption) selectedDaysOption.classList.add('selected');
             } else if (type === 'second') {
                 document.getElementById('secondReminderOptions').style.display = 'block';
+
+                // Select the correct hours option
+                const hoursOptions = document.querySelectorAll('#secondReminderOptions .time-option');
+                hoursOptions.forEach(opt => opt.classList.remove('selected'));
+                const selectedOption = Array.from(hoursOptions).find(opt =>
+                    opt.textContent.includes(`${selectedAfterHoursSecond} час`)
+                );
+                if (selectedOption) selectedOption.classList.add('selected');
             } else if (type === 'third') {
                 document.getElementById('thirdReminderOptions').style.display = 'block';
+
+                // Select the correct hours option
+                const hoursOptions = document.querySelectorAll('#thirdReminderOptions .time-option');
+                hoursOptions.forEach(opt => opt.classList.remove('selected'));
+                const selectedOption = Array.from(hoursOptions).find(opt =>
+                    opt.textContent.includes(`${selectedAfterHoursThird} час`)
+                );
+                if (selectedOption) selectedOption.classList.add('selected');
             } else if (type === 'cancel') {
                 document.getElementById('cancelReminderOptions').style.display = 'block';
+
+                // Select the correct hours option
+                const hoursOptions = document.querySelectorAll('#cancelReminderOptions .time-option');
+                hoursOptions.forEach(opt => opt.classList.remove('selected'));
+                const selectedOption = Array.from(hoursOptions).find(opt =>
+                    opt.textContent.includes(`${selectedAfterHoursCancel} час`)
+                );
+                if (selectedOption) selectedOption.classList.add('selected');
             }
 
             const sheet = document.getElementById('reminderSettingsSheet');
@@ -1841,9 +1883,10 @@
             if (window.safeHapticFeedback) window.safeHapticFeedback('selectionChanged');
         }
 
-        function saveReminderSettings() {
+        async function saveReminderSettings() {
             const type = currentReminderType;
             let description = '';
+            const settings = {};
 
             if (type === 'first') {
                 const hours = document.getElementById('firstHoursInput').value;
@@ -1851,21 +1894,46 @@
                 const daysText = selectedDaysValue === 1 ? 'день' : (selectedDaysValue === 2 ? 'два дня' : 'три дня');
                 description = `За ${daysText} в ${hours}:${minutes.padStart(2, '0')}`;
                 document.getElementById('firstReminderDesc').textContent = description;
+
+                // Prepare API data
+                settings.reminder_1_days_before = selectedDaysValue;
+                settings.reminder_1_time = `${hours}:${minutes.padStart(2, '0')}`;
             } else if (type === 'second') {
                 const hoursText = selectedAfterHoursSecond === 1 ? 'час' : (selectedAfterHoursSecond === 2 ? 'два' : 'три');
                 description = `Через ${hoursText} после первого`;
                 document.getElementById('secondReminderDesc').textContent = description;
+
+                // Prepare API data
+                settings.reminder_2_hours_after = selectedAfterHoursSecond;
             } else if (type === 'third') {
                 const hoursText = selectedAfterHoursThird === 1 ? 'час' : (selectedAfterHoursThird === 2 ? 'два' : 'три');
                 description = `Через ${hoursText} после второго`;
                 document.getElementById('thirdReminderDesc').textContent = description;
+
+                // Prepare API data
+                settings.reminder_3_hours_after = selectedAfterHoursThird;
             } else if (type === 'cancel') {
                 const hoursText = selectedAfterHoursCancel === 1 ? 'час' : (selectedAfterHoursCancel === 2 ? 'два' : 'три');
                 description = `Через ${hoursText} после третьего`;
                 document.getElementById('cancelReminderDesc').textContent = description;
+
+                // Prepare API data
+                settings.auto_cancel_hours_after = selectedAfterHoursCancel;
             }
 
-            showNotification(`✅ Настройка сохранена`);
+            // Save to backend API
+            try {
+                const success = await saveTrainerSettings(settings);
+                if (success) {
+                    showNotification(`✅ Настройка сохранена`);
+                } else {
+                    showNotification(`❌ Ошибка сохранения`);
+                }
+            } catch (error) {
+                console.error('Error saving reminder settings:', error);
+                showNotification(`❌ Ошибка сохранения`);
+            }
+
             closeSheet('reminderSettingsSheet');
         }
 
