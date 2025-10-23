@@ -140,6 +140,30 @@ async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator =
         try {
             const response = await fetch(url, options);
 
+            // Check for server errors (5xx) that should trigger retry
+            if (response.status >= 500 && response.status < 600) {
+                console.log(`Server error ${response.status}, will retry...`);
+
+                // Show indicator on first server error
+                if (showIndicator && attempt === 0 && !indicatorShown) {
+                    showLoadingIndicator('⏳ Сервер обновляется...');
+                    indicatorShown = true;
+                    indicatorShowTime = Date.now();
+                }
+
+                // Treat 5xx as error and retry
+                if (attempt < maxRetries - 1) {
+                    const delay = Math.min(2000 * Math.pow(2, attempt), 32000);
+                    console.log(`Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue; // Try again
+                } else {
+                    // Last attempt - return the error response
+                    lastError = new Error(`Server error: ${response.status}`);
+                    throw lastError;
+                }
+            }
+
             // Hide indicator on successful response (with minimum show time)
             if (indicatorShown) {
                 const elapsedTime = Date.now() - indicatorShowTime;
