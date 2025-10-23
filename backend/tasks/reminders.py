@@ -267,9 +267,9 @@ def send_client_reminders():
                 sent_count += 1
 
             # Check 1-hour reminder (55-65 minutes before, 5-minute window)
-            elif (55 <= time_until_training <= 65 and
-                  not booking.client_reminder_1h_sent and
-                  getattr(client, 'client_reminder_1h_enabled', True)):
+            if (55 <= time_until_training <= 65 and
+                not booking.client_reminder_1h_sent and
+                getattr(client, 'client_reminder_1h_enabled', True)):
 
                 print(f"✅ Sending 1h reminder for booking {booking.id} (time_until={time_until_training:.1f}m)")
                 asyncio.run(_send_client_reminder_async(booking, trainer, client, "1h"))
@@ -278,17 +278,18 @@ def send_client_reminders():
                 sent_count += 1
 
             # Check 15-minute reminder (13-17 minutes before, 2-minute window)
-            elif (13 <= time_until_training <= 17 and
-                  not booking.client_reminder_15m_sent and
-                  getattr(client, 'client_reminder_15m_enabled', True)):
+            if (13 <= time_until_training <= 17 and
+                not booking.client_reminder_15m_sent and
+                getattr(client, 'client_reminder_15m_enabled', True)):
 
                 print(f"✅ Sending 15m reminder for booking {booking.id} (time_until={time_until_training:.1f}m)")
                 asyncio.run(_send_client_reminder_async(booking, trainer, client, "15m"))
                 booking.client_reminder_15m_sent = True
                 db.commit()
                 sent_count += 1
-            else:
-                # Log why reminder was skipped
+
+            # Log status
+            if not (115 <= time_until_training <= 125 or 55 <= time_until_training <= 65 or 13 <= time_until_training <= 17):
                 if booking.client_reminder_2h_sent and booking.client_reminder_1h_sent and booking.client_reminder_15m_sent:
                     print(f"  Booking {booking.id}: all reminders already sent")
                 else:
