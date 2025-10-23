@@ -828,11 +828,11 @@ function showClientDetails(client) {
     message += `• Потрачено за всё время: ${totalSpent} ₽\n\n`;
 
     message += `📊 Статистика:\n`;
-    message += `• Всего тренировок: ${client.total_bookings || 0}\n`;
+    message += `• Осталось тренировок: ${client.remaining_trainings || 0}\n`;
     message += `• Завершено: ${client.completed_bookings || 0}\n`;
     message += `• Отменено: ${client.cancelled_bookings || 0}\n`;
     message += `• Предстоящих: ${upcomingBookings.length}\n`;
-    message += `• Среднее в месяц: ${avgBookingsPerMonth}\n\n`;
+    message += `• Тренировок/мес: ${avgBookingsPerMonth}\n\n`;
 
     if (upcomingBookings.length > 0) {
         message += `📅 Ближайшие тренировки:\n`;
@@ -1624,7 +1624,7 @@ function openClientProfile(clientTelegramId) {
     balanceElement.style.color = balance < 0 ? 'var(--tg-theme-destructive-text-color)' : 'var(--tg-theme-text-color)';
 
     // Set statistics
-    document.getElementById('clientProfileTotalBookings').textContent = client.total_bookings || 0;
+    document.getElementById('clientProfileRemainingTrainings').textContent = client.remaining_trainings || 0;
     document.getElementById('clientProfileCompletedBookings').textContent = client.completed_bookings || 0;
     document.getElementById('clientProfileTotalSpent').textContent = `${(client.total_spent || 0).toLocaleString()}₽`;
     document.getElementById('clientProfileAvgPerMonth').textContent = (client.avg_bookings_per_month || 0).toFixed(1);

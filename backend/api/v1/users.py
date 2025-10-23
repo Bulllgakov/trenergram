@@ -78,6 +78,7 @@ class ClientWithBalanceResponse(BaseModel):
     email: Optional[str]
     # Balance and stats from TrainerClient relationship
     balance: int
+    remaining_trainings: int
     total_bookings: int
     completed_bookings: int
     cancelled_bookings: int
@@ -195,7 +196,11 @@ async def get_trainer_clients(
         ).all()
         total_spent = sum(b.price or 0 for b in charged_bookings)
 
-        # Calculate avg bookings per month
+        # Calculate remaining trainings (balance / trainer price)
+        trainer_price = trainer.price or 2000
+        remaining_trainings = max(0, rel.balance // trainer_price) if trainer_price > 0 else 0
+
+        # Calculate avg bookings per month based on completed bookings
         if rel.created_at:
             # Use timezone-aware datetime for comparison
             now = datetime.now(timezone.utc)
@@ -207,7 +212,15 @@ async def get_trainer_clients(
                 created_at = created_at.replace(tzinfo=tz.utc)
 
             months_active = max(1, (now - created_at).days / 30)
-            avg_bookings_per_month = round(rel.completed_bookings / months_active, 1)
+
+            # Count confirmed bookings (not just completed)
+            confirmed_count = db.query(Booking).filter(
+                Booking.trainer_id == trainer.id,
+                Booking.client_id == client.id,
+                Booking.status == BookingStatus.CONFIRMED
+            ).count()
+
+            avg_bookings_per_month = round(confirmed_count / months_active, 1)
         else:
             avg_bookings_per_month = 0.0
 
@@ -219,6 +232,7 @@ async def get_trainer_clients(
             phone=client.phone,
             email=client.email,
             balance=rel.balance,
+            remaining_trainings=remaining_trainings,
             total_bookings=rel.total_bookings,
             completed_bookings=rel.completed_bookings,
             cancelled_bookings=rel.cancelled_bookings,
