@@ -12,6 +12,110 @@ let clientData = {};
 let trainers = [];
 let bookings = [];
 
+// Loading indicator for system updates
+let loadingIndicator = null;
+
+function showLoadingIndicator(message = '🔄 Обновление системы...') {
+    if (loadingIndicator) return; // Already showing
+
+    loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'system-loading-indicator';
+    loadingIndicator.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            backdrop-filter: blur(4px);
+        ">
+            <div style="
+                background: var(--tg-theme-bg-color, #ffffff);
+                border-radius: 16px;
+                padding: 24px 32px;
+                text-align: center;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                min-width: 200px;
+            ">
+                <div style="
+                    width: 48px;
+                    height: 48px;
+                    border: 4px solid var(--tg-theme-hint-color, #ccc);
+                    border-top-color: var(--tg-theme-button-color, #3390ec);
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 16px;
+                "></div>
+                <div style="
+                    font-size: 16px;
+                    color: var(--tg-theme-text-color, #000000);
+                    font-weight: 500;
+                ">${message}</div>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    document.body.appendChild(loadingIndicator);
+}
+
+function hideLoadingIndicator() {
+    if (loadingIndicator) {
+        loadingIndicator.remove();
+        loadingIndicator = null;
+    }
+}
+
+// Fetch with automatic retry and loading indicator
+async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator = true) {
+    let lastError = null;
+    let indicatorShown = false;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+
+            // Hide indicator on successful response
+            if (indicatorShown) {
+                hideLoadingIndicator();
+            }
+
+            return response;
+        } catch (error) {
+            lastError = error;
+            console.log(`Fetch attempt ${attempt + 1}/${maxRetries} failed:`, error.message);
+
+            // Show indicator after first failed attempt
+            if (showIndicator && attempt === 0 && !indicatorShown) {
+                showLoadingIndicator('⏳ Переподключение...');
+                indicatorShown = true;
+            }
+
+            // Don't retry if it's the last attempt
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+                const delay = Math.min(2000 * Math.pow(2, attempt), 32000);
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    // All retries failed - hide indicator and throw error
+    if (indicatorShown) {
+        hideLoadingIndicator();
+    }
+    throw lastError || new Error('Failed to fetch after multiple retries');
+}
+
 // Helper function to format date/time in trainer's timezone
 function formatInTrainerTimezone(date, trainer, options) {
     const timezone = trainer?.timezone || 'Europe/Moscow';
@@ -46,7 +150,7 @@ async function initializeAPI() {
 async function loadClientData() {
     try {
         // Load client info with trainers
-        const clientResponse = await fetch(`${API_BASE_URL}/users/client/${clientId}`);
+        const clientResponse = await fetchWithRetry(`${API_BASE_URL}/users/client/${clientId}`);
         if (clientResponse.ok) {
             clientData = await clientResponse.json();
             trainers = clientData.trainers || [];
@@ -54,7 +158,7 @@ async function loadClientData() {
         }
 
         // Load bookings
-        const bookingsResponse = await fetch(`${API_BASE_URL}/bookings/client/${clientId}`);
+        const bookingsResponse = await fetchWithRetry(`${API_BASE_URL}/bookings/client/${clientId}`);
         if (bookingsResponse.ok) {
             bookings = await bookingsResponse.json();
             console.log('Bookings loaded:', bookings);
@@ -330,7 +434,7 @@ function getStatusText(status) {
 // Confirm booking via API
 async function confirmBookingAPI(bookingId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/confirm?telegram_id=${clientId}`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/bookings/${bookingId}/confirm?telegram_id=${clientId}`, {
             method: 'PUT'
         });
 
@@ -362,7 +466,7 @@ async function cancelBookingAPI(bookingId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${clientId}&reason=Отменено клиентом`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${clientId}&reason=Отменено клиентом`, {
             method: 'DELETE'
         });
 
@@ -787,8 +891,8 @@ function showNotification(message) {
 async function showTrainerScheduleAPI(trainerId) {
     try {
         // Load trainer schedule
-        const scheduleResponse = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
-        const bookingsResponse = await fetch(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
+        const scheduleResponse = await fetchWithRetry(`${API_BASE_URL}/users/trainer/${trainerId}/schedule`);
+        const bookingsResponse = await fetchWithRetry(`${API_BASE_URL}/bookings/trainer/${trainerId}`);
 
         let workingHours = {};
         let trainerBookings = [];

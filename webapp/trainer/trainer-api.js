@@ -67,6 +67,110 @@ Object.defineProperty(window, 'API_BASE_URL', {
     writable: false,
     configurable: false
 });
+
+// Loading indicator for system updates
+let loadingIndicator = null;
+
+function showLoadingIndicator(message = '🔄 Обновление системы...') {
+    if (loadingIndicator) return; // Already showing
+
+    loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'system-loading-indicator';
+    loadingIndicator.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            backdrop-filter: blur(4px);
+        ">
+            <div style="
+                background: var(--tg-theme-bg-color, #ffffff);
+                border-radius: 16px;
+                padding: 24px 32px;
+                text-align: center;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                min-width: 200px;
+            ">
+                <div style="
+                    width: 48px;
+                    height: 48px;
+                    border: 4px solid var(--tg-theme-hint-color, #ccc);
+                    border-top-color: var(--tg-theme-button-color, #3390ec);
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 16px;
+                "></div>
+                <div style="
+                    font-size: 16px;
+                    color: var(--tg-theme-text-color, #000000);
+                    font-weight: 500;
+                ">${message}</div>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    document.body.appendChild(loadingIndicator);
+}
+
+function hideLoadingIndicator() {
+    if (loadingIndicator) {
+        loadingIndicator.remove();
+        loadingIndicator = null;
+    }
+}
+
+// Fetch with automatic retry and loading indicator
+async function fetchWithRetry(url, options = {}, maxRetries = 5, showIndicator = true) {
+    let lastError = null;
+    let indicatorShown = false;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+
+            // Hide indicator on successful response
+            if (indicatorShown) {
+                hideLoadingIndicator();
+            }
+
+            return response;
+        } catch (error) {
+            lastError = error;
+            console.log(`Fetch attempt ${attempt + 1}/${maxRetries} failed:`, error.message);
+
+            // Show indicator after first failed attempt
+            if (showIndicator && attempt === 0 && !indicatorShown) {
+                showLoadingIndicator('⏳ Переподключение...');
+                indicatorShown = true;
+            }
+
+            // Don't retry if it's the last attempt
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+                const delay = Math.min(2000 * Math.pow(2, attempt), 32000);
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    // All retries failed - hide indicator and throw error
+    if (indicatorShown) {
+        hideLoadingIndicator();
+    }
+    throw lastError || new Error('Failed to fetch after multiple retries');
+}
 console.log('PROTECTED API_BASE_URL:', window.API_BASE_URL);
 
 // Fetch interceptor to prevent Mixed Content errors
@@ -152,7 +256,7 @@ async function initializeAPI() {
 async function loadTrainerData() {
     try {
         // Load trainer basic info
-        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}`);
+        const response = await fetchWithRetry(`${API_BASE_URL}/users/trainer/${trainerId}`);
         if (response.ok) {
             trainerData = await response.json();
             console.log('Trainer data loaded:', trainerData);
@@ -163,7 +267,7 @@ async function loadTrainerData() {
         const clientsURL = `${API_BASE_URL}/users/trainer/${trainerId}/clients`;
         console.log('Clients API URL:', clientsURL);
 
-        const clientsResponse = await fetch(clientsURL);
+        const clientsResponse = await fetchWithRetry(clientsURL);
         console.log('Clients response status:', clientsResponse.status);
 
         if (clientsResponse.ok) {
@@ -201,7 +305,7 @@ async function loadSchedule() {
         // Use from_date and to_date to get only bookings for this specific day
         const url = `${API_BASE_URL}/bookings/trainer/${trainerId}?from_date=${fromDateStr}&to_date=${toDateStr}`;
 
-        const response = await fetch(url);
+        const response = await fetchWithRetry(url);
         if (response.ok) {
             bookings = await response.json();
             console.log(`Bookings loaded for ${fromDateStr} to ${toDateStr}:`, bookings);
@@ -661,7 +765,7 @@ if (!window.showNotification) {
 // Confirm booking via API
 async function confirmBookingAPI(bookingId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/confirm`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/bookings/${bookingId}/confirm`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -691,7 +795,7 @@ async function cancelBookingAPI(bookingId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${trainerId}&reason=Отменено тренером`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/bookings/${bookingId}?telegram_id=${trainerId}&reason=Отменено тренером`, {
             method: 'DELETE'
         });
 
@@ -981,7 +1085,7 @@ window.selectDuration = function(duration) {
 
 window.saveDuration = async function() {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1098,7 +1202,7 @@ window.confirmBooking = async function() {
                 };
 
                 // Use hardcoded HTTPS URL to prevent Mixed Content errors
-                const response = await fetch('https://trenergram.ru/api/v1/bookings/', {
+                const response = await fetchWithRetry('https://trenergram.ru/api/v1/bookings/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1286,7 +1390,7 @@ window.saveWorkingHoursAPI = async function(workingHoursData) {
             }
         });
 
-        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1329,7 +1433,7 @@ async function loadWorkingHours() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`);
+        const response = await fetchWithRetry(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`);
         if (response.ok) {
             const schedules = await response.json();
 
@@ -1785,7 +1889,7 @@ async function saveWorkingHoursAPI(workingHoursData) {
             }
         });
 
-        const response = await fetch(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/slots/trainer/${trainerId}/schedule`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1827,7 +1931,7 @@ async function saveTrainerSettings(settings) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
+        const response = await fetchWithRetry(`${API_BASE_URL}/users/trainer/${trainerId}/settings`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1975,7 +2079,7 @@ async function loadBookingData() {
             return false;
         }
 
-        const response = await fetch(`https://trenergram.ru/api/v1/bookings/trainer/${trainerId}`);
+        const response = await fetchWithRetry(`https://trenergram.ru/api/v1/bookings/trainer/${trainerId}`);
         if (!response.ok) {
             console.error('Failed to load bookings:', response.status);
             return false;
@@ -2032,7 +2136,7 @@ async function confirmTopup() {
     }
 
     try {
-        const response = await fetch(
+        const response = await fetchWithRetry(
             `${API_BASE_URL}/users/trainer/${trainerId}/client/${currentTopupClient}/topup`,
             {
                 method: 'POST',
