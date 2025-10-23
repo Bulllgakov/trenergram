@@ -239,11 +239,46 @@ async def handle_confirm_attendance(update: Update, context: ContextTypes.DEFAUL
 
     booking_id = int(query.data.split(":")[1])
 
-    # Just acknowledge - no database changes needed
-    await query.edit_message_text(
-        query.message.text + "\n\n✅ <b>Присутствие подтверждено</b>",
-        parse_mode="HTML"
-    )
+    db = next(get_db())
+    try:
+        # Get booking
+        booking = db.query(Booking).filter_by(id=booking_id).first()
+        if not booking:
+            await query.message.reply_text("❌ Запись не найдена")
+            return
+
+        # Verify user is the client
+        client = db.query(User).filter_by(telegram_id=str(query.from_user.id)).first()
+        if not client or client.id != booking.client_id:
+            await query.message.reply_text("❌ Вы не можете подтвердить эту запись")
+            return
+
+        # If booking is PENDING, change status to CONFIRMED
+        if booking.status == BookingStatus.PENDING:
+            booking.status = BookingStatus.CONFIRMED
+            booking.confirmed_at = datetime.now()
+            db.commit()
+
+            # Send notification to trainer
+            await notify_booking_confirmed(booking, db)
+
+            await query.edit_message_text(
+                query.message.text + "\n\n✅ <b>Тренировка подтверждена</b>",
+                parse_mode="HTML"
+            )
+        else:
+            # Already confirmed - just acknowledge
+            await query.edit_message_text(
+                query.message.text + "\n\n✅ <b>Присутствие подтверждено</b>",
+                parse_mode="HTML"
+            )
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error confirming attendance: {e}")
+        await query.message.reply_text(f"❌ Ошибка: {str(e)}")
+    finally:
+        db.close()
 
 
 async def handle_topup_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
