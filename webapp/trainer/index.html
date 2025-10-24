@@ -1891,6 +1891,19 @@
                 const hours = document.getElementById('firstHoursInput').value;
                 const minutes = document.getElementById('firstMinutesInput').value;
 
+                // Validate that hours and minutes are filled
+                if (!hours || !minutes) {
+                    showNotification('❌ Укажите время отправки');
+                    return; // Don't close modal, let user fix the error
+                }
+
+                // Validate that a day option is selected
+                const selectedDayOption = document.querySelector('#firstReminderOptions .time-option.selected');
+                if (!selectedDayOption) {
+                    showNotification('❌ Выберите за сколько дней отправлять напоминание');
+                    return; // Don't close modal, let user fix the error
+                }
+
                 // Prepare API data
                 settings.reminder_1_days_before = selectedDaysValue;
                 settings.reminder_1_time = `${hours}:${minutes.padStart(2, '0')}`;
@@ -1911,6 +1924,7 @@
                 if (success) {
                     showNotification(`✅ Настройка сохранена`);
                     // UI will be updated automatically by saveTrainerSettings -> loadTrainerData -> updateTrainerSettings
+                    closeSheet('reminderSettingsSheet'); // Close only on success
                 } else {
                     showNotification(`❌ Ошибка сохранения`);
                 }
@@ -1918,8 +1932,6 @@
                 console.error('Error saving reminder settings:', error);
                 showNotification(`❌ Ошибка сохранения`);
             }
-
-            closeSheet('reminderSettingsSheet');
         }
 
         // Date selection
