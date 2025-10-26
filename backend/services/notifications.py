@@ -277,7 +277,10 @@ class NotificationService:
             elif reminder_number == 2:
                 text = f"Завтра тренировка с {booking_time_start} до {booking_time_end}"
             elif reminder_number == 3:
-                text = "Скоро тренировка будет отменена. Придешь?"
+                # Calculate time until auto-cancel
+                auto_cancel_hours = trainer.auto_cancel_hours_after or 1
+                hours_text = "час" if auto_cancel_hours == 1 else ("два часа" if auto_cancel_hours == 2 else "три часа")
+                text = f"Тренировка будет отменена через {hours_text}"
             else:
                 text = "Напоминание о тренировке"
 
@@ -314,7 +317,10 @@ class NotificationService:
     ):
         """Send notification when booking is auto-cancelled due to no response"""
         try:
-            text = "Тренировка отменена слабак"
+            text = (
+                "❌ <b>Тренировка отменена</b>\n\n"
+                "Причина: не было подтверждения от вас\n\n"
+            )
 
             # No buttons - just informational message
             await self.bot.send_message(
