@@ -143,27 +143,45 @@ def _should_send_first_reminder(booking: Booking, trainer: User) -> bool:
     days_before = trainer.reminder_1_days_before or 1
     reminder_time_str = trainer.reminder_1_time or "20:00"
 
+    # DEBUG: Log trainer settings
+    print(f"[DEBUG] Trainer {trainer.id} reminder settings:")
+    print(f"  - reminder_1_days_before: {trainer.reminder_1_days_before} (using: {days_before})")
+    print(f"  - reminder_1_time: {trainer.reminder_1_time} (type: {type(trainer.reminder_1_time)})")
+    print(f"  - reminder_time_str: {reminder_time_str} (type: {type(reminder_time_str)})")
+
     # Parse reminder time
     try:
         if isinstance(reminder_time_str, str):
             reminder_time = datetime.strptime(reminder_time_str, "%H:%M").time()
         else:
             reminder_time = reminder_time_str
-    except:
+    except Exception as e:
+        print(f"[DEBUG] Failed to parse reminder time: {e}, using default 20:00")
         reminder_time = datetime.strptime("20:00", "%H:%M").time()
 
+    print(f"  - parsed reminder_time: {reminder_time} (hour={reminder_time.hour}, minute={reminder_time.minute})")
+
     # Check if we're on the right day
+    print(f"[DEBUG] Day check: days_until_training={days_until_training}, days_before={days_before}")
     if days_until_training != days_before:
+        print(f"[DEBUG] ❌ Wrong day, skipping")
         return False
 
     reminder_hour = reminder_time.hour
     reminder_minute = reminder_time.minute
+
+    print(f"[DEBUG] Time check: current={current_time_in_trainer_tz.hour}:{current_time_in_trainer_tz.minute:02d}, target={reminder_hour}:{reminder_minute:02d}")
 
     # Allow 5-minute window around the target time
     is_time_match = (
         current_time_in_trainer_tz.hour == reminder_hour and
         abs(current_time_in_trainer_tz.minute - reminder_minute) <= 5
     )
+
+    if is_time_match:
+        print(f"[DEBUG] ✅ TIME MATCH! Sending reminder")
+    else:
+        print(f"[DEBUG] ❌ Time mismatch, skipping")
 
     return is_time_match
 
