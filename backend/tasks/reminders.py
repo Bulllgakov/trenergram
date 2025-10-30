@@ -95,6 +95,9 @@ def check_and_send_reminders():
                             # Send auto-cancel notification to client
                             asyncio.run(_send_auto_cancel_notification(booking, trainer, client, db))
 
+                            # Send auto-cancel notification to trainer
+                            asyncio.run(_send_auto_cancel_to_trainer(booking, trainer, client, db))
+
                             db.commit()
 
         print(f"[{datetime.now()}] Finished check_and_send_reminders task")
@@ -218,6 +221,21 @@ async def _send_auto_cancel_notification(
         )
     except Exception as e:
         print(f"Error sending auto-cancel notification: {e}")
+
+
+async def _send_auto_cancel_to_trainer(
+    booking: Booking,
+    trainer: User,
+    client: User,
+    db: Session
+):
+    """Wrapper to send auto-cancel notification to trainer"""
+    try:
+        await notification_service.send_auto_cancel_to_trainer(
+            booking, trainer, client
+        )
+    except Exception as e:
+        print(f"Error sending auto-cancel notification to trainer: {e}")
 
 
 @celery_app.task(name="tasks.reminders.send_client_reminders")

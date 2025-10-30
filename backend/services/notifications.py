@@ -334,6 +334,30 @@ class NotificationService:
             print(f"Error sending auto-cancel notification: {e}")
             return False
 
+    async def send_auto_cancel_to_trainer(
+        self,
+        booking: Booking,
+        trainer: User,
+        client: User
+    ):
+        """Send notification to trainer when booking is auto-cancelled"""
+        try:
+            # Format date and time in trainer's timezone
+            booking_date, booking_time = self._format_datetime_in_timezone(booking.datetime, trainer)
+
+            text = f"❌ Тренировка {booking_date} на {booking_time} автоматически отменена"
+
+            await self.bot.send_message(
+                chat_id=trainer.telegram_id,
+                text=text,
+                parse_mode="HTML"
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error sending auto-cancel notification to trainer: {e}")
+            return False
+
     async def send_client_training_reminder(
         self,
         booking: Booking,
