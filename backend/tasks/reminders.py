@@ -44,14 +44,6 @@ def check_and_send_reminders():
                 print(f"Skipping booking {booking.id}: trainer or client not found")
                 continue
 
-            # Track when reminders were sent
-            if not hasattr(booking, 'reminder_1_sent_at'):
-                booking.reminder_1_sent_at = None
-            if not hasattr(booking, 'reminder_2_sent_at'):
-                booking.reminder_2_sent_at = None
-            if not hasattr(booking, 'reminder_3_sent_at'):
-                booking.reminder_3_sent_at = None
-
             # Check if it's time to send first reminder (X days before at specific time)
             if not booking.reminder_24h_sent:
                 if _should_send_first_reminder(booking, trainer):
@@ -76,7 +68,7 @@ def check_and_send_reminders():
                         continue
 
             # Check if it's time to send third reminder (Z hours after second)
-            if booking.reminder_2h_sent and not hasattr(booking, 'reminder_3_sent'):
+            if booking.reminder_2h_sent and not booking.reminder_3_sent:
                 hours_after_second = trainer.reminder_3_hours_after or 1
                 if booking.reminder_2_sent_at:
                     hours_since_second = (datetime.now() - booking.reminder_2_sent_at).total_seconds() / 3600
@@ -90,7 +82,7 @@ def check_and_send_reminders():
 
             # Auto-cancel if PENDING and W hours passed after third reminder
             if booking.status == BookingStatus.PENDING:
-                if hasattr(booking, 'reminder_3_sent') and booking.reminder_3_sent:
+                if booking.reminder_3_sent:
                     auto_cancel_hours = trainer.auto_cancel_hours_after or 1
                     if booking.reminder_3_sent_at:
                         hours_since_third = (datetime.now() - booking.reminder_3_sent_at).total_seconds() / 3600

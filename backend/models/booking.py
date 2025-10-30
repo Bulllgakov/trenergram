@@ -35,9 +35,20 @@ class Booking(Base):
     is_paid = Column(Boolean, default=False)
     payment_method = Column(String(50))
 
-    # Reminders
-    reminder_24h_sent = Column(Boolean, default=False)
-    reminder_2h_sent = Column(Boolean, default=False)
+    # Reminders (trainer → client)
+    reminder_24h_sent = Column(Boolean, default=False)  # First reminder sent flag
+    reminder_2h_sent = Column(Boolean, default=False)   # Second reminder sent flag
+    reminder_3_sent = Column(Boolean, default=False)    # Third reminder sent flag
+
+    # Reminder timestamps (for tracking intervals between reminders)
+    reminder_1_sent_at = Column(DateTime, nullable=True)  # When first reminder was sent
+    reminder_2_sent_at = Column(DateTime, nullable=True)  # When second reminder was sent
+    reminder_3_sent_at = Column(DateTime, nullable=True)  # When third reminder was sent
+
+    # Client reminders (before confirmed training)
+    client_reminder_2h_sent = Column(Boolean, default=False)   # 2h before training
+    client_reminder_1h_sent = Column(Boolean, default=False)   # 1h before training
+    client_reminder_15m_sent = Column(Boolean, default=False)  # 15m before training
 
     # Cancellation info
     cancellation_reason = Column(Text)
