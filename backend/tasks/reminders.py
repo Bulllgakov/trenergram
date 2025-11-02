@@ -57,8 +57,9 @@ def check_and_send_reminders():
             # Check if it's time to send second reminder (Y hours after first)
             if booking.reminder_24h_sent and not booking.reminder_2h_sent:
                 hours_after_first = trainer.reminder_2_hours_after or 1
-                if booking.reminder_1_sent_at:
-                    hours_since_first = (datetime.now() - booking.reminder_1_sent_at).total_seconds() / 3600
+                reminder_1_sent_at = getattr(booking, 'reminder_1_sent_at', None)
+                if reminder_1_sent_at:
+                    hours_since_first = (datetime.now() - reminder_1_sent_at).total_seconds() / 3600
                     if hours_since_first >= hours_after_first:
                         print(f"Sending second reminder for booking {booking.id}")
                         asyncio.run(_send_reminder_async(booking, trainer, client, db, "second"))
@@ -68,10 +69,11 @@ def check_and_send_reminders():
                         continue
 
             # Check if it's time to send third reminder (Z hours after second)
-            if booking.reminder_2h_sent and not booking.reminder_3_sent:
+            if booking.reminder_2h_sent and not getattr(booking, 'reminder_3_sent', False):
                 hours_after_second = trainer.reminder_3_hours_after or 1
-                if booking.reminder_2_sent_at:
-                    hours_since_second = (datetime.now() - booking.reminder_2_sent_at).total_seconds() / 3600
+                reminder_2_sent_at = getattr(booking, 'reminder_2_sent_at', None)
+                if reminder_2_sent_at:
+                    hours_since_second = (datetime.now() - reminder_2_sent_at).total_seconds() / 3600
                     if hours_since_second >= hours_after_second:
                         print(f"Sending third reminder for booking {booking.id}")
                         asyncio.run(_send_reminder_async(booking, trainer, client, db, "third"))
@@ -82,10 +84,11 @@ def check_and_send_reminders():
 
             # Auto-cancel if PENDING and W hours passed after third reminder
             if booking.status == BookingStatus.PENDING:
-                if booking.reminder_3_sent:
+                if getattr(booking, 'reminder_3_sent', False):
                     auto_cancel_hours = trainer.auto_cancel_hours_after or 1
-                    if booking.reminder_3_sent_at:
-                        hours_since_third = (datetime.now() - booking.reminder_3_sent_at).total_seconds() / 3600
+                    reminder_3_sent_at = getattr(booking, 'reminder_3_sent_at', None)
+                    if reminder_3_sent_at:
+                        hours_since_third = (datetime.now() - reminder_3_sent_at).total_seconds() / 3600
                         if hours_since_third >= auto_cancel_hours:
                             print(f"Auto-canceling booking {booking.id} (not confirmed)")
                             booking.status = BookingStatus.CANCELLED
