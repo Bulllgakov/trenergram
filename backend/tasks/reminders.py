@@ -147,7 +147,12 @@ def _should_send_first_reminder(booking: Booking, trainer: User) -> bool:
     # Parse reminder time
     try:
         if isinstance(reminder_time_str, str):
-            reminder_time = datetime.strptime(reminder_time_str, "%H:%M").time()
+            # Try parsing with seconds first (HH:MM:SS from database)
+            try:
+                reminder_time = datetime.strptime(reminder_time_str, "%H:%M:%S").time()
+            except ValueError:
+                # Fallback to HH:MM format
+                reminder_time = datetime.strptime(reminder_time_str, "%H:%M").time()
         else:
             reminder_time = reminder_time_str
     except Exception as e:
