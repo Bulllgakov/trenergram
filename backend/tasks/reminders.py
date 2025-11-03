@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from celery_app import celery_app
 from db.session import SessionLocal
 from models import User, Booking, BookingStatus
@@ -49,9 +50,18 @@ def check_and_send_reminders():
                 if _should_send_first_reminder(booking, trainer):
                     print(f"Sending first reminder for booking {booking.id}")
                     asyncio.run(_send_reminder_async(booking, trainer, client, db, "first"))
-                    booking.reminder_24h_sent = True
-                    booking.reminder_1_sent_at = datetime.now()
+
+                    # Use direct SQL to update fields (ORM mapper doesn't see new columns)
+                    now = datetime.now()
+                    db.execute(text("""
+                        UPDATE bookings
+                        SET reminder_24h_sent = true, reminder_1_sent_at = :now
+                        WHERE id = :booking_id
+                    """), {"now": now, "booking_id": booking.id})
                     db.commit()
+
+                    # Update local object for consistency
+                    booking.reminder_24h_sent = True
                     continue
 
             # Check if it's time to send second reminder (Y hours after first)
@@ -63,9 +73,18 @@ def check_and_send_reminders():
                     if hours_since_first >= hours_after_first:
                         print(f"Sending second reminder for booking {booking.id}")
                         asyncio.run(_send_reminder_async(booking, trainer, client, db, "second"))
-                        booking.reminder_2h_sent = True
-                        booking.reminder_2_sent_at = datetime.now()
+
+                        # Use direct SQL to update fields
+                        now = datetime.now()
+                        db.execute(text("""
+                            UPDATE bookings
+                            SET reminder_2h_sent = true, reminder_2_sent_at = :now
+                            WHERE id = :booking_id
+                        """), {"now": now, "booking_id": booking.id})
                         db.commit()
+
+                        # Update local object
+                        booking.reminder_2h_sent = True
                         continue
 
             # Check if it's time to send third reminder (Z hours after second)
@@ -77,8 +96,14 @@ def check_and_send_reminders():
                     if hours_since_second >= hours_after_second:
                         print(f"Sending third reminder for booking {booking.id}")
                         asyncio.run(_send_reminder_async(booking, trainer, client, db, "third"))
-                        booking.reminder_3_sent = True
-                        booking.reminder_3_sent_at = datetime.now()
+
+                        # Use direct SQL to update fields
+                        now = datetime.now()
+                        db.execute(text("""
+                            UPDATE bookings
+                            SET reminder_3_sent = true, reminder_3_sent_at = :now
+                            WHERE id = :booking_id
+                        """), {"now": now, "booking_id": booking.id})
                         db.commit()
                         continue
 
