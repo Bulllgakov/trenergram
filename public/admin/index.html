@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trenergram Admin</title>
+    <script src="/admin/js/auth.js"></script>
+    <script>
+        // Redirect to dashboard if authenticated, otherwise to login
+        if (isAuthenticated()) {
+            window.location.href = '/admin/dashboard.html';
+        } else {
+            window.location.href = '/admin/login.html';
+        }
+    </script>
+</head>
+<body>
+    <p>Перенаправление...</p>
+</body>
+</html>

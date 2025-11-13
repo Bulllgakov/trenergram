@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Trenergram Admin</title>
+
+    <!-- Tabler CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                <div class="logo">
+                    <h1>Trenergram</h1>
+                    <p>Панель администрирования</p>
+                </div>
+
+                <div class="card login-card">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Вход в систему</h2>
+
+                        <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <label class="form-label" for="email">Email</label>
+                                <input
+                                    type="email"
+                                    class="form-control"
+                                    id="email"
+                                    name="email"
+                                    placeholder="admin@trenergram.ru"
+                                    required
+                                    autocomplete="email"
+                                >
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="password">Пароль</label>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="password"
+                                    name="password"
+                                    placeholder="Введите пароль"
+                                    required
+                                    autocomplete="current-password"
+                                >
+                            </div>
+
+                            <div class="form-footer">
+                                <button type="submit" class="btn btn-primary w-100" id="submit-btn">
+                                    <span id="submit-text">Войти</span>
+                                    <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-3">
+                    <p class="text-white-50 small">
+                        © 2025 Trenergram. Все права защищены.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabler JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+
+    <!-- Auth module -->
+    <script src="/admin/js/auth.js"></script>
+
+    <script>
+        // Redirect if already authenticated
+        if (isAuthenticated()) {
+            window.location.href = '/admin/dashboard.html';
+        }
+
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitText = document.getElementById('submit-text');
+        const submitSpinner = document.getElementById('submit-spinner');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form data
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Hide error message
+            errorMessage.classList.add('d-none');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Вход...';
+            submitSpinner.classList.remove('d-none');
+
+            try {
+                // Call login API
+                await login(email, password);
+
+                // Redirect to dashboard
+                window.location.href = '/admin/dashboard.html';
+            } catch (error) {
+                // Show error message
+                errorMessage.textContent = error.message || 'Ошибка входа. Проверьте email и пароль.';
+                errorMessage.classList.remove('d-none');
+
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.textContent = 'Войти';
+                submitSpinner.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+</html>
