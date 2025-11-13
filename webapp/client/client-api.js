@@ -816,14 +816,15 @@ function createPastBookingCard(booking) {
     const bookingDate = new Date(booking.datetime);
     // Use trainer timezone
     const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const dateStr = formatDateInTrainerTimezone(bookingDate, trainer, { day: 'numeric', month: 'short' });
     const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
     const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
     const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
 
     card.innerHTML = `
         <div class="booking-date">
-            <div class="booking-time">${timeStr}</div>
-            <div class="booking-time">${endTimeStr}</div>
+            <div class="booking-day">${dateStr}</div>
+            <div class="booking-time">${timeStr} - ${endTimeStr}</div>
         </div>
         <div class="booking-info">
             <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
@@ -907,14 +908,15 @@ function createCancelledBookingCard(booking) {
     const bookingDate = new Date(booking.datetime);
     // Use trainer timezone
     const trainer = trainers.find(t => t.telegram_id === booking.trainer_telegram_id) || {};
+    const dateStr = formatDateInTrainerTimezone(bookingDate, trainer, { day: 'numeric', month: 'short' });
     const timeStr = formatTimeInTrainerTimezone(bookingDate, trainer, { hour: '2-digit', minute: '2-digit' });
     const endTime = new Date(bookingDate.getTime() + (booking.duration || 60) * 60000);
     const endTimeStr = formatTimeInTrainerTimezone(endTime, trainer, { hour: '2-digit', minute: '2-digit' });
 
     card.innerHTML = `
         <div class="booking-date">
-            <div class="booking-time">${timeStr}</div>
-            <div class="booking-time">${endTimeStr}</div>
+            <div class="booking-day">${dateStr}</div>
+            <div class="booking-time">${timeStr} - ${endTimeStr}</div>
         </div>
         <div class="booking-info">
             <div class="booking-trainer">${booking.trainer_name || 'Тренер'}</div>
