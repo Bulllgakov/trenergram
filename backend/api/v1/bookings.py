@@ -51,7 +51,7 @@ class BookingResponse(BaseModel):
     price: Optional[int]
     status: BookingStatus
     notes: Optional[str]
-    is_paid: bool
+    is_paid: Optional[bool] = False  # Allow None, default to False
     created_at: datetime
     trainer_name: Optional[str] = None
     client_name: Optional[str] = None
