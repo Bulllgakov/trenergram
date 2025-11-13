@@ -49,7 +49,7 @@ def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> TokenData:
+def decode_access_token(token: str) -> Dict:
     """
     Decode and validate JWT token
 
@@ -57,7 +57,7 @@ def decode_access_token(token: str) -> TokenData:
         token: JWT token string
 
     Returns:
-        TokenData: Decoded token data
+        Dict: Decoded token payload
 
     Raises:
         HTTPException: If token is invalid or expired
@@ -67,8 +67,6 @@ def decode_access_token(token: str) -> TokenData:
 
         telegram_id: Optional[str] = payload.get("telegram_id")
         email: Optional[str] = payload.get("email")
-        role: Optional[str] = payload.get("role")
-        club_id: Optional[int] = payload.get("club_id")
 
         if not telegram_id and not email:
             raise HTTPException(
@@ -76,12 +74,7 @@ def decode_access_token(token: str) -> TokenData:
                 detail="Invalid token: missing user identifier"
             )
 
-        return TokenData(
-            telegram_id=telegram_id,
-            email=email,
-            role=role,
-            club_id=club_id
-        )
+        return payload
 
     except JWTError:
         raise HTTPException(
