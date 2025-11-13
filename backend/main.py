@@ -9,8 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import settings
 from api.v1 import router as api_v1_router
-# Temporarily disable admin router to debug
-# from api.admin import router as admin_router
+from api.admin import router as admin_router
 
 
 def create_app() -> FastAPI:
@@ -36,8 +35,7 @@ def create_app() -> FastAPI:
 
     # API routes
     app.include_router(api_v1_router, prefix="/api/v1")
-    # Temporarily disable admin router to debug
-    # app.include_router(admin_router, prefix="/api/admin")
+    app.include_router(admin_router, prefix="/api/admin")
 
     @app.get("/")
     async def root():

@@ -71,7 +71,7 @@ async def get_current_admin(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    email = payload.get("email")
+    email = payload.email
     if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
