@@ -1,5 +1,6 @@
 # Old models (temporarily commented due to async base issue)
-# from .club import Club as ClubOld, ClubAdmin, ClubPayment, ClubQRCode, ClubClient
+from .club import ClubAdmin, ClubPayment, ClubQRCode
+# from .club import Club as ClubOld, ClubClient
 # from .user import Trainer, Client, TrainerClient as TrainerClientOld
 # from .booking import TrainerSlot, Booking as BookingOld, Invitation, ProfileView
 
@@ -10,8 +11,9 @@ from .booking_v2 import Booking, BookingStatus
 from .schedule_v2 import Schedule, TimeSlot, DayOfWeek, SlotStatus
 
 __all__ = [
-    # Old models (temporarily disabled)
-    # "ClubOld", "ClubAdmin", "ClubPayment", "ClubQRCode", "ClubClient",
+    # Old models (partially enabled for admin panel)
+    "ClubAdmin", "ClubPayment", "ClubQRCode",
+    # "ClubOld", "ClubClient",
     # "Trainer", "Client", "TrainerClientOld",
     # "TrainerSlot", "BookingOld", "Invitation", "ProfileView",
 

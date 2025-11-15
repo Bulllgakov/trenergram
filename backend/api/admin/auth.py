@@ -24,12 +24,6 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: "AdminUserResponse"
-
-
 class AdminUserResponse(BaseModel):
     id: int
     email: str
@@ -41,6 +35,12 @@ class AdminUserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AdminUserResponse
 
 
 class UpdateProfileRequest(BaseModel):

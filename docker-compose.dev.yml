@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: trenergram-dev-postgres
+    environment:
+      POSTGRES_USER: trenergram
+      POSTGRES_PASSWORD: trenergram123
+      POSTGRES_DB: trenergram
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflict with production
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - trenergram-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trenergram"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: trenergram-dev-redis
+    ports:
+      - "6380:6379"  # Use 6380 to avoid conflict with production
+    networks:
+      - trenergram-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trenergram-dev-backend
+    environment:
+      DATABASE_URL: postgresql://trenergram:trenergram123@postgres:5432/trenergram
+      REDIS_URL: redis://redis:6379/0
+      BOT_TOKEN: ${BOT_TOKEN:-test-bot-token}
+      BOT_USERNAME: ${BOT_USERNAME:-trenergram_bot}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      ENVIRONMENT: development
+      DEBUG: "True"
+      SUPER_ADMIN_EMAIL: admin@trenergram.ru
+      SUPER_ADMIN_PASSWORD: changeme
+      WEBAPP_URL: http://localhost:8080
+      DOMAIN: localhost
+    ports:
+      - "8001:8000"  # Use 8001 to avoid conflict with production
+    volumes:
+      - ./backend:/app/backend
+      - ./bot:/app/bot
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trenergram-dev-network
+    command: >
+      sh -c "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+
+  # Bot service (optional for local dev)
+  # Uncomment if you need to test bot functionality
+  # bot:
+  #   build: .
+  #   container_name: trenergram-dev-bot
+  #   environment:
+  #     DATABASE_URL: postgresql://trenergram:trenergram123@postgres:5432/trenergram
+  #     REDIS_URL: redis://redis:6379/0
+  #     BOT_TOKEN: ${BOT_TOKEN}
+  #     BOT_USERNAME: ${BOT_USERNAME}
+  #     SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+  #     ENVIRONMENT: development
+  #     DEBUG: "True"
+  #   volumes:
+  #     - ./backend:/app/backend
+  #     - ./bot:/app/bot
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     backend:
+  #       condition: service_started
+  #   networks:
+  #     - trenergram-dev-network
+  #   command: python -m bot.main
+  #   restart: unless-stopped
+
+  # Frontend dev server with live reload
+  frontend:
+    image: nginx:alpine
+    container_name: trenergram-dev-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/usr/share/nginx/html/public:ro
+      - ./webapp:/usr/share/nginx/html/webapp:ro
+      - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - trenergram-dev-network
+    restart: unless-stopped
+
+networks:
+  trenergram-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
