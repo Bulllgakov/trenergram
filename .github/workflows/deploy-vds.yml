@@ -80,7 +80,8 @@ jobs:
           fi
 
           # Apply database migrations
-          docker-compose exec -T backend python apply_migrations.py || echo "Migrations applied or not needed"
+          echo "Applying database migrations..."
+          docker-compose exec -T backend bash /app/migrations/apply_migrations.sh || echo "Migrations applied or not needed"
 
           # Check container status
           docker-compose ps

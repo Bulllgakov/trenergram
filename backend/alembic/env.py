@@ -1,9 +1,14 @@
 from logging.config import fileConfig
+import os
+from dotenv import load_dotenv
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# Load environment variables (don't override existing env vars)
+load_dotenv(override=False)
 
 # Import all models for autogenerate
 from db.base_sync import Base
@@ -11,12 +16,28 @@ from models import (
     User, UserRole, TrainerClient,
     Club, ClubTariff,
     Booking, BookingStatus,
-    Schedule, TimeSlot, DayOfWeek, SlotStatus
+    Schedule, TimeSlot, DayOfWeek, SlotStatus,
+    ClubAdmin, ClubPayment, ClubQRCode
 )
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Override sqlalchemy.url with DATABASE_URL from environment
+database_url = os.getenv("DATABASE_URL")
+print(f"DEBUG: DATABASE_URL from env = {database_url}")
+if database_url:
+    # Convert async URL to sync URL for Alembic
+    if database_url.startswith("postgresql+asyncpg://"):
+        database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    elif database_url.startswith("sqlite+aiosqlite://"):
+        database_url = database_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+    print(f"DEBUG: Setting sqlalchemy.url to {database_url}")
+    config.set_main_option("sqlalchemy.url", database_url)
+else:
+    print("DEBUG: DATABASE_URL not found in environment!")
+    print(f"DEBUG: Using alembic.ini value: {config.get_main_option('sqlalchemy.url')}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

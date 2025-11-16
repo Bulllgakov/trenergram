@@ -30,7 +30,7 @@ BEGIN
             'admin@trenergram.ru',
             '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5LS2wL0SU3WoW',  -- 'changeme'
             'Super Admin',
-            'owner',
+            'super_admin',
             NULL,  -- NULL club_id indicates super_admin
             TRUE,
             NOW()
