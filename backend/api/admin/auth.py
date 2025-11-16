@@ -4,12 +4,13 @@ Admin authentication API endpoints
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime, timedelta
 
-from db.session import get_db
+from db.base import async_session, get_db
 from models import ClubAdmin
 from core.password import hash_password, verify_password
 from core.jwt import create_access_token, decode_access_token
@@ -55,7 +56,7 @@ class ChangePasswordRequest(BaseModel):
 # Dependency to get current admin user from JWT token
 async def get_current_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ) -> ClubAdmin:
     """
     Validate JWT token and return current admin user
@@ -78,7 +79,9 @@ async def get_current_admin(
             detail="Invalid token payload"
         )
 
-    admin = db.query(ClubAdmin).filter(ClubAdmin.email == email).first()
+    result = await db.execute(select(ClubAdmin).filter(ClubAdmin.email == email))
+    admin = result.scalar_one_or_none()
+
     if not admin:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -97,13 +100,14 @@ async def get_current_admin(
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Login with email and password, returns JWT token
     """
     # Find admin by email
-    admin = db.query(ClubAdmin).filter(ClubAdmin.email == request.email).first()
+    result = await db.execute(select(ClubAdmin).filter(ClubAdmin.email == request.email))
+    admin = result.scalar_one_or_none()
 
     if not admin:
         raise HTTPException(
@@ -153,7 +157,7 @@ async def get_current_user(
 async def update_profile(
     request: UpdateProfileRequest,
     admin: ClubAdmin = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Update current user's profile
@@ -161,8 +165,8 @@ async def update_profile(
     if request.name:
         admin.name = request.name
 
-    db.commit()
-    db.refresh(admin)
+    await db.commit()
+    await db.refresh(admin)
 
     return AdminUserResponse.from_orm(admin)
 
@@ -171,7 +175,7 @@ async def update_profile(
 async def change_password(
     request: ChangePasswordRequest,
     admin: ClubAdmin = Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Change current user's password
@@ -186,6 +190,6 @@ async def change_password(
     # Hash and set new password
     admin.password_hash = hash_password(request.new_password)
 
-    db.commit()
+    await db.commit()
 
     return {"message": "Password changed successfully"}

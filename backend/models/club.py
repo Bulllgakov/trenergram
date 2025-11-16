@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, DECIMAL
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from db.base_sync import Base
+from db.base import Base
 
 
 class Club(Base):
