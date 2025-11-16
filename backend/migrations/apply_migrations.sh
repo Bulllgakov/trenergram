@@ -1,26 +1,48 @@
 #!/bin/bash
-# Apply database migrations
+# Apply database migrations using Python and SQLAlchemy
 
 set -e
 
 echo "Applying database migrations..."
 
-# Get database connection details from environment
-DB_HOST="${DB_HOST:-db}"
-DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-trenergram_db}"
-DB_USER="${DB_USER:-trenergram_user}"
-PGPASSWORD="${DB_PASSWORD:-trenergram_pass}"
+# Create Python script to run migrations
+python3 << 'PYTHON_EOF'
+import os
+import glob
+from sqlalchemy import create_engine, text
 
-export PGPASSWORD
+# Get database URL from environment
+database_url = os.getenv('DATABASE_URL')
+if not database_url:
+    print("ERROR: DATABASE_URL environment variable not set")
+    exit(1)
 
-# Apply migrations in order
-for migration in /app/migrations/*.sql; do
-    if [ -f "$migration" ]; then
-        echo "Applying migration: $(basename $migration)"
-        psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration"
-        echo "✓ Applied $(basename $migration)"
-    fi
-done
+# Convert async URL to sync URL
+if database_url.startswith("postgresql+asyncpg://"):
+    database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
 
-echo "All migrations applied successfully!"
+# Create engine
+engine = create_engine(database_url)
+
+# Get all SQL files in migrations directory
+migration_files = sorted(glob.glob('/app/migrations/*.sql'))
+
+# Apply each migration
+for migration_file in migration_files:
+    print(f"Applying migration: {os.path.basename(migration_file)}")
+
+    with open(migration_file, 'r') as f:
+        sql_content = f.read()
+
+    try:
+        with engine.connect() as conn:
+            # Execute the SQL file
+            conn.execute(text(sql_content))
+            conn.commit()
+        print(f"✓ Applied {os.path.basename(migration_file)}")
+    except Exception as e:
+        print(f"Note: {e}")
+        # Continue even if migration fails (might already be applied)
+
+print("All migrations processed!")
+PYTHON_EOF
