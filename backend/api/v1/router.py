@@ -2,6 +2,10 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
+# Debug endpoint
+from .debug_db import router as debug_router
+router.include_router(debug_router, prefix="/debug", tags=["debug"])
+
 # Import sub-routers when they're created
 # from .trainers import router as trainers_router
 # from .clients import router as clients_router
