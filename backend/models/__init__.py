@@ -1,5 +1,7 @@
+# Admin panel models (isolated to avoid circular dependencies)
+from .admin import ClubAdmin, ClubPayment, ClubQRCode
+
 # Old models (temporarily commented due to async base issue)
-from .club import ClubAdmin, ClubPayment, ClubQRCode
 # from .club import Club as ClubOld, ClubClient
 # from .user import Trainer, Client, TrainerClient as TrainerClientOld
 # from .booking import TrainerSlot, Booking as BookingOld, Invitation, ProfileView
