@@ -139,7 +139,7 @@ async def login(
 
     return LoginResponse(
         access_token=access_token,
-        user=AdminUserResponse.from_orm(admin)
+        user=AdminUserResponse.model_validate(admin)
     )
 
 
@@ -150,7 +150,7 @@ async def get_current_user(
     """
     Get current authenticated user information
     """
-    return AdminUserResponse.from_orm(admin)
+    return AdminUserResponse.model_validate(admin)
 
 
 @router.put("/profile", response_model=AdminUserResponse)
@@ -168,7 +168,7 @@ async def update_profile(
     await db.commit()
     await db.refresh(admin)
 
-    return AdminUserResponse.from_orm(admin)
+    return AdminUserResponse.model_validate(admin)
 
 
 @router.put("/change-password")
