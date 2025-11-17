@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime, timedelta
 
@@ -26,6 +26,8 @@ class LoginRequest(BaseModel):
 
 
 class AdminUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     email: str
     name: str
@@ -33,9 +35,6 @@ class AdminUserResponse(BaseModel):
     club_id: Optional[int] = None
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class LoginResponse(BaseModel):
