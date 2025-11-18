@@ -1,0 +1,99 @@
+name: Test Mini Apps After Deploy
+
+on:
+  workflow_run:
+    workflows: ["Deploy to VDS"]
+    types:
+      - completed
+
+jobs:
+  test-mini-apps:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Wait for deployment to settle
+      run: sleep 10
+
+    - name: Test Backend Health
+      run: |
+        echo "Testing backend health..."
+        response=$(curl -s https://trenergram.ru/health)
+        echo "$response"
+        if echo "$response" | grep -q '"status":"healthy"'; then
+          echo "✅ Backend is healthy"
+        else
+          echo "❌ Backend health check failed"
+          exit 1
+        fi
+
+    - name: Test Trainer API
+      run: |
+        echo "Testing trainer API..."
+        response=$(curl -s https://trenergram.ru/api/v1/bookings/trainer/8384084241)
+        if echo "$response" | grep -q '"trainer_name"'; then
+          echo "✅ Trainer API works"
+        else
+          echo "❌ Trainer API failed"
+          exit 1
+        fi
+
+    - name: Test Trainer Mini App HTML
+      run: |
+        echo "Testing trainer Mini App HTML..."
+        status=$(curl -s -o /dev/null -w "%{http_code}" https://trenergram.ru/trainer/8384084241)
+        if [ "$status" = "200" ]; then
+          echo "✅ Trainer Mini App HTML loads"
+        else
+          echo "❌ Trainer Mini App returns $status"
+          exit 1
+        fi
+
+    - name: Test Trainer JS File
+      run: |
+        echo "Testing trainer JS file..."
+        content_type=$(curl -s -I https://trenergram.ru/trainer/trainer-api.js | grep -i "content-type" | tr -d '\r')
+        echo "Content-Type: $content_type"
+        if echo "$content_type" | grep -q "application/javascript"; then
+          echo "✅ Trainer JS has correct MIME type"
+        else
+          echo "❌ Trainer JS has wrong MIME type: $content_type"
+          exit 1
+        fi
+
+    - name: Test Client Mini App HTML
+      run: |
+        echo "Testing client Mini App HTML..."
+        status=$(curl -s -o /dev/null -w "%{http_code}" https://trenergram.ru/client/236692046)
+        if [ "$status" = "200" ]; then
+          echo "✅ Client Mini App HTML loads"
+        else
+          echo "❌ Client Mini App returns $status"
+          exit 1
+        fi
+
+    - name: Test Client JS File
+      run: |
+        echo "Testing client JS file..."
+        content_type=$(curl -s -I https://trenergram.ru/client/app.js | grep -i "content-type" | tr -d '\r')
+        echo "Content-Type: $content_type"
+        if echo "$content_type" | grep -q "application/javascript"; then
+          echo "✅ Client JS has correct MIME type"
+        else
+          echo "❌ Client JS has wrong MIME type: $content_type"
+          exit 1
+        fi
+
+    - name: Summary
+      if: success()
+      run: |
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "✅ ALL MINI APPS TESTS PASSED!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "✅ Backend healthy"
+        echo "✅ Trainer API works"
+        echo "✅ Trainer Mini App loads"
+        echo "✅ Trainer JS correct MIME type"
+        echo "✅ Client Mini App loads"
+        echo "✅ Client JS correct MIME type"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
