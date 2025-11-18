@@ -22,65 +22,26 @@ class Club(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    admins = relationship("ClubAdmin", back_populates="club", cascade="all, delete-orphan")
+    # Note: admins, payments, qr_codes relationships removed to avoid conflicts with admin.py models
     trainers = relationship("Trainer", back_populates="club")
-    payments = relationship("ClubPayment", back_populates="club")
-    qr_codes = relationship("ClubQRCode", back_populates="club", cascade="all, delete-orphan")
     clients = relationship("ClubClient", back_populates="club")
 
 
-class ClubAdmin(Base):
-    __tablename__ = "club_admins"
+# Note: ClubAdmin, ClubPayment, ClubQRCode models moved to admin.py to avoid circular dependencies
+# These old definitions are kept commented out for reference only
+# The active models for admin panel are in admin.py
 
-    id = Column(Integer, primary_key=True, index=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    telegram_id = Column(String(50))
-    email = Column(String(100), nullable=False, unique=True)
-    password_hash = Column(String(255))
-    name = Column(String(200))
-    role = Column(String(20), default="admin")  # owner, admin, manager
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+# class ClubAdmin(Base):
+#     __tablename__ = "club_admins"
+#     ...
 
-    # Relationships
-    club = relationship("Club", back_populates="admins")
+# class ClubPayment(Base):
+#     __tablename__ = "club_payments"
+#     ...
 
-
-class ClubPayment(Base):
-    __tablename__ = "club_payments"
-
-    id = Column(Integer, primary_key=True, index=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    amount = Column(DECIMAL(10, 2), nullable=False)
-    tariff = Column(String(20), nullable=False)
-    period_start = Column(Date, nullable=False)
-    period_end = Column(Date, nullable=False)
-    status = Column(String(20), default="pending")  # pending, paid, failed, refunded
-    payment_method = Column(String(50))
-    transaction_id = Column(String(100))
-    paid_at = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    club = relationship("Club", back_populates="payments")
-
-
-class ClubQRCode(Base):
-    __tablename__ = "club_qr_codes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    code = Column(String(100), unique=True, nullable=False)
-    name = Column(String(200))
-    location = Column(String(200))  # Рецепция, Зал 1, Раздевалка
-    scans_count = Column(Integer, default=0)
-    conversions_count = Column(Integer, default=0)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    club = relationship("Club", back_populates="qr_codes")
-    scanned_by = relationship("ClubClient", back_populates="qr_code")
+# class ClubQRCode(Base):
+#     __tablename__ = "club_qr_codes"
+#     ...
 
 
 class ClubClient(Base):
@@ -98,4 +59,4 @@ class ClubClient(Base):
     # Relationships
     club = relationship("Club", back_populates="clients")
     client = relationship("Client", back_populates="clubs")
-    qr_code = relationship("ClubQRCode", back_populates="scanned_by")
+    # Note: qr_code relationship removed since ClubQRCode moved to admin.py

@@ -2,7 +2,8 @@
 from .admin import ClubAdmin, ClubPayment, ClubQRCode
 
 # Old models (needed for existing Mini Apps)
-from .user import Trainer, Client
+from .club import Club as ClubOld, ClubClient
+from .user import Trainer, Client, TrainerClient as TrainerClientOld
 from .booking import TrainerSlot, Booking as BookingOld, Invitation, ProfileView
 
 # New unified models (for future use)
@@ -16,7 +17,8 @@ __all__ = [
     "ClubAdmin", "ClubPayment", "ClubQRCode",
 
     # Old models (for existing Mini Apps)
-    "Trainer", "Client", "TrainerSlot", "BookingOld", "Invitation", "ProfileView",
+    "ClubOld", "ClubClient",
+    "Trainer", "Client", "TrainerClientOld", "TrainerSlot", "BookingOld", "Invitation", "ProfileView",
 
     # New models (v2)
     "User", "UserRole", "TrainerClient",
