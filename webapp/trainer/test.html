@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Диагностика API</title>
+</head>
+<body>
+    <h1>Диагностика Trainer API</h1>
+    <div id="status"></div>
+    <pre id="output"></pre>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
+        const trainerId = '8384084241';
+
+        async function test() {
+            const log = [];
+
+            try {
+                log.push('=== Проверка API ===\n');
+
+                // Test 1: Trainer Info
+                log.push('1. Загрузка данных тренера...');
+                const resp1 = await fetch(`https://trenergram.ru/api/v1/users/trainer/${trainerId}`);
+                const data1 = await resp1.json();
+                log.push(`✅ Тренер: ${data1.name}`);
+                log.push(`   Клиентов: ${data1.total_clients}`);
+                log.push(`   Тренировок: ${data1.total_bookings}\n`);
+
+                // Test 2: Clients
+                log.push('2. Загрузка клиентов...');
+                const resp2 = await fetch(`https://trenergram.ru/api/v1/users/trainer/${trainerId}/clients`);
+                const clients = await resp2.json();
+                log.push(`✅ Клиентов загружено: ${clients.length}`);
+                clients.forEach(c => {
+                    log.push(`   - ${c.name} (${c.telegram_id})`);
+                });
+                log.push('');
+
+                // Test 3: Bookings
+                log.push('3. Загрузка тренировок...');
+                const resp3 = await fetch(`https://trenergram.ru/api/v1/bookings/trainer/${trainerId}`);
+                const bookings = await resp3.json();
+                log.push(`✅ Тренировок загружено: ${bookings.length}`);
+                bookings.forEach(b => {
+                    log.push(`   - ${b.client_name}: ${b.datetime} (${b.status})`);
+                });
+
+                statusDiv.innerHTML = '<h2 style="color:green">✅ Все API работают!</h2>';
+
+            } catch (error) {
+                log.push(`\n❌ ОШИБКА: ${error.message}`);
+                log.push(error.stack);
+                statusDiv.innerHTML = '<h2 style="color:red">❌ Ошибка API</h2>';
+            }
+
+            outputDiv.textContent = log.join('\n');
+        }
+
+        test();
+    </script>
+</body>
+</html>
