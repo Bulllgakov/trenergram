@@ -62,6 +62,31 @@ async def test_database(db: AsyncSession = Depends(get_db)):
         }
 
 
+@router.get("/test-dashboard")
+async def test_dashboard(db: AsyncSession = Depends(get_db)):
+    """Test dashboard stats query to debug 500 error"""
+    from sqlalchemy import select, func
+    from models import Trainer, Client, BookingOld, ClubOld
+
+    try:
+        # Test simple count
+        result = await db.execute(select(func.count(Trainer.id)))
+        trainer_count = result.scalar()
+
+        return {
+            "success": True,
+            "trainer_count": trainer_count,
+            "message": "Basic query works"
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.post("/test-login")
 async def test_login(db: AsyncSession = Depends(get_db)):
     """Test login flow to debug 500 error"""
