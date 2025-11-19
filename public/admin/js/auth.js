@@ -73,7 +73,7 @@ function getUserRole() {
  */
 function isSuperAdmin() {
     const userData = getUserData();
-    return userData && userData.role === 'owner' && !userData.club_id;
+    return userData && userData.role === 'super_admin' && !userData.club_id;
 }
 
 /**
