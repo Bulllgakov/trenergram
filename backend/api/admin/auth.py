@@ -30,7 +30,7 @@ class AdminUserResponse(BaseModel):
 
     id: int
     email: str
-    name: str
+    name: Optional[str] = None
     role: str
     club_id: Optional[int] = None
     is_active: bool
