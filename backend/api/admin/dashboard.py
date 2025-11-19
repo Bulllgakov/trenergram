@@ -3,13 +3,13 @@ Admin dashboard statistics API
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, and_, select
+from sqlalchemy.orm import Session
+from sqlalchemy import func, and_
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 
-from db.base import get_db
-from models import Trainer, Client, BookingOld, ClubOld, ClubAdmin
+from db.session import get_db
+from models import User, UserRole, Booking, BookingStatus, Club, ClubAdmin
 from .auth import get_current_admin
 
 router = APIRouter()
@@ -33,9 +33,9 @@ class DashboardStats(BaseModel):
 
 
 @router.get("/stats", response_model=DashboardStats)
-async def get_dashboard_stats(
+def get_dashboard_stats(
     admin: ClubAdmin = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """
     Get dashboard statistics
@@ -46,84 +46,122 @@ async def get_dashboard_stats(
     # Determine if super_admin or club_admin
     is_super_admin = admin.role == "super_admin" and admin.club_id is None
 
-    # Count trainers
+    # Count trainers (users with role=TRAINER)
     if is_super_admin:
-        result = await db.execute(select(func.count(Trainer.id)))
-        total_trainers = result.scalar() or 0
-        result = await db.execute(select(func.count(Trainer.id)).filter(Trainer.is_active == True))
-        active_trainers = result.scalar() or 0
+        total_trainers = db.query(User).filter(User.role == UserRole.TRAINER).count()
+        active_trainers = db.query(User).filter(
+            User.role == UserRole.TRAINER,
+            User.is_active == True
+        ).count()
     else:
         if not admin.club_id:
             raise HTTPException(status_code=403, detail="Access denied")
-        result = await db.execute(select(func.count(Trainer.id)).filter(Trainer.club_id == admin.club_id))
-        total_trainers = result.scalar() or 0
-        result = await db.execute(select(func.count(Trainer.id)).filter(
-            Trainer.club_id == admin.club_id,
-            Trainer.is_active == True
-        ))
-        active_trainers = result.scalar() or 0
+        total_trainers = db.query(User).filter(
+            User.role == UserRole.TRAINER,
+            User.club_id == admin.club_id
+        ).count()
+        active_trainers = db.query(User).filter(
+            User.role == UserRole.TRAINER,
+            User.club_id == admin.club_id,
+            User.is_active == True
+        ).count()
 
-    # Count clients (all clients for now, filtering by club is complex)
-    result = await db.execute(select(func.count(Client.id)))
-    total_clients = result.scalar() or 0
-    active_clients = total_clients  # Clients don't have is_active in old model
+    # Count clients (users with role=CLIENT)
+    if is_super_admin:
+        total_clients = db.query(User).filter(User.role == UserRole.CLIENT).count()
+        active_clients = db.query(User).filter(
+            User.role == UserRole.CLIENT,
+            User.is_active == True
+        ).count()
+    else:
+        # For club admin, count clients who have bookings with club's trainers
+        trainer_ids = [u.id for u in db.query(User.id).filter(
+            User.role == UserRole.TRAINER,
+            User.club_id == admin.club_id
+        ).all()]
+
+        total_clients = db.query(User).filter(
+            User.role == UserRole.CLIENT,
+            User.id.in_(
+                db.query(Booking.client_id).filter(
+                    Booking.trainer_id.in_(trainer_ids)
+                ).distinct()
+            )
+        ).count()
+        active_clients = total_clients
 
     # Count bookings
     if is_super_admin:
-        result = await db.execute(select(func.count(BookingOld.id)))
-        total_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(BookingOld.status == "confirmed"))
-        confirmed_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(BookingOld.status == "pending"))
-        pending_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(BookingOld.status == "completed"))
-        completed_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(BookingOld.status == "cancelled"))
-        cancelled_bookings = result.scalar() or 0
+        total_bookings = db.query(Booking).count()
+        confirmed_bookings = db.query(Booking).filter(Booking.status == BookingStatus.CONFIRMED).count()
+        pending_bookings = db.query(Booking).filter(Booking.status == BookingStatus.PENDING).count()
+        completed_bookings = db.query(Booking).filter(Booking.status == BookingStatus.COMPLETED).count()
+        cancelled_bookings = db.query(Booking).filter(Booking.status == BookingStatus.CANCELLED).count()
     else:
-        # Get trainer IDs for this club
-        result = await db.execute(select(Trainer.id).filter(Trainer.club_id == admin.club_id))
-        trainer_ids = [row[0] for row in result.all()]
+        trainer_ids = [u.id for u in db.query(User.id).filter(
+            User.role == UserRole.TRAINER,
+            User.club_id == admin.club_id
+        ).all()]
 
-        result = await db.execute(select(func.count(BookingOld.id)).filter(BookingOld.trainer_id.in_(trainer_ids)))
-        total_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(
-            BookingOld.trainer_id.in_(trainer_ids),
-            BookingOld.status == "confirmed"
-        ))
-        confirmed_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(
-            BookingOld.trainer_id.in_(trainer_ids),
-            BookingOld.status == "pending"
-        ))
-        pending_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(
-            BookingOld.trainer_id.in_(trainer_ids),
-            BookingOld.status == "completed"
-        ))
-        completed_bookings = result.scalar() or 0
-        result = await db.execute(select(func.count(BookingOld.id)).filter(
-            BookingOld.trainer_id.in_(trainer_ids),
-            BookingOld.status == "cancelled"
-        ))
-        cancelled_bookings = result.scalar() or 0
+        total_bookings = db.query(Booking).filter(Booking.trainer_id.in_(trainer_ids)).count()
+        confirmed_bookings = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.status == BookingStatus.CONFIRMED
+        ).count()
+        pending_bookings = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.status == BookingStatus.PENDING
+        ).count()
+        completed_bookings = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.status == BookingStatus.COMPLETED
+        ).count()
+        cancelled_bookings = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.status == BookingStatus.CANCELLED
+        ).count()
 
     # Count clubs
     if is_super_admin:
-        result = await db.execute(select(func.count(ClubOld.id)))
-        total_clubs = result.scalar() or 0
-        result = await db.execute(select(func.count(ClubOld.id)).filter(ClubOld.is_active == True))
-        active_clubs = result.scalar() or 0
+        total_clubs = db.query(Club).count()
+        active_clubs = db.query(Club).filter(Club.is_active == True).count()
     else:
         total_clubs = 1
-        result = await db.execute(select(ClubOld.is_active).filter(ClubOld.id == admin.club_id))
-        club_active = result.scalar()
-        active_clubs = 1 if club_active else 0
+        club = db.query(Club).filter(Club.id == admin.club_id).first()
+        active_clubs = 1 if (club and club.is_active) else 0
 
-    # Time-based bookings (simplified - just return 0 for now)
-    bookings_today = 0
-    bookings_this_week = 0
-    bookings_this_month = 0
+    # Time-based bookings
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=today_start.weekday())
+    month_start = today_start.replace(day=1)
+
+    if is_super_admin:
+        bookings_today = db.query(Booking).filter(
+            Booking.datetime >= today_start,
+            Booking.datetime < today_start + timedelta(days=1)
+        ).count()
+        bookings_this_week = db.query(Booking).filter(Booking.datetime >= week_start).count()
+        bookings_this_month = db.query(Booking).filter(Booking.datetime >= month_start).count()
+    else:
+        trainer_ids = [u.id for u in db.query(User.id).filter(
+            User.role == UserRole.TRAINER,
+            User.club_id == admin.club_id
+        ).all()]
+
+        bookings_today = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.datetime >= today_start,
+            Booking.datetime < today_start + timedelta(days=1)
+        ).count()
+        bookings_this_week = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.datetime >= week_start
+        ).count()
+        bookings_this_month = db.query(Booking).filter(
+            Booking.trainer_id.in_(trainer_ids),
+            Booking.datetime >= month_start
+        ).count()
 
     return DashboardStats(
         total_trainers=total_trainers,
