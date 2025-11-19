@@ -62,6 +62,34 @@ async def test_database(db: AsyncSession = Depends(get_db)):
         }
 
 
+@router.get("/list-tables")
+async def list_tables(db: AsyncSession = Depends(get_db)):
+    """List all tables in database"""
+    from sqlalchemy import text
+
+    try:
+        result = await db.execute(text("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        """))
+        tables = [row[0] for row in result.all()]
+
+        return {
+            "success": True,
+            "tables": tables,
+            "count": len(tables)
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.get("/test-dashboard")
 async def test_dashboard(db: AsyncSession = Depends(get_db)):
     """Test dashboard stats query to debug 500 error"""
