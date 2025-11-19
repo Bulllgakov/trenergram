@@ -19,8 +19,8 @@ router = APIRouter()
 
 # Dependency to require super_admin role
 async def require_super_admin(admin: ClubAdmin = Depends(get_current_admin)):
-    """Only allow super_admin (owner with no club_id)"""
-    if admin.role != "owner" or admin.club_id is not None:
+    """Only allow super_admin (role='super_admin' with no club_id)"""
+    if admin.role != "super_admin" or admin.club_id is not None:
         raise HTTPException(status_code=403, detail="Super admin access required")
     return admin
 

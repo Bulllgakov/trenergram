@@ -94,17 +94,21 @@ async def list_tables(db: AsyncSession = Depends(get_db)):
 async def test_dashboard(db: AsyncSession = Depends(get_db)):
     """Test dashboard stats query to debug 500 error"""
     from sqlalchemy import select, func
-    from models import Trainer, Client, BookingOld, ClubOld
+    from models import User, UserRole, Booking, Club
 
     try:
-        # Test simple count
-        result = await db.execute(select(func.count(Trainer.id)))
+        # Test simple count using new models (same as Mini Apps)
+        result = await db.execute(select(func.count(User.id)).filter(User.role == UserRole.TRAINER))
         trainer_count = result.scalar()
+
+        result = await db.execute(select(func.count(Booking.id)))
+        booking_count = result.scalar()
 
         return {
             "success": True,
             "trainer_count": trainer_count,
-            "message": "Basic query works"
+            "booking_count": booking_count,
+            "message": "Using new models v2 (User/Booking) like Mini Apps"
         }
     except Exception as e:
         import traceback
