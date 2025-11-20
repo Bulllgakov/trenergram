@@ -23,7 +23,19 @@ async function apiRequest(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+    // Always use relative paths (never absolute http/https URLs)
+    let url;
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+        // Extract path from absolute URL
+        const urlObj = new URL(endpoint);
+        url = urlObj.pathname + urlObj.search;
+    } else if (endpoint.startsWith('/api/')) {
+        // Already full path
+        url = endpoint;
+    } else {
+        // Relative to API_BASE
+        url = `${API_BASE}${endpoint}`;
+    }
 
     try {
         const response = await fetch(url, {
