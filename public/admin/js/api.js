@@ -75,10 +75,10 @@ const dashboardAPI = {
 const trainersAPI = {
     list: (params = {}) => {
         const query = new URLSearchParams(params).toString();
-        return apiRequest(`/trainers?${query}`);
+        return apiRequest(`/trainers/?${query}`);
     },
-    get: (id) => apiRequest(`/trainers/${id}`),
-    update: (id, data) => apiRequest(`/trainers/${id}`, {
+    get: (id) => apiRequest(`/trainers/${id}/`),
+    update: (id, data) => apiRequest(`/trainers/${id}/`, {
         method: 'PUT',
         body: JSON.stringify(data)
     })
@@ -90,9 +90,9 @@ const trainersAPI = {
 const clientsAPI = {
     list: (params = {}) => {
         const query = new URLSearchParams(params).toString();
-        return apiRequest(`/clients?${query}`);
+        return apiRequest(`/clients/?${query}`);
     },
-    get: (id) => apiRequest(`/clients/${id}`)
+    get: (id) => apiRequest(`/clients/${id}/`)
 };
 
 /**
@@ -101,22 +101,22 @@ const clientsAPI = {
 const clubsAPI = {
     list: (params = {}) => {
         const query = new URLSearchParams(params).toString();
-        return apiRequest(`/clubs?${query}`);
+        return apiRequest(`/clubs/?${query}`);
     },
-    get: (id) => apiRequest(`/clubs/${id}`),
-    create: (data) => apiRequest('/clubs', {
+    get: (id) => apiRequest(`/clubs/${id}/`),
+    create: (data) => apiRequest('/clubs/', {
         method: 'POST',
         body: JSON.stringify(data)
     }),
-    update: (id, data) => apiRequest(`/clubs/${id}`, {
+    update: (id, data) => apiRequest(`/clubs/${id}/`, {
         method: 'PUT',
         body: JSON.stringify(data)
     }),
-    delete: (id) => apiRequest(`/clubs/${id}`, {
+    delete: (id) => apiRequest(`/clubs/${id}/`, {
         method: 'DELETE'
     }),
-    listAdmins: (clubId) => apiRequest(`/clubs/${clubId}/admins`),
-    createAdmin: (clubId, data) => apiRequest(`/clubs/${clubId}/admins`, {
+    listAdmins: (clubId) => apiRequest(`/clubs/${clubId}/admins/`),
+    createAdmin: (clubId, data) => apiRequest(`/clubs/${clubId}/admins/`, {
         method: 'POST',
         body: JSON.stringify(data)
     })
