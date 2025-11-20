@@ -78,7 +78,7 @@ async def list_clients(
     For club_admin: can only see clients who have bookings with trainers from their club
     """
     # Check permissions
-    is_super_admin = admin.role == "owner" and admin.club_id is None
+    is_super_admin = admin.role == "super_admin" and admin.club_id is None
 
     query = db.query(User).filter(User.role == UserRole.CLIENT)
 
@@ -181,7 +181,7 @@ async def get_client(
         raise HTTPException(status_code=404, detail="Client not found")
 
     # Check permissions for club admins
-    is_super_admin = admin.role == "owner" and admin.club_id is None
+    is_super_admin = admin.role == "super_admin" and admin.club_id is None
     if not is_super_admin:
         # Check if client has bookings with trainers from admin's club
         trainer_ids = db.query(User.id).filter(

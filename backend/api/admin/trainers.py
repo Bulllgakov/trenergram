@@ -95,7 +95,7 @@ async def list_trainers(
     For club_admin: can only see trainers from their club
     """
     # Check permissions
-    is_super_admin = admin.role == "owner" and admin.club_id is None
+    is_super_admin = admin.role == "super_admin" and admin.club_id is None
 
     query = db.query(User).filter(User.role == UserRole.TRAINER)
 
@@ -186,7 +186,7 @@ async def get_trainer(
         raise HTTPException(status_code=404, detail="Trainer not found")
 
     # Check permissions
-    is_super_admin = admin.role == "owner" and admin.club_id is None
+    is_super_admin = admin.role == "super_admin" and admin.club_id is None
     if not is_super_admin:
         if trainer.club_id != admin.club_id:
             raise HTTPException(status_code=403, detail="Access denied")
@@ -265,7 +265,7 @@ async def update_trainer(
         raise HTTPException(status_code=404, detail="Trainer not found")
 
     # Check permissions
-    is_super_admin = admin.role == "owner" and admin.club_id is None
+    is_super_admin = admin.role == "super_admin" and admin.club_id is None
     if not is_super_admin:
         if trainer.club_id != admin.club_id:
             raise HTTPException(status_code=403, detail="Access denied")
