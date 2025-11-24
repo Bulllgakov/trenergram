@@ -610,6 +610,18 @@ async def notify_booking_created_by_trainer(booking: Booking, db: Session):
                 reply_markup=keyboard
             )
             print(f"✅ Immediate notification sent to client {client.telegram_id}")
+
+            # IMPORTANT: Mark first reminder as sent so second/third reminders will work
+            # This ensures the reminder chain continues even though first reminder was "late"
+            from sqlalchemy import text
+            now = datetime.now()
+            db.execute(text("""
+                UPDATE bookings
+                SET reminder_24h_sent = true, reminder_1_sent_at = :now
+                WHERE id = :booking_id
+            """), {"now": now, "booking_id": booking.id})
+            db.commit()
+            print(f"✅ Marked reminder_24h_sent=true and set reminder_1_sent_at for booking {booking.id}")
         else:
             print(f"⏰ First reminder time not yet passed, will wait for scheduled reminder")
 
