@@ -527,14 +527,96 @@ async def notify_booking_rescheduled(
 # New simplified notification functions according to TZ 10.6
 async def notify_booking_created_by_trainer(booking: Booking, db: Session):
     """
-    When trainer creates booking: NO notifications sent to anyone.
-    First reminder will serve as first notification to client.
+    When trainer creates booking: Check if first reminder time has passed.
+    If yes - send immediate notification to client with confirmation buttons.
+    If no - wait for scheduled first reminder.
     """
-    # According to new TZ 10.6: no notifications when trainer creates booking
-    print(f"🚫🚫🚫 VERSION 2025-10-08-v3 🚫🚫🚫")
-    print(f"🚫 notify_booking_created_by_trainer() called for booking {booking.id}")
-    print(f"🚫 NO notifications will be sent (correct per TZ 10.6)")
-    pass
+    from datetime import datetime, timedelta, time
+
+    print(f"📧 notify_booking_created_by_trainer() called for booking {booking.id}")
+
+    # Get trainer and client
+    trainer = db.query(User).filter_by(id=booking.trainer_id).first()
+    client = db.query(User).filter_by(id=booking.client_id).first()
+
+    if not trainer or not client:
+        print(f"❌ Trainer or client not found for booking {booking.id}")
+        return
+
+    # Check if first reminder time has already passed
+    # reminder_1_days_before (default 1) and reminder_1_time (default "20:00")
+    days_before = trainer.reminder_1_days_before or 1
+    reminder_time = trainer.reminder_1_time or time(20, 0)
+
+    # Convert reminder_time to time object if it's a string
+    if isinstance(reminder_time, str):
+        try:
+            from datetime import datetime
+            reminder_time = datetime.strptime(reminder_time, "%H:%M:%S").time()
+        except ValueError:
+            try:
+                reminder_time = datetime.strptime(reminder_time, "%H:%M").time()
+            except ValueError:
+                print(f"❌ Invalid reminder_1_time format: {reminder_time}, using default 20:00")
+                reminder_time = time(20, 0)
+
+    # Calculate when first reminder should be sent (in trainer's timezone)
+    trainer_tz = getattr(trainer, 'timezone', None) or "Europe/Moscow"
+    try:
+        tz = ZoneInfo(trainer_tz)
+        booking_datetime_local = booking.datetime.astimezone(tz)
+
+        # First reminder datetime = booking_date - days_before at reminder_time
+        first_reminder_datetime = datetime.combine(
+            booking_datetime_local.date() - timedelta(days=days_before),
+            reminder_time
+        ).replace(tzinfo=tz)
+
+        # Current time in trainer's timezone
+        now_local = datetime.now(tz)
+
+        print(f"📅 Booking datetime: {booking_datetime_local}")
+        print(f"⏰ First reminder should be at: {first_reminder_datetime}")
+        print(f"🕐 Current time (trainer TZ): {now_local}")
+        print(f"⏳ Reminder passed: {now_local > first_reminder_datetime}")
+
+        # If first reminder time has already passed, send immediate notification
+        if now_local > first_reminder_datetime:
+            print(f"✅ First reminder time has passed, sending immediate notification to client")
+
+            # Format datetime for message
+            booking_date = booking_datetime_local.strftime("%d.%m.%Y")
+            booking_time = booking_datetime_local.strftime("%H:%M")
+
+            text = f"Придешь на тренировку {booking_date} в {booking_time}?"
+
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Подтверждаю",
+                        callback_data=f"confirm_attendance:{booking.id}"
+                    ),
+                    InlineKeyboardButton(
+                        text="❌ Не смогу прийти",
+                        callback_data=f"cancel_booking:{booking.id}"
+                    )
+                ]
+            ])
+
+            await notification_service.bot.send_message(
+                chat_id=client.telegram_id,
+                text=text,
+                parse_mode="HTML",
+                reply_markup=keyboard
+            )
+            print(f"✅ Immediate notification sent to client {client.telegram_id}")
+        else:
+            print(f"⏰ First reminder time not yet passed, will wait for scheduled reminder")
+
+    except Exception as e:
+        print(f"❌ Error checking/sending notification: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 async def notify_booking_created_by_client(booking: Booking, db: Session):
