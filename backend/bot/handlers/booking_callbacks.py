@@ -72,9 +72,18 @@ async def handle_confirm_booking(update: Update, context: ContextTypes.DEFAULT_T
 async def handle_cancel_booking(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle booking cancellation"""
     query = update.callback_query
-    logger.info(f"📞 handle_cancel_booking called by user {query.from_user.id}, callback_data: {query.data}")
 
-    await query.answer()
+    # CRITICAL: Answer callback query IMMEDIATELY to stop loading animation
+    try:
+        await query.answer()
+        logger.info(f"📞 handle_cancel_booking called by user {query.from_user.id}, callback_data: {query.data}")
+    except Exception as e:
+        logger.error(f"❌ FAILED to answer callback query: {e}")
+        try:
+            await query.answer()
+        except:
+            pass
+        return
 
     # Extract booking ID from callback data
     try:
@@ -246,9 +255,19 @@ async def handle_decline_reschedule(update: Update, context: ContextTypes.DEFAUL
 async def handle_confirm_attendance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle attendance confirmation for reminders"""
     query = update.callback_query
-    logger.info(f"📞 handle_confirm_attendance called by user {query.from_user.id}, callback_data: {query.data}")
 
-    await query.answer("✅ Спасибо за подтверждение!")
+    # CRITICAL: Answer callback query IMMEDIATELY to stop loading animation
+    try:
+        await query.answer("✅ Спасибо за подтверждение!")
+        logger.info(f"📞 handle_confirm_attendance called by user {query.from_user.id}, callback_data: {query.data}")
+    except Exception as e:
+        logger.error(f"❌ FAILED to answer callback query: {e}")
+        # Try to answer without text
+        try:
+            await query.answer()
+        except:
+            pass
+        return
 
     try:
         booking_id = int(query.data.split(":")[1])

@@ -6,8 +6,9 @@ import asyncio
 from typing import Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from aiogram import Bot
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+# IMPORTANT: Use python-telegram-bot (same as bot/main.py) NOT aiogram
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import TelegramError
 from sqlalchemy.orm import Session
 
 from core.config import settings
@@ -16,6 +17,7 @@ from models import User, Booking, BookingStatus
 
 class NotificationService:
     def __init__(self):
+        # Use python-telegram-bot Bot (compatible with bot handlers)
         self.bot = Bot(token=settings.BOT_TOKEN)
 
     def _format_datetime_in_timezone(self, dt: datetime, trainer: User) -> tuple[str, str]:
