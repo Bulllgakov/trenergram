@@ -72,18 +72,29 @@ async def handle_confirm_booking(update: Update, context: ContextTypes.DEFAULT_T
 async def handle_cancel_booking(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle booking cancellation"""
     query = update.callback_query
+    logger.info(f"📞 handle_cancel_booking called by user {query.from_user.id}, callback_data: {query.data}")
+
     await query.answer()
 
     # Extract booking ID from callback data
-    booking_id = int(query.data.split(":")[1])
+    try:
+        booking_id = int(query.data.split(":")[1])
+        logger.info(f"📞 Extracted booking_id: {booking_id}")
+    except (IndexError, ValueError) as e:
+        logger.error(f"❌ Failed to parse booking_id from callback_data: {query.data}, error: {e}")
+        await query.message.reply_text("❌ Ошибка обработки данных")
+        return
 
     db = next(get_db())
     try:
         # Get booking
         booking = db.query(Booking).filter_by(id=booking_id).first()
         if not booking:
+            logger.error(f"❌ Booking {booking_id} not found in database")
             await query.message.reply_text("❌ Запись не найдена")
             return
+
+        logger.info(f"✅ Found booking {booking_id}, status: {booking.status}")
 
         # Check if the user is the trainer or client for this booking
         user = db.query(User).filter_by(telegram_id=str(query.from_user.id)).first()
@@ -235,39 +246,64 @@ async def handle_decline_reschedule(update: Update, context: ContextTypes.DEFAUL
 async def handle_confirm_attendance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle attendance confirmation for reminders"""
     query = update.callback_query
+    logger.info(f"📞 handle_confirm_attendance called by user {query.from_user.id}, callback_data: {query.data}")
+
     await query.answer("✅ Спасибо за подтверждение!")
 
-    booking_id = int(query.data.split(":")[1])
+    try:
+        booking_id = int(query.data.split(":")[1])
+        logger.info(f"📞 Extracted booking_id: {booking_id}")
+    except (IndexError, ValueError) as e:
+        logger.error(f"❌ Failed to parse booking_id from callback_data: {query.data}, error: {e}")
+        await query.message.reply_text("❌ Ошибка обработки данных")
+        return
 
     db = next(get_db())
     try:
         # Get booking
         booking = db.query(Booking).filter_by(id=booking_id).first()
         if not booking:
+            logger.error(f"❌ Booking {booking_id} not found in database")
             await query.message.reply_text("❌ Запись не найдена")
             return
 
+        logger.info(f"✅ Found booking {booking_id}, status: {booking.status}")
+
         # Verify user is the client
         client = db.query(User).filter_by(telegram_id=str(query.from_user.id)).first()
-        if not client or client.id != booking.client_id:
+        if not client:
+            logger.error(f"❌ User {query.from_user.id} not found in database")
+            await query.message.reply_text("❌ Пользователь не найден")
+            return
+
+        if client.id != booking.client_id:
+            logger.error(f"❌ User {client.id} is not the client for booking {booking_id} (client_id={booking.client_id})")
             await query.message.reply_text("❌ Вы не можете подтвердить эту запись")
             return
 
+        logger.info(f"✅ User verified: {client.name} (id={client.id})")
+
         # If booking is PENDING, change status to CONFIRMED
         if booking.status == BookingStatus.PENDING:
+            logger.info(f"📝 Changing booking {booking_id} status from PENDING to CONFIRMED")
             booking.status = BookingStatus.CONFIRMED
             booking.confirmed_at = datetime.now()
             db.commit()
+            logger.info(f"✅ Booking {booking_id} confirmed in database")
 
             # Send notification to trainer
+            logger.info(f"📧 Sending confirmation notification to trainer")
             await notify_booking_confirmed(booking, db)
+            logger.info(f"✅ Notification sent to trainer")
 
             await query.edit_message_text(
                 query.message.text + "\n\n✅ <b>Тренировка подтверждена</b>",
                 parse_mode="HTML"
             )
+            logger.info(f"✅ Message edited successfully")
         else:
             # Already confirmed - just acknowledge
+            logger.info(f"ℹ️ Booking {booking_id} already has status {booking.status}, just acknowledging")
             await query.edit_message_text(
                 query.message.text + "\n\n✅ <b>Присутствие подтверждено</b>",
                 parse_mode="HTML"
@@ -275,10 +311,13 @@ async def handle_confirm_attendance(update: Update, context: ContextTypes.DEFAUL
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error confirming attendance: {e}")
+        logger.error(f"❌ Error confirming attendance: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         await query.message.reply_text(f"❌ Ошибка: {str(e)}")
     finally:
         db.close()
+        logger.info(f"✅ handle_confirm_attendance completed")
 
 
 async def handle_topup_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
