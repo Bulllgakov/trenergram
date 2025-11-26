@@ -169,3 +169,46 @@ async def test_login(db: AsyncSession = Depends(get_db)):
             "error_type": type(e).__name__,
             "traceback": traceback.format_exc()
         }
+
+
+@router.get("/bot-logs")
+async def get_bot_logs():
+    """Get recent bot logs to debug callback issues"""
+    import subprocess
+
+    try:
+        # Get last 200 lines of bot logs
+        result = subprocess.run(
+            ["docker", "logs", "trenergram-bot-1", "--tail", "200"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        logs = result.stdout + result.stderr
+
+        # Filter for relevant lines (callbacks, errors, bookings)
+        relevant_lines = []
+        for line in logs.split('\n'):
+            if any(keyword in line.lower() for keyword in [
+                'confirm_attendance', 'cancel_booking', 'handle_',
+                'error', 'exception', 'booking', 'callback', '❌', '✅', '📞'
+            ]):
+                relevant_lines.append(line)
+
+        return {
+            "success": True,
+            "total_lines": len(logs.split('\n')),
+            "relevant_lines": len(relevant_lines),
+            "logs": relevant_lines[-100:]  # Last 100 relevant lines
+        }
+
+    except subprocess.TimeoutExpired:
+        return {"error": "Timeout getting logs"}
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
